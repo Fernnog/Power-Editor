@@ -1,0 +1,107 @@
+/* Configurações Globais */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f5f7;
+    height: 100vh;
+}
+
+/* Container Principal com Flexbox para as colunas */
+.app-container {
+    display: flex;
+    height: 100%;
+}
+
+/* Área do Editor (Coluna da Esquerda) */
+.editor-area {
+    flex: 3; /* O editor ocupará 3/4 do espaço */
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.toolbar {
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 5px 5px 0 0;
+    border: 1px solid #ccc;
+    border-bottom: none;
+}
+
+.toolbar button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    background-color: #fff;
+}
+
+.text-editor {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    padding: 15px;
+    background-color: #fff;
+    overflow-y: auto;
+    font-size: 16px;
+    line-height: 1.5; /* Espaçamento entre linhas */
+}
+/* Estilo para simular espaçamento entre parágrafos */
+.text-editor p {
+    margin-bottom: 1em; /* Adiciona espaço após cada parágrafo */
+}
+
+
+/* Área da Sidebar (Coluna da Direita) */
+.sidebar-area {
+    flex: 1; /* A sidebar ocupará 1/4 do espaço */
+    background-color: #e9ecef;
+    border-left: 1px solid #ccc;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-area h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #333;
+}
+
+#search-box {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#model-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.model-item {
+    background-color: #ffd580; /* Cor similar à sua imagem */
+    border: 1px solid #daa520;
+    border-radius: 5px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.model-item:hover {
+    background-color: #ffca60;
+}
+
+.model-item .model-name {
+    font-weight: bold;
+    font-size: 14px;
+}
