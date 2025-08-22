@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- Inclui a biblioteca do editor de texto Quill.js -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+  <style>
+    body, html { font-family: Arial, sans-serif; margin: 0; padding: 0; height: 100%; box-sizing: border-box; background-color: #f4f5f7; }
+    #app-container { display: flex; height: 100%; }
+    
+    /* Coluna Principal com o Editor */
+    #editor-column { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
+    #editor-container { flex-grow: 1; background-color: white; border: 1px solid #ccc; }
+    #editor { height: calc(100% - 42px); } /* O -42px é para a barra de ferramentas do Quill */
+    #insert-into-doc-btn {
+      margin-top: 15px; padding: 12px 20px; font-size: 16px; font-weight: bold;
+      cursor: pointer; background-color: #0065ff; color: white;
+      border: none; border-radius: 5px; transition: background-color 0.2s;
+    }
+    #insert-into-doc-btn:hover { background-color: #0052cc; }
+    #insert-into-doc-btn:disabled { background-color: #a5adba; cursor: not-allowed; }
+
+    /* Coluna da Direita com os Modelos */
+    #sidebar-column {
+      width: 300px; background-color: #e9ecef; border-left: 1px solid #ccc;
+      padding: 15px; display: flex; flex-direction: column; box-sizing: border-box;
+    }
+    #model-list { list-style-type: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+    .model-item {
+      padding: 10px; background-color: #fff; border: 1px solid #ddd;
+      border-radius: 4px; margin-bottom: 8px; cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .model-item:hover { background-color: #f0f8ff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .model-name { font-weight: bold; color: #333; }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- Coluna Esquerda: Editor de Texto -->
+    <div id="editor-column">
+      <h2>Compor Documento</h2>
+      <div id="editor-container">
+        <!-- O Quill.js será inserido aqui pelo script -->
+        <div id="editor">
+          <p>Comece a escrever ou insira um modelo...</p>
+        </div>
+      </div>
+      <button id="insert-into-doc-btn" onclick="sendContentToDocument()">Inserir no Documento</button>
+    </div>
+
+    <!-- Coluna Direita: Lista de Modelos -->
+    <div id="sidebar-column">
+      <h3>Modelos Rápidos</h3>
+      <p id="loading-indicator">Carregando modelos...</p>
+      <ul id="model-list">
+        <!-- A lista de modelos será inserida aqui pelo script -->
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. INICIALIZAÇÃO ---
+    let quill; // Variável global para o editor
+    
+    document.addEventListener("DOMContentLoaded", function() {
+      // Inicializa o editor de texto Quill
+      quill = new Quill('#editor', {
+        modules: { toolbar: [
+          [{ 'header': [1, 2, false] }],
+          ['bold', 'italic', 'underline'],
+          ['link'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }]
+        ]},
+        theme: 'snow'
+      });
+      
+      // Carrega os dados iniciais do back-end
+      loadInitialData();
+    });
+
+    // --- 2. CARREGAMENTO DE DADOS (Comunicação com .gs) ---
+    function loadInitialData() {
+      google.script.run
+        .withSuccessHandler(models => {
+          document.getElementById('loading-indicator').style.display = 'none';
+          renderModelList(models);
+        })
+        .withFailureHandler(error => {
+          document.getElementById('loading-indicator').innerText = "Erro ao carregar modelos.";
+          console.error(error);
+        })
+        .getModelsForEditor(); // Esta é a função no seu arquivo .gs
+    }
+
+    // --- 3. RENDERIZAÇÃO DA UI (Lógica do Cliente) ---
+    function renderModelList(models) {
+      const listElement = document.getElementById('model-list');
+      listElement.innerHTML = ''; // Limpa a lista antiga
+      
+      models.forEach(model => {
+        const li = document.createElement('li');
+        li.className = 'model-item';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'model-name';
+        nameSpan.innerText = model.name;
+        li.appendChild(nameSpan);
+        
+        // Ação de clique é gerenciada 100% no cliente
+        li.onclick = () => {
+          insertModelIntoEditor(model.content);
+        };
+        
+        listElement.appendChild(li);
+      });
+    }
+
+    // --- 4. AÇÕES DO USUÁRIO (Lógica do Cliente) ---
+    function insertModelIntoEditor(htmlContent) {
+      // A mágica acontece aqui: a UI é atualizada instantaneamente
+      // sem nenhuma chamada ao servidor.
+      const range = quill.getSelection(true);
+      quill.clipboard.dangerouslyPasteHTML(range.index, htmlContent);
+      quill.insertText(quill.getLength(), '\n'); // Adiciona uma nova linha depois
+    }
+
+    function sendContentToDocument() {
+      const button = document.getElementById('insert-into-doc-btn');
+      button.disabled = true;
+      button.innerText = 'Processando...';
+      
+      const htmlContent = quill.root.innerHTML;
+      
+      // A única chamada ao servidor no final, para a ação que só ele pode fazer.
+      google.script.run
+        .withSuccessHandler(() => {
+          google.script.host.close(); // Fecha o diálogo em caso de sucesso
+        })
+        .withFailureHandler(error => {
+          alert('Falha ao inserir no documento: ' + error.message);
+          button.disabled = false;
+          button.innerText = 'Inserir no Documento';
+        })
+        .insertHtmlContent(htmlContent); // A função no .gs que processará o HTML
+    }
+  </script>
+</body>
+</html>
