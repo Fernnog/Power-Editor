@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Documentos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Coluna Principal: Editor de Texto -->
+        <div class="editor-area">
+            <div class="toolbar">
+                <button onclick="execCmd('bold')"><b>B</b></button>
+                <button onclick="execCmd('italic')"><i>I</i></button>
+                <button onclick="execCmd('underline')"><u>U</u></button>
+                <button onclick="execCmd('justifyLeft')">Esquerda</button>
+                <button onclick="execCmd('justifyCenter')">Centro</button>
+                <button onclick="execCmd('justifyFull')">Justificado</button>
+                <!-- O espaçamento entre parágrafos é mais complexo e será tratado via CSS -->
+            </div>
+            <div id="editor" class="text-editor" contenteditable="true">
+                <p>Comece a escrever seu texto aqui...</p>
+            </div>
+        </div>
+
+        <!-- Coluna da Direita: Sidebar de Modelos -->
+        <div class="sidebar-area">
+            <h3>Modelos de Documento</h3>
+            <div class="sidebar-controls">
+                <input type="text" id="search-box" placeholder="Pesquisar modelos...">
+            </div>
+            <ul id="model-list">
+                <!-- A lista de modelos será preenchida pelo JavaScript -->
+            </ul>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
