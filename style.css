@@ -196,18 +196,39 @@ body, html {
     font-size: 16px;
 }
 
-/* NOVA REGRA PARA O EDITOR NO MODAL */
+/* NOVAS REGRAS PARA A TOOLBAR DO MODAL */
+.modal-toolbar {
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    padding: 5px;
+    border-radius: 4px 4px 0 0;
+}
+
+.modal-toolbar button {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.modal-toolbar button:hover {
+    background-color: #e9ecef;
+}
+
 .text-editor-modal {
     width: 100%;
-    min-height: 150px; /* Equivalente a rows="10" */
+    min-height: 150px;
     padding: 10px;
-    margin-bottom: 15px;
     box-sizing: border-box;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 0 0 4px 4px; /* Ajustado para conectar com a toolbar */
     background-color: #fff;
     overflow-y: auto;
     font-size: 16px;
+    margin-bottom: 15px; /* Movido de input/textarea para cá */
 }
 
 

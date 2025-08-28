@@ -51,7 +51,7 @@ function loadModelsFromStorage() {
 // --- FUNÇÕES DO EDITOR ---
 function execCmd(command) {
     document.execCommand(command, false, null);
-    editor.focus();
+    // Não focamos em nenhum editor específico, pois o comando atua na seleção ativa
 }
 
 function insertModelContent(content) {
@@ -201,14 +201,12 @@ function handleImportFile(event) {
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
-    // ALTERAÇÃO AQUI: usa .innerHTML em vez de .value
     modalInputContent.innerHTML = config.initialContent || '';
     
     const isContentVisible = config.initialContent !== undefined;
     modalInputContent.style.display = isContentVisible ? 'block' : 'none';
     modalContentLabel.style.display = isContentVisible ? 'block' : 'none';
 
-    // ALTERAÇÃO AQUI: usa .innerHTML em vez de .value
     currentOnSave = () => config.onSave(modalInputName.value, modalInputContent.innerHTML);
     
     modalContainer.classList.add('visible');

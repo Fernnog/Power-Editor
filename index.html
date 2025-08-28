@@ -57,7 +57,12 @@
             <input type="text" id="modal-input-name" placeholder="Digite o nome aqui...">
             
             <label for="modal-input-content">Conteúdo do Modelo:</label>
-            <!-- A LINHA ABAIXO FOI ALTERADA -->
+            <!-- NOVA BARRA DE FERRAMENTAS DO MODAL -->
+            <div class="modal-toolbar">
+                <button onclick="execCmd('bold')"><b>B</b></button>
+                <button onclick="execCmd('italic')"><i>I</i></button>
+                <button onclick="execCmd('underline')"><u>U</u></button>
+            </div>
             <div id="modal-input-content" class="text-editor-modal" contenteditable="true"></div>
             
             <div class="modal-buttons">
