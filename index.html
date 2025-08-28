@@ -19,7 +19,12 @@
                 <button onclick="execCmd('justifyLeft')">Esquerda</button>
                 <button onclick="execCmd('justifyCenter')">Centro</button>
                 <button onclick="execCmd('justifyFull')">Justificado</button>
-                <!-- O espaçamento entre parágrafos é mais complexo e será tratado via CSS -->
+                <select id="line-spacing-select" title="Espaçamento entre linhas">
+                    <option value="1.0">Simples</option>
+                    <option value="1.5" selected>1.5</option>
+                    <option value="2.0">Duplo</option>
+                </select>
+                <button id="indent-btn" title="Aumentar recuo do parágrafo">Recuo</button>
             </div>
             <div id="editor" class="text-editor" contenteditable="true">
                 <p>Comece a escrever seu texto aqui...</p>
@@ -31,6 +36,11 @@
             <h3>Modelos de Documento</h3>
             <div class="sidebar-controls">
                 <input type="text" id="search-box" placeholder="Pesquisar modelos...">
+                <div class="sidebar-buttons">
+                    <button id="export-btn">Exportar Modelos (JSON)</button>
+                    <button id="import-btn">Importar Modelos (JSON)</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                </div>
             </div>
             <ul id="model-list">
                 <!-- A lista de modelos será preenchida pelo JavaScript -->
