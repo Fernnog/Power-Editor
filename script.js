@@ -35,16 +35,11 @@ function saveStateToStorage() {
     localStorage.setItem('editorModelosApp', JSON.stringify(appState));
 }
 
+// CORRIGIDO: Função loadStateFromStorage agora é mais robusta
 function loadStateFromStorage() {
     const savedState = localStorage.getItem('editorModelosApp');
-    if (savedState) {
-        appState = JSON.parse(savedState);
-        // Garante que a aba de favoritos sempre exista
-        if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
-            appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos' });
-        }
-    } else {
-        // Estado inicial com abas e modelos padrão
+    
+    const setDefaultState = () => {
         const defaultTabId = `tab-${Date.now()}`;
         appState = {
             models: defaultModels.map((m, i) => ({
@@ -60,12 +55,36 @@ function loadStateFromStorage() {
             ],
             activeTabId: defaultTabId
         };
+    };
+
+    if (savedState) {
+        try {
+            const parsedState = JSON.parse(savedState);
+            // Validação para garantir que a estrutura carregada é válida
+            if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
+                appState = parsedState;
+                // Garante que a aba de favoritos sempre exista
+                if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
+                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos' });
+                }
+            } else {
+                throw new Error("Formato de estado inválido.");
+            }
+        } catch (e) {
+            console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
+            setDefaultState();
+        }
+    } else {
+        setDefaultState();
     }
+
     // Garante que uma aba válida esteja sempre ativa
     if (!appState.tabs.find(t => t.id === appState.activeTabId)) {
-        appState.activeTabId = appState.tabs[1]?.id || null; // Tenta a primeira aba não-favorita
+        // Tenta a primeira aba não-favorita, ou a de favoritos se for a única
+        appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null;
     }
 }
+
 
 // --- FUNÇÕES DO EDITOR ---
 function execCmd(command) {
@@ -117,10 +136,11 @@ function renderTabs() {
             render();
         });
 
-        // Adiciona botão de fechar, exceto para Favoritos
-        if (tab.id !== FAVORITES_TAB_ID) {
+        // Adiciona botão de fechar, exceto para Favoritos e se for a última aba regular
+        const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
+        if (tab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
             const closeBtn = document.createElement('span');
-            closeBtn.className = 'close-tab-btn';
+            closeBtn.className = 'action-btn close-tab-btn';
             closeBtn.innerHTML = '&times;';
             closeBtn.title = 'Excluir aba';
             closeBtn.onclick = (e) => {
@@ -218,17 +238,12 @@ function addNewTab() {
 }
 
 function deleteTab(tabId) {
-    const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID);
-    if (regularTabs.length <= 1) {
-        alert("Não é possível excluir a última aba.");
-        return;
-    }
-    
     const tabToDelete = appState.tabs.find(t => t.id === tabId);
     if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) {
         return;
     }
 
+    const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID);
     const destinationOptions = regularTabs.filter(t => t.id !== tabId);
     const promptMessage = `Para qual aba deseja mover os modelos?\n` +
         destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
@@ -259,12 +274,11 @@ function addNewModelFromEditor() {
         return;
     }
 
-    // Não se pode adicionar um modelo diretamente à aba de favoritos.
     let targetTabId = appState.activeTabId;
     if (targetTabId === FAVORITES_TAB_ID) {
-        targetTabId = appState.tabs[1]?.id; // Adiciona na primeira aba regular
+        targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id;
         if (!targetTabId) {
-            alert("Crie uma aba primeiro para adicionar modelos.");
+            alert("Crie uma aba regular primeiro para poder adicionar modelos.");
             return;
         }
     }
