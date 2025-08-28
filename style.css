@@ -105,3 +105,34 @@ body, html {
     font-weight: bold;
     font-size: 14px;
 }
+
+/* Novas regras para a barra de ferramentas */
+.toolbar select {
+    padding: 4px;
+    margin-right: 5px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    background-color: #fff;
+    vertical-align: middle; /* Alinha com os botões */
+}
+
+/* Novas regras para a barra lateral */
+.sidebar-buttons {
+    display: flex;
+    gap: 10px; /* Espaço entre os botões */
+    margin-bottom: 15px;
+}
+
+.sidebar-buttons button {
+    flex: 1; /* Faz os botões ocuparem espaço igual */
+    padding: 8px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    background-color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.sidebar-buttons button:hover {
+    background-color: #f0f0f0;
+}
