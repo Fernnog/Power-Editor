@@ -7,15 +7,15 @@ body, html {
     height: 100vh;
 }
 
-/* Container Principal com Flexbox para as colunas */
+/* Container Principal */
 .app-container {
     display: flex;
     height: 100%;
 }
 
-/* Área do Editor (Coluna da Esquerda) */
+/* Área do Editor */
 .editor-area {
-    flex: 3; /* O editor ocupará 3/4 do espaço */
+    flex: 3;
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -30,12 +30,13 @@ body, html {
     border-bottom: none;
 }
 
-.toolbar button {
+.toolbar button, .toolbar select {
     padding: 5px 10px;
     margin-right: 5px;
     cursor: pointer;
     border: 1px solid #aaa;
     background-color: #fff;
+    vertical-align: middle;
 }
 
 .text-editor {
@@ -45,23 +46,22 @@ body, html {
     background-color: #fff;
     overflow-y: auto;
     font-size: 16px;
-    line-height: 1.5; /* Espaçamento entre linhas */
+    line-height: 1.5;
 }
-/* Estilo para simular espaçamento entre parágrafos */
 .text-editor p {
-    margin-bottom: 1em; /* Adiciona espaço após cada parágrafo */
+    margin-bottom: 1em;
 }
 
-
-/* Área da Sidebar (Coluna da Direita) */
+/* Área da Sidebar */
 .sidebar-area {
-    flex: 1; /* A sidebar ocupará 1/4 do espaço */
+    flex: 1;
     background-color: #e9ecef;
     border-left: 1px solid #ccc;
     padding: 15px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    height: 100vh;
 }
 
 .sidebar-area h3 {
@@ -88,15 +88,16 @@ body, html {
 }
 
 .model-item {
-    background-color: #ffd580; /* Cor similar à sua imagem */
+    background-color: #ffd580;
     border: 1px solid #daa520;
     border-radius: 5px;
     padding: 12px;
     margin-bottom: 10px;
-    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     transition: background-color 0.2s;
 }
-
 .model-item:hover {
     background-color: #ffca60;
 }
@@ -104,35 +105,124 @@ body, html {
 .model-item .model-name {
     font-weight: bold;
     font-size: 14px;
+    cursor: default;
 }
 
-/* Novas regras para a barra de ferramentas */
-.toolbar select {
-    padding: 4px;
-    margin-right: 5px;
-    cursor: pointer;
-    border: 1px solid #aaa;
-    background-color: #fff;
-    vertical-align: middle; /* Alinha com os botões */
-}
-
-/* Novas regras para a barra lateral */
-.sidebar-buttons {
+.model-actions {
     display: flex;
-    gap: 10px; /* Espaço entre os botões */
-    margin-bottom: 15px;
+    gap: 8px;
 }
 
-.sidebar-buttons button {
-    flex: 1; /* Faz os botões ocuparem espaço igual */
-    padding: 8px;
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px;
+    line-height: 1;
+}
+.action-btn:hover {
+    opacity: 0.7;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #ccc;
+    display: flex;
+    gap: 10px;
+}
+
+.sidebar-footer button {
+    flex: 1;
+    padding: 10px;
     cursor: pointer;
     border: 1px solid #aaa;
-    background-color: #fff;
+    background-color: #f8f9fa;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: bold;
+}
+.sidebar-footer button:hover {
+    background-color: #e9ecef;
 }
 
-.sidebar-buttons button:hover {
-    background-color: #f0f0f0;
+/* --- ESTILOS DO MODAL --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none; /* Alterado por JS */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-overlay.visible {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.modal-content label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.modal-content input, .modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#modal-btn-save {
+    background-color: #28a745;
+    color: white;
+}
+#modal-btn-save:hover {
+    background-color: #218838;
+}
+
+#modal-btn-cancel {
+    background-color: #dc3545;
+    color: white;
+}
+#modal-btn-cancel:hover {
+    background-color: #c82333;
 }

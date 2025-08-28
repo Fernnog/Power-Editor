@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Documentos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Coluna Principal: Editor de Texto -->
+        <div class="editor-area">
+            <div class="toolbar">
+                <button onclick="execCmd('bold')"><b>B</b></button>
+                <button onclick="execCmd('italic')"><i>I</i></button>
+                <button onclick="execCmd('underline')"><u>U</u></button>
+                <button onclick="execCmd('justifyLeft')">Esquerda</button>
+                <button onclick="execCmd('justifyCenter')">Centro</button>
+                <button onclick="execCmd('justifyFull')">Justificado</button>
+                <select id="line-spacing-select" title="Espaçamento entre linhas">
+                    <option value="1.0">Simples</option>
+                    <option value="1.5" selected>1.5</option>
+                    <option value="2.0">Duplo</option>
+                </select>
+                <button id="indent-btn" title="Recuo da Primeira Linha">Recuo</button>
+            </div>
+            <div id="editor" class="text-editor" contenteditable="true">
+                <p>Comece a escrever seu texto aqui...</p>
+            </div>
+        </div>
+
+        <!-- Coluna da Direita: Sidebar de Modelos -->
+        <div class="sidebar-area">
+            <h3>Modelos de Documento</h3>
+            <div class="sidebar-controls">
+                <input type="text" id="search-box" placeholder="Pesquisar modelos...">
+            </div>
+            <ul id="model-list">
+                <!-- A lista de modelos será preenchida pelo JavaScript -->
+            </ul>
+            <div class="sidebar-footer">
+                <button id="add-new-model-btn">Adicionar</button>
+                <button id="import-btn">Importar</button>
+                <button id="export-btn">Exportar</button>
+                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Estrutura do Modal (Inicialmente Oculta) -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title">Título do Modal</h3>
+            <label for="modal-input-name">Nome do Modelo:</label>
+            <input type="text" id="modal-input-name" placeholder="Digite o nome aqui...">
+            
+            <label for="modal-input-content">Conteúdo do Modelo:</label>
+            <textarea id="modal-input-content" rows="10" placeholder="Digite ou cole o conteúdo HTML aqui..."></textarea>
+            
+            <div class="modal-buttons">
+                <button id="modal-btn-save">Salvar</button>
+                <button id="modal-btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
