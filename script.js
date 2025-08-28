@@ -1,5 +1,5 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
-let modelosDeDocumento = []; // Começa vazio, será populado pelo LocalStorage ou por padrão
+let modelosDeDocumento = [];
 
 const defaultModels = [
     { name: "IDPJ - Criação de Relatório de Sentença", content: "Este é o texto para a criação do relatório de sentença. Inclui seções sobre <b>fatos</b>, <i>fundamentos</i> e <u>dispositivo</u>." },
@@ -41,10 +41,10 @@ function loadModelsFromStorage() {
             modelosDeDocumento = JSON.parse(savedModels);
         } catch (e) {
             console.error("Erro ao carregar modelos do LocalStorage:", e);
-            modelosDeDocumento = defaultModels; // Carrega padrão em caso de erro
+            modelosDeDocumento = defaultModels;
         }
     } else {
-        modelosDeDocumento = defaultModels; // Carrega padrão se não houver nada salvo
+        modelosDeDocumento = defaultModels;
     }
 }
 
@@ -78,36 +78,29 @@ function renderModels(models) {
     models.forEach((model, index) => {
         const li = document.createElement('li');
         li.className = 'model-item';
-        
         const nameSpan = document.createElement('span');
         nameSpan.className = 'model-name';
         nameSpan.textContent = model.name;
-        
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'model-actions';
-
         const addButton = document.createElement('button');
         addButton.className = 'action-btn';
         addButton.innerHTML = '➕';
         addButton.title = 'Inserir modelo';
         addButton.addEventListener('click', () => insertModelContent(model.content));
-        
         const editButton = document.createElement('button');
         editButton.className = 'action-btn';
         editButton.innerHTML = '✏️';
         editButton.title = 'Editar modelo';
         editButton.addEventListener('click', () => editModel(index));
-
         const deleteButton = document.createElement('button');
         deleteButton.className = 'action-btn';
         deleteButton.innerHTML = '🗑️';
         deleteButton.title = 'Excluir modelo';
         deleteButton.addEventListener('click', () => deleteModel(index));
-        
         actionsDiv.appendChild(addButton);
         actionsDiv.appendChild(editButton);
         actionsDiv.appendChild(deleteButton);
-        
         li.appendChild(nameSpan);
         li.appendChild(actionsDiv);
         modelList.appendChild(li);
@@ -131,7 +124,7 @@ function addNewModelFromEditor() {
         onSave: (name) => {
             if (!name) { alert('O nome do modelo não pode ser vazio.'); return; }
             modelosDeDocumento.push({ name: name, content: content });
-            saveModelsToStorage(); // Salva no LocalStorage
+            saveModelsToStorage();
             searchBox.value = '';
             filterModels();
             closeModal();
@@ -148,7 +141,7 @@ function editModel(index) {
         onSave: (name, content) => {
             if (!name) { alert('O nome do modelo não pode ser vazio.'); return; }
             modelosDeDocumento[index] = { name: name, content: content };
-            saveModelsToStorage(); // Salva no LocalStorage
+            saveModelsToStorage();
             filterModels();
             closeModal();
         }
@@ -159,7 +152,7 @@ function deleteModel(index) {
     const modelName = modelosDeDocumento[index].name;
     if (confirm(`Tem certeza que deseja excluir o modelo "${modelName}"?`)) {
         modelosDeDocumento.splice(index, 1);
-        saveModelsToStorage(); // Salva no LocalStorage
+        saveModelsToStorage();
         filterModels();
     }
 }
@@ -191,7 +184,7 @@ function handleImportFile(event) {
             const importedModels = JSON.parse(e.target.result);
             if (Array.isArray(importedModels) && importedModels.every(m => m.name && m.content)) {
                 modelosDeDocumento = importedModels;
-                saveModelsToStorage(); // Salva os modelos importados
+                saveModelsToStorage();
                 renderModels(modelosDeDocumento);
                 alert('Modelos importados com sucesso!');
             } else { throw new Error('Formato de arquivo inválido.'); }
@@ -208,13 +201,15 @@ function handleImportFile(event) {
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
-    modalInputContent.value = config.initialContent || '';
+    // ALTERAÇÃO AQUI: usa .innerHTML em vez de .value
+    modalInputContent.innerHTML = config.initialContent || '';
     
     const isContentVisible = config.initialContent !== undefined;
     modalInputContent.style.display = isContentVisible ? 'block' : 'none';
     modalContentLabel.style.display = isContentVisible ? 'block' : 'none';
 
-    currentOnSave = () => config.onSave(modalInputName.value, modalInputContent.value);
+    // ALTERAÇÃO AQUI: usa .innerHTML em vez de .value
+    currentOnSave = () => config.onSave(modalInputName.value, modalInputContent.innerHTML);
     
     modalContainer.classList.add('visible');
     modalInputName.focus();
@@ -227,7 +222,7 @@ function closeModal() {
 
 // --- INICIALIZAÇÃO E LISTENERS ---
 window.addEventListener('DOMContentLoaded', () => {
-    loadModelsFromStorage(); // Carrega os modelos salvos
+    loadModelsFromStorage();
     renderModels(modelosDeDocumento);
     lineSpacingSelect.value = "1.5";
 });
