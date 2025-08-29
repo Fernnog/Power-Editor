@@ -162,6 +162,7 @@ body, html {
 
 /* --- ÁREA DE CONTEÚDO ATIVA --- */
 #active-content-area {
+    position: relative; /* Adicionado para ancorar os botões de ação */
     flex-grow: 1;
     overflow: hidden;
     display: flex; /* Para o UL crescer */
@@ -230,3 +231,84 @@ body, html {
 .text-editor ol > li { counter-increment: list-counter; position: relative; padding-left: 1.5em; margin-bottom: 0.5em; text-indent: 0; }
 .text-editor ol > li::before { content: counter(list-counter) "."; position: absolute; left: -1.5em; top: 0; width: 1.2em; text-align: right; font-weight: bold; }
 .text-editor blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }
+
+/* --- NOVOS ESTILOS PARA GERENCIAMENTO DE ABAS --- */
+
+/* Container para os botões de ação da aba */
+#tab-actions-container {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(10px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+#tab-actions-container.visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Estilo individual dos botões de ação */
+.tab-action-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.tab-action-btn:hover {
+    background-color: #e9ecef;
+    transform: scale(1.1);
+    border-color: #adb5bd;
+}
+
+/* Estilo para os ícones SVG dentro dos botões */
+.tab-action-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+    color: #495057;
+}
+
+/* Pop-up da paleta de cores */
+.color-palette-popup {
+    position: absolute;
+    bottom: 50px; /* Posiciona acima dos botões de ação */
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1010;
+}
+
+/* Amostra de cor individual na paleta */
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px #adb5bd;
+}

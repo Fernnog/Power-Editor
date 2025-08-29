@@ -1,7 +1,10 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
-const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C'];
+const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
+const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const ICON_PALETTE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
+const ICON_PENCIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 let colorIndex = 0;
 let backupDebounceTimer;
 
@@ -28,6 +31,7 @@ const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
 const backupStatusEl = document.getElementById('backup-status');
+const tabActionsContainer = document.getElementById('tab-actions-container');
 
 // --- REFERÊNCIAS DO MODAL ---
 const modalContainer = document.getElementById('modal-container');
@@ -55,10 +59,96 @@ function execCmd(command, value = null) { document.execCommand(command, false, v
 function insertModelContent(content, tabId) { if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); }
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
+function renderTabActions() {
+    tabActionsContainer.innerHTML = '';
+    const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
+
+    if (!activeTab || activeTab.id === FAVORITES_TAB_ID) {
+        tabActionsContainer.classList.remove('visible');
+        return;
+    }
+
+    const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
+
+    // Botão de Excluir
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'tab-action-btn';
+    deleteBtn.innerHTML = ICON_TRASH;
+    deleteBtn.title = 'Excluir esta aba';
+    if (regularTabsCount <= 1) {
+        deleteBtn.disabled = true;
+        deleteBtn.style.cursor = 'not-allowed';
+        deleteBtn.style.opacity = '0.5';
+    }
+    deleteBtn.onclick = () => deleteTab(appState.activeTabId);
+    tabActionsContainer.appendChild(deleteBtn);
+
+    // Botão de Alterar Cor
+    const colorBtn = document.createElement('button');
+    colorBtn.className = 'tab-action-btn';
+    colorBtn.innerHTML = ICON_PALETTE;
+    colorBtn.title = 'Alterar cor da aba';
+    colorBtn.onclick = (event) => {
+        event.stopPropagation();
+        toggleColorPalette(tabActionsContainer, activeTab);
+    };
+    tabActionsContainer.appendChild(colorBtn);
+
+    // Botão de Renomear
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'tab-action-btn';
+    renameBtn.innerHTML = ICON_PENCIL;
+    renameBtn.title = 'Renomear esta aba';
+    renameBtn.onclick = () => {
+        const newName = prompt('Digite o novo nome para a aba:', activeTab.name);
+        if (newName && newName.trim()) {
+            modifyStateAndBackup(() => {
+                activeTab.name = newName.trim();
+                render();
+            });
+        }
+    };
+    tabActionsContainer.appendChild(renameBtn);
+
+    tabActionsContainer.classList.add('visible');
+}
+
+function toggleColorPalette(anchorElement, tab) {
+    const existingPalette = document.querySelector('.color-palette-popup');
+    if (existingPalette) {
+        existingPalette.remove();
+        return;
+    }
+
+    const palette = document.createElement('div');
+    palette.className = 'color-palette-popup';
+    
+    TAB_COLORS.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.onclick = () => {
+            modifyStateAndBackup(() => {
+                tab.color = color;
+                render();
+            });
+            palette.remove();
+        };
+        palette.appendChild(swatch);
+    });
+
+    anchorElement.appendChild(palette);
+
+    setTimeout(() => {
+        document.addEventListener('click', () => palette.remove(), { once: true });
+    }, 0);
+}
+
 function render() {
     saveStateToStorage();
     renderTabs();
     renderModels(filterModels());
+    renderTabActions();
 }
 
 function renderTabs() {
@@ -72,12 +162,11 @@ function renderTabs() {
         tabEl.dataset.tabId = tab.id;
         
         const tabColor = tab.color || '#6c757d';
-        // Define a variável CSS para a cor da aba
         tabEl.style.setProperty('--tab-color', tabColor);
 
         if (tab.id === appState.activeTabId) {
             tabEl.classList.add('active');
-            activeTabColor = tabColor; // Guarda a cor da aba ativa
+            activeTabColor = tabColor;
         }
 
         tabEl.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
@@ -88,7 +177,6 @@ function renderTabs() {
             render();
         });
 
-        // Adiciona botão de fechar apenas em abas regulares e se houver mais de uma
         const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
         if (tab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
             const closeBtn = document.createElement('span');
@@ -102,7 +190,6 @@ function renderTabs() {
         tabsContainer.appendChild(tabEl);
     });
     
-    // Atualiza a cor da borda da área de conteúdo com a cor da aba ativa
     activeContentArea.style.borderColor = activeTabColor;
 }
 
