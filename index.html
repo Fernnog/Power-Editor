@@ -1,3 +1,4 @@
+--- START OF FILE index.html ---
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -38,7 +39,13 @@
         <div class="sidebar-area">
             <h3>Modelos de Documento</h3>
             <div class="sidebar-controls">
-                <input type="text" id="search-box" placeholder="Pesquisar modelos...">
+                <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+                <div class="control-buttons-grid">
+                    <button id="search-btn" class="control-btn btn-secondary">Pesquisar</button>
+                    <button id="clear-search-btn" class="control-btn btn-secondary">Limpar Pesquisa</button>
+                    <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
+                    <button id="clear-doc-btn" class="control-btn btn-primary">Apagar Doc</button>
+                </div>
             </div>
             
             <!-- Container para abas inativas -->
@@ -105,6 +112,8 @@
     </div>
 
     <script src="speech.js"></script>
+    <script src="editor-actions.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+--- END OF FILE index.html ---
