@@ -49,13 +49,13 @@
                 </div>
             </div>
             
-            <!-- ÚNICO CONTAINER PARA TODAS AS ABAS (ATIVAS E INATIVAS) -->
+            <!-- ÚNICO CONTAINER PARA TODAS AS ABAS -->
             <div id="tabs-container" class="tabs-container">
-                <!-- As abas serão preenchidas e ordenadas pelo JavaScript -->
+                <!-- As abas serão preenchidas pelo JavaScript -->
             </div>
 
-            <!-- Container para a lista de modelos -->
-            <div id="model-list-area" class="model-list-area">
+            <!-- Container apenas para a lista -->
+            <div id="active-content-area" class="active-content-area">
                 <ul id="model-list">
                     <!-- A lista de modelos será preenchida pelo JavaScript -->
                 </ul>
@@ -71,12 +71,13 @@
         </div>
     </div>
 
-    <!-- Modais (sem alteração) -->
+    <!-- Estrutura do Modal de Edição (Inicialmente Oculta) -->
     <div id="modal-container" class="modal-overlay">
         <div class="modal-content">
             <h3 id="modal-title">Título do Modal</h3>
             <label for="modal-input-name">Nome do Modelo:</label>
             <input type="text" id="modal-input-name" placeholder="Digite o nome aqui...">
+            
             <label for="modal-input-content">Conteúdo do Modelo:</label>
             <div class="modal-toolbar">
                 <button onclick="execCmd('bold')"><b>B</b></button>
@@ -84,12 +85,15 @@
                 <button onclick="execCmd('underline')"><u>U</u></button>
             </div>
             <div id="modal-input-content" class="text-editor-modal" contenteditable="true"></div>
+            
             <div class="modal-buttons">
                 <button id="modal-btn-save">Salvar</button>
                 <button id="modal-btn-cancel">Cancelar</button>
             </div>
         </div>
     </div>
+
+    <!-- Estrutura do Modal de Ditado (Inicialmente Oculta) -->
     <div id="dictation-modal" class="modal-overlay">
         <div class="dictation-content">
             <select id="dictation-lang-select" title="Selecionar idioma">
