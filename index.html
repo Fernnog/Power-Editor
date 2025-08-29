@@ -25,6 +25,7 @@
                     <option value="2.0">Duplo</option>
                 </select>
                 <button id="indent-btn" title="Recuo da Primeira Linha">Recuo</button>
+                <button id="dictate-btn" title="Ditar texto">🎤</button>
             </div>
             <div id="editor" class="text-editor" contenteditable="true">
                 <p>Comece a escrever seu texto aqui...</p>
@@ -38,7 +39,6 @@
                 <input type="text" id="search-box" placeholder="Pesquisar modelos...">
             </div>
             
-            <!-- NOVO: Container para as Abas -->
             <div id="tabs-container" class="tabs-container">
                 <!-- As abas serão preenchidas pelo JavaScript -->
             </div>
@@ -56,7 +56,7 @@
         </div>
     </div>
 
-    <!-- Estrutura do Modal (Inicialmente Oculta) -->
+    <!-- Estrutura do Modal de Edição (Inicialmente Oculta) -->
     <div id="modal-container" class="modal-overlay">
         <div class="modal-content">
             <h3 id="modal-title">Título do Modal</h3>
@@ -64,7 +64,6 @@
             <input type="text" id="modal-input-name" placeholder="Digite o nome aqui...">
             
             <label for="modal-input-content">Conteúdo do Modelo:</label>
-            <!-- NOVA BARRA DE FERRAMENTAS DO MODAL -->
             <div class="modal-toolbar">
                 <button onclick="execCmd('bold')"><b>B</b></button>
                 <button onclick="execCmd('italic')"><i>I</i></button>
@@ -79,6 +78,21 @@
         </div>
     </div>
 
+    <!-- Estrutura do Modal de Ditado (Inicialmente Oculta) -->
+    <div id="dictation-modal" class="modal-overlay">
+        <div class="dictation-content">
+            <select id="dictation-lang-select" title="Selecionar idioma">
+                <option value="pt-BR" selected>Português (Brasil)</option>
+                <option value="en-US">English (US)</option>
+                <option value="es-ES">Español (España)</option>
+            </select>
+            <span id="dictation-status">Clique no microfone para começar</span>
+            <div id="dictation-mic-icon" class="mic-icon">🎤</div>
+            <button id="dictation-close-btn">&times;</button>
+        </div>
+    </div>
+
+    <script src="speech.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

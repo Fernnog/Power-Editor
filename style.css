@@ -79,112 +79,56 @@ body, html {
     border-radius: 4px;
 }
 
-/* --- ESTILOS DAS ABAS EM FORMATO FICHÁRIO --- */
+/* --- ESTILOS DAS ABAS --- */
 .tabs-container {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 0;
-    padding-left: 5px;
-    padding-bottom: 0;
-    border-bottom: 1px solid #daa520;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc;
 }
 
 .tab-item {
-    padding: 8px 12px;
+    padding: 5px 12px;
     border: 1px solid #aaa;
-    background-color: #d1d5db; /* Cor padrão para abas inativas */
-    border-radius: 8px 8px 0 0; /* Formato de fichário */
+    background-color: #f8f9fa;
+    border-radius: 15px;
     cursor: pointer;
     font-size: 13px;
     transition: background-color 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     gap: 5px;
-    position: relative;
-    top: 1px;
-    border-bottom: none;
-    margin-bottom: -1px;
 }
 
 .tab-item:hover {
-    opacity: 0.9;
+    background-color: #e2e6ea;
 }
 
 .tab-item.active {
-    background-color: #ffd580; /* Amarelo principal, como os modelos */
+    background-color: #ffc107;
     color: #333;
     border-color: #daa520;
     font-weight: bold;
 }
 
-.tab-name-input {
-    border: 1px solid #999;
-    padding: 2px 4px;
-    font-size: 13px;
-    border-radius: 3px;
-    width: 80px; /* Largura base, pode ajustar */
-}
-
-.tab-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: 5px;
-}
-
-.action-btn-tab {
-    background: none;
-    border: none;
-    cursor: pointer;
+.close-tab-btn {
     font-size: 16px;
-    padding: 0;
+    font-weight: bold;
+    color: #888;
     line-height: 1;
-    color: #555;
 }
-
-.action-btn-tab:hover {
-    color: #000;
+.close-tab-btn:hover {
+    color: #333;
 }
-
-/* --- ESTILOS DA PALETA DE CORES --- */
-.color-palette {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px;
-    display: flex;
-    gap: 5px;
-    z-index: 10;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.color-swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 1px solid #eee;
-}
-
-.color-swatch:hover {
-    transform: scale(1.1);
-    border: 1px solid #333;
-}
-
 
 #model-list {
     list-style-type: none;
-    padding: 10px; /* Adicionado padding para separar da borda */
+    padding: 0;
     margin: 0;
     overflow-y: auto;
     flex-grow: 1;
-    border: 1px solid #daa520; /* Borda para conectar com as abas */
-    border-top: none;
-    background-color: #fff; /* Fundo branco para a lista */
 }
 
 .model-item {
@@ -208,17 +152,6 @@ body, html {
     cursor: default;
     word-break: break-word;
     padding-right: 10px;
-    display: flex; /* Para alinhar o círculo de cor */
-    align-items: center;
-    gap: 8px;
-}
-
-.model-color-indicator {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 1px solid rgba(0,0,0,0.2);
-    flex-shrink: 0;
 }
 
 .model-actions {
@@ -269,6 +202,7 @@ body, html {
 #add-new-tab-btn:hover {
     background-color: #5a6268;
 }
+
 
 /* --- ESTILOS DO MODAL --- */
 .modal-overlay {
@@ -383,4 +317,68 @@ body, html {
 }
 #modal-btn-cancel:hover {
     background-color: #c82333;
+}
+
+/* --- ESTILOS PARA A JANELA DE DITADO (SPEECH-TO-TEXT) --- */
+.dictation-content {
+    background-color: #fff;
+    padding: 20px 30px;
+    border-radius: 50px; /* Formato de pílula horizontal */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+}
+
+#dictation-lang-select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+}
+
+#dictation-status {
+    font-size: 16px;
+    color: #555;
+    min-width: 250px; /* Evita que o layout pule */
+    text-align: center;
+}
+
+.mic-icon {
+    font-size: 40px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.mic-icon:hover {
+    background-color: #f0f0f0;
+}
+
+.mic-icon.listening {
+    animation: pulse 1.5s infinite;
+}
+
+#dictation-close-btn {
+    position: absolute;
+    top: -10px;
+    right: -5px;
+    background: #e0e0e0;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 18px;
+    line-height: 25px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
 }
