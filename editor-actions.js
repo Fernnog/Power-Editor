@@ -64,12 +64,37 @@ const EditorActions = (() => {
     }
 
     /**
-     * Aplica ou remove a formatação de citação (blockquote) ao texto selecionado.
+     * Aplica ou remove a formatação de citação (blockquote) no parágrafo atual.
+     * Funciona como um interruptor (toggle).
      */
     function formatAsBlockquote() {
         if (!editor) return;
-        // O comando 'formatBlock' alterna a tag 'blockquote' no parágrafo atual.
-        document.execCommand('formatBlock', false, 'blockquote');
+
+        // 1. Obter a seleção atual do usuário
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        let node = selection.getRangeAt(0).startContainer;
+        let inBlockquote = false;
+
+        // 2. Verificar se a seleção atual já está dentro de um elemento <blockquote>
+        // Para isso, subimos na árvore de elementos a partir do cursor.
+        while (node && node !== editor) {
+            if (node.nodeName === 'BLOCKQUOTE') {
+                inBlockquote = true;
+                break;
+            }
+            node = node.parentNode;
+        }
+
+        // 3. Executar o comando apropriado com base no estado encontrado
+        if (inBlockquote) {
+            // Se já for uma citação, o comando 'formatBlock' com 'p' reverte para um parágrafo normal.
+            document.execCommand('formatBlock', false, 'p');
+        } else {
+            // Caso contrário, aplica a formatação de citação como antes.
+            document.execCommand('formatBlock', false, 'blockquote');
+        }
+
         editor.focus();
     }
 
