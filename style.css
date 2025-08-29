@@ -43,7 +43,7 @@ body, html {
     flex-grow: 1;
     border: 1px solid #ccc;
     padding: 15px;
-    background-color: #fff;
+    background-color: #ffd580; /* AJUSTADO */
     overflow-y: auto;
     font-size: 16px;
     line-height: 1.5;
@@ -115,17 +115,16 @@ body, html {
 }
 
 .tab-item.active {
-    background-color: #fff;
+    background-color: #ffd580;
     color: #333;
-    border-color: #ccc;
+    border-color: #daa520;
     font-weight: bold;
-    border-bottom: 1px solid #fff;
 }
 
 .close-tab-btn {
     font-size: 16px;
     font-weight: bold;
-    color: rgba(0,0,0,0.3);
+    color: #888; /* AJUSTADO */
     line-height: 1;
 }
 .close-tab-btn:hover {
@@ -140,29 +139,25 @@ body, html {
 
 #model-list {
     list-style-type: none;
-    padding: 10px;
+    padding: 0;
     margin: 0;
     overflow-y: auto;
     flex-grow: 1;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-top: none;
 }
 
 .model-item {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background-color: #ffd580; /* AJUSTADO */
+    border: 1px solid #daa520; /* AJUSTADO */
     border-radius: 5px;
     padding: 12px;
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: background-color 0.2s, box-shadow 0.2s;
+    transition: background-color 0.2s;
 }
 .model-item:hover {
-    background-color: #f1f3f5;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background-color: #ffca60; /* AJUSTADO */
 }
 
 .model-item .model-name {
