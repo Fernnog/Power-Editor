@@ -26,7 +26,6 @@ const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
 
-
 // --- REFERÊNCIAS DO MODAL ---
 const modalContainer = document.getElementById('modal-container');
 const modalTitle = document.getElementById('modal-title');
@@ -36,6 +35,45 @@ const modalBtnSave = document.getElementById('modal-btn-save');
 const modalBtnCancel = document.getElementById('modal-btn-cancel');
 const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
 let currentOnSave = null;
+
+// --- LÓGICA DE BACKUP AUTOMÁTICO COM DEBOUNCE ---
+let backupDebounceTimer;
+
+function triggerAutoBackup() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const timestamp = `${year}${month}${day}_${hours}${minutes}`;
+    const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
+
+    const dataStr = JSON.stringify(appState, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    const backupStatusEl = document.getElementById('backup-status');
+    if (backupStatusEl) {
+        backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+}
+
+function modifyStateAndBackup(modificationFn) {
+    modificationFn(); // Executa a alteração de estado imediatamente
+
+    // Aciona o backup com debounce para evitar downloads excessivos
+    clearTimeout(backupDebounceTimer);
+    backupDebounceTimer = setTimeout(triggerAutoBackup, 2000); // Espera 2 segundos de inatividade
+}
 
 // --- FUNÇÃO AUXILIAR DE COR ---
 function getNextColor() {
@@ -79,7 +117,6 @@ function loadStateFromStorage() {
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
-                // Garante que abas antigas sem cor recebam uma
                 appState.tabs.forEach(tab => {
                     if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
                         tab.color = getNextColor();
@@ -102,8 +139,8 @@ function loadStateFromStorage() {
 }
 
 // --- FUNÇÕES DO EDITOR ---
-function execCmd(command) {
-    document.execCommand(command, false, null);
+function execCmd(command, value = null) {
+    document.execCommand(command, false, value);
 }
 
 function insertModelContent(content, tabId) {
@@ -282,7 +319,6 @@ function filterModels() {
         }
     }
 
-    // Lógica de busca avançada
     const models = appState.models;
     if (query.includes(' ou ')) {
         const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
@@ -297,7 +333,6 @@ function filterModels() {
             return terms.every(term => modelText.includes(term));
         });
     } else {
-        // Fallback para busca simples
         return models.filter(model =>
             model.name.toLowerCase().includes(query) ||
             model.content.toLowerCase().includes(query)
@@ -308,14 +343,16 @@ function filterModels() {
 function addNewTab() {
     const name = prompt("Digite o nome da nova aba:");
     if (name && name.trim()) {
-        const newTab = {
-            id: `tab-${Date.now()}`,
-            name: name.trim(),
-            color: getNextColor()
-        };
-        appState.tabs.push(newTab);
-        appState.activeTabId = newTab.id;
-        render();
+        modifyStateAndBackup(() => {
+            const newTab = {
+                id: `tab-${Date.now()}`,
+                name: name.trim(),
+                color: getNextColor()
+            };
+            appState.tabs.push(newTab);
+            appState.activeTabId = newTab.id;
+            render();
+        });
     }
 }
 
@@ -338,15 +375,17 @@ function deleteTab(tabId) {
     }
     
     const destinationTabId = destinationOptions[choiceIndex].id;
-    appState.models.forEach(model => {
-        if (model.tabId === tabId) {
-            model.tabId = destinationTabId;
-        }
-    });
+    modifyStateAndBackup(() => {
+        appState.models.forEach(model => {
+            if (model.tabId === tabId) {
+                model.tabId = destinationTabId;
+            }
+        });
 
-    appState.tabs = appState.tabs.filter(t => t.id !== tabId);
-    appState.activeTabId = destinationTabId;
-    render();
+        appState.tabs = appState.tabs.filter(t => t.id !== tabId);
+        appState.activeTabId = destinationTabId;
+        render();
+    });
 }
 
 function addNewModelFromEditor() {
@@ -369,17 +408,19 @@ function addNewModelFromEditor() {
         title: 'Salvar Novo Modelo',
         onSave: (name) => {
             if (!name) { alert('O nome do modelo não pode ser vazio.'); return; }
-            const newModel = {
-                id: `model-${Date.now()}`,
-                name: name,
-                content: content,
-                tabId: targetTabId,
-                isFavorite: false
-            };
-            appState.models.push(newModel);
-            searchBox.value = '';
+            modifyStateAndBackup(() => {
+                const newModel = {
+                    id: `model-${Date.now()}`,
+                    name: name,
+                    content: content,
+                    tabId: targetTabId,
+                    isFavorite: false
+                };
+                appState.models.push(newModel);
+                searchBox.value = '';
+                render();
+            });
             closeModal();
-            render();
         }
     });
 }
@@ -392,10 +433,12 @@ function editModel(modelId) {
         initialContent: model.content,
         onSave: (name, content) => {
             if (!name) { alert('O nome do modelo não pode ser vazio.'); return; }
-            model.name = name;
-            model.content = content;
+            modifyStateAndBackup(() => {
+                model.name = name;
+                model.content = content;
+                render();
+            });
             closeModal();
-            render();
         }
     });
 }
@@ -403,16 +446,20 @@ function editModel(modelId) {
 function deleteModel(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) {
-        appState.models = appState.models.filter(m => m.id !== modelId);
-        render();
+        modifyStateAndBackup(() => {
+            appState.models = appState.models.filter(m => m.id !== modelId);
+            render();
+        });
     }
 }
 
 function toggleFavorite(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     if (model) {
-        model.isFavorite = !model.isFavorite;
-        render();
+        modifyStateAndBackup(() => {
+            model.isFavorite = !model.isFavorite;
+            render();
+        });
     }
 }
 
@@ -431,24 +478,17 @@ function moveModelToAnotherTab(modelId) {
     const choiceIndex = parseInt(choice, 10) - 1;
 
     if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
-        model.tabId = destinationOptions[choiceIndex].id;
-        render();
+        modifyStateAndBackup(() => {
+            model.tabId = destinationOptions[choiceIndex].id;
+            render();
+        });
     } else if(choice) {
         alert("Seleção inválida.");
     }
 }
 
 function exportModels() {
-    const dataStr = JSON.stringify(appState, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(dataBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'modelos_backup.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    triggerAutoBackup(); // A exportação manual também usa a função de backup.
 }
 
 function handleImportFile(event) {
@@ -496,14 +536,37 @@ function closeModal() {
     currentOnSave = null;
 }
 
+// --- INICIALIZAÇÃO E EVENT LISTENERS ---
 window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage();
     render();
 
+    // --- Configuração dos Botões e Atalhos ---
     const dictateBtn = document.getElementById('dictate-btn');
+    const blockquoteBtn = document.getElementById('blockquote-btn');
     const dictationModal = document.getElementById('dictation-modal');
     const dictationCloseBtn = document.getElementById('dictation-close-btn');
     
+    // Atalhos do editor
+    editor.addEventListener('keydown', (event) => {
+        if (event.ctrlKey) {
+            switch (event.key.toLowerCase()) {
+                case 'b': event.preventDefault(); execCmd('bold'); break;
+                case 'i': event.preventDefault(); execCmd('italic'); break;
+                case 'u': event.preventDefault(); execCmd('underline'); break;
+            }
+        } else if (event.key === 'Tab') {
+            event.preventDefault();
+            EditorActions.indentFirstLine();
+        }
+    });
+    
+    // Botão de citação
+    if (blockquoteBtn) {
+        blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote);
+    }
+    
+    // Configuração do Ditado por Voz
     if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
         SpeechDictation.init({
             micIcon: document.getElementById('dictation-mic-icon'),
@@ -514,10 +577,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        dictateBtn.addEventListener('click', () => {
-            dictationModal.classList.add('visible');
-        });
-
+        dictateBtn.addEventListener('click', () => dictationModal.classList.add('visible'));
         dictationCloseBtn.addEventListener('click', () => {
             SpeechDictation.stop();
             dictationModal.classList.remove('visible');
@@ -525,37 +585,31 @@ window.addEventListener('DOMContentLoaded', () => {
     } else {
         dictateBtn.style.display = 'none';
     }
-});
 
-// --- EVENT LISTENERS ---
-searchBox.addEventListener('input', debouncedFilter);
+    // Demais Listeners
+    searchBox.addEventListener('input', debouncedFilter);
+    searchBox.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            renderModels(filterModels());
+        }
+    });
 
-searchBox.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault(); // Impede o comportamento padrão (ex: submeter formulário)
+    addNewTabBtn.addEventListener('click', addNewTab);
+    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+    clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+    searchBtn.addEventListener('click', () => renderModels(filterModels()));
+    clearSearchBtn.addEventListener('click', () => {
+        searchBox.value = '';
         renderModels(filterModels());
-    }
+    });
+    exportBtn.addEventListener('click', exportModels);
+    importBtn.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', handleImportFile);
+
+    modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
+    modalBtnCancel.addEventListener('click', closeModal);
+    modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
 });
-
-addNewTabBtn.addEventListener('click', addNewTab);
-addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-clearDocBtn.addEventListener('click', EditorActions.clearDocument);
-
-searchBtn.addEventListener('click', () => {
-    renderModels(filterModels());
-});
-
-clearSearchBtn.addEventListener('click', () => {
-    searchBox.value = '';
-    renderModels(filterModels());
-});
-
-exportBtn.addEventListener('click', exportModels);
-importBtn.addEventListener('click', () => importFileInput.click());
-importFileInput.addEventListener('change', handleImportFile);
-
-modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
-modalBtnCancel.addEventListener('click', closeModal);
-modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
