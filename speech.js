@@ -34,22 +34,37 @@ const SpeechDictation = (() => {
     };
     
     function processVoiceCommands(transcript) {
-        return transcript
-            // Remove espaço ANTES da pontuação
-            .replace(/\s+\bvírgula\b/gi, ',')
-            .replace(/\s+\bponto\b/gi, '.')
-            // Novos comandos
-            .replace(/\s+\bponto de interrogação\b/gi, '?')
-            .replace(/\s+\bponto de exclamação\b/gi, '!')
-            // Comandos sem espaço antes (caso seja a primeira palavra)
-            .replace(/\bvírgula\b/gi, ',')
-            .replace(/\bponto\b/gi, '.')
-            .replace(/\bponto de interrogação\b/gi, '?')
-            .replace(/\bponto de exclamação\b/gi, '!')
-            // Comandos para nova linha e parênteses
-            .replace(/\bnova linha\b/gi, '<br>')
-            .replace(/\babrir parênteses\b/gi, '(')
-            .replace(/\bfechar parênteses\b/gi, ')');
+        // Dicionário de comandos para uma arquitetura mais limpa e escalável.
+        const commands = {
+            "ponto de interrogação": "?",
+            "ponto de exclamação": "!",
+            "nova linha": "<br>",
+            "abrir parênteses": "(",
+            "fechar parênteses": ")",
+            "vírgula": ",",
+            "ponto": "."
+        };
+
+        // Ordena os comandos do mais longo para o mais curto para evitar substituições parciais.
+        // Isso garante que "ponto de interrogação" seja processado antes de "ponto".
+        const sortedCommands = Object.keys(commands).sort((a, b) => b.length - a.length);
+
+        let processedTranscript = transcript;
+        
+        sortedCommands.forEach(command => {
+            const replacement = commands[command];
+            const flags = 'gi'; // Global e Insensitive (não diferencia maiúsculas/minúsculas)
+            
+            // Regex para substituir o comando precedido por um espaço.
+            const regexWithSpace = new RegExp(`\\s+\\b${command}\\b`, flags);
+            processedTranscript = processedTranscript.replace(regexWithSpace, replacement);
+            
+            // Regex para substituir o comando no início da frase (sem espaço antes).
+            const regexAtStart = new RegExp(`^\\b${command}\\b`, flags);
+            processedTranscript = processedTranscript.replace(regexAtStart, replacement);
+        });
+        
+        return processedTranscript;
     }
 
     const setupListeners = () => {
