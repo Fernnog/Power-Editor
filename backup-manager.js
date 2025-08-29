@@ -17,6 +17,9 @@ const BackupManager = (() => {
         const timestamp = `${year}${month}${day}_${hours}${minutes}`;
         const filename = `${timestamp}_Modelos dos meus documentos.JSON`;
 
+        // Atualiza o timestamp no estado antes de salvar
+        state.lastBackupTimestamp = now.toISOString();
+
         const dataStr = JSON.stringify(state, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(dataBlob);
