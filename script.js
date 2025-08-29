@@ -3,6 +3,7 @@ let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C'];
 let colorIndex = 0;
+let backupDebounceTimer; // Prioridade 3: Variável para o timer do debounce
 
 const defaultModels = [
     { name: "IDPJ - Criação de Relatório de Sentença", content: "Este é o texto para a criação do relatório de sentença. Inclui seções sobre <b>fatos</b>, <i>fundamentos</i> e <u>dispositivo</u>." },
@@ -26,7 +27,7 @@ const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
-const backupStatusEl = document.getElementById('backup-status');
+const backupStatusEl = document.getElementById('backup-status'); // Prioridade 1: Referência centralizada
 
 // --- REFERÊNCIAS DO MODAL ---
 const modalContainer = document.getElementById('modal-container');
@@ -38,10 +39,11 @@ const modalBtnCancel = document.getElementById('modal-btn-cancel');
 const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
 let currentOnSave = null;
 
+// --- LÓGICA DE BACKUP INTELIGENTE (COM DEBOUNCE E PERSISTÊNCIA) ---
 
 /**
- * Atualiza o texto do status de backup na interface.
- * @param {Date | null} dateObject - O objeto Date do momento do backup ou null.
+ * Prioridade 1: Atualiza o texto do status de backup na interface.
+ * @param {Date} dateObject - O objeto Date do momento do backup.
  */
 function updateBackupStatus(dateObject) {
     if (!backupStatusEl) return;
@@ -58,17 +60,55 @@ function updateBackupStatus(dateObject) {
     }
 }
 
+/**
+ * Prioridade 1 & 2: Executa o download do backup e atualiza o estado.
+ */
+function triggerAutoBackup() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const timestamp = `${year}${month}${day}_${hours}${minutes}`;
+    const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
+
+    appState.lastBackupTimestamp = now.toISOString(); // Prioridade 2: Salva o timestamp no estado
+
+    const dataStr = JSON.stringify(appState, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    updateBackupStatus(now); // Prioridade 1: Atualiza a UI
+}
+
+/**
+ * Prioridade 3: Função "debounce" que evita backups excessivos.
+ * Só aciona o backup 2.5 segundos após a ÚLTIMA alteração.
+ */
+function debouncedTriggerAutoBackup() {
+    clearTimeout(backupDebounceTimer);
+    backupDebounceTimer = setTimeout(() => {
+        triggerAutoBackup();
+    }, 2500); // 2.5 segundos de espera
+}
 
 /**
  * Função central que executa uma modificação no estado e depois
- * agenda um backup automático através do BackupManager.
+ * chama o backup com debounce.
  * @param {Function} modificationFn - A função que altera o appState.
  */
 function modifyStateAndBackup(modificationFn) {
     modificationFn(); // Executa a modificação (ex: apagar modelo)
-    appState.lastBackupTimestamp = new Date().toISOString(); // Atualiza o timestamp no estado
-    saveStateToStorage(); // Salva no LocalStorage imediatamente
-    BackupManager.schedule(appState); // Agenda o download do backup
+    debouncedTriggerAutoBackup(); // Aciona o backup inteligente
 }
 
 // --- FUNÇÃO AUXILIAR DE COR ---
@@ -87,12 +127,13 @@ function loadStateFromStorage() {
     const savedState = localStorage.getItem('editorModelosApp');
     
     const setDefaultState = () => {
+        const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
-            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: `tab-${Date.now()}`, isFavorite: false })),
-            tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: `tab-${Date.now()}`, name: 'Geral', color: getNextColor() }],
-            activeTabId: `tab-${Date.now()}`,
-            lastBackupTimestamp: null
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
+            tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }],
+            activeTabId: defaultTabId,
+            lastBackupTimestamp: null // Prioridade 2: Inicializa a propriedade
         };
     };
 
@@ -114,6 +155,7 @@ function loadStateFromStorage() {
         setDefaultState();
     }
     
+    // Prioridade 2: Atualiza o status de backup ao carregar a página
     if (appState.lastBackupTimestamp) {
         updateBackupStatus(new Date(appState.lastBackupTimestamp));
     } else {
@@ -467,11 +509,11 @@ function handleImportFile(event) {
             const importedState = JSON.parse(e.target.result);
             if (importedState.models && importedState.tabs && importedState.activeTabId) {
                 appState = importedState;
-                const now = new Date();
-                appState.lastBackupTimestamp = now.toISOString();
-                updateBackupStatus(now);
                 render();
                 alert('Modelos importados com sucesso!');
+                const now = new Date(); // Prioridade 1: Atualiza status na importação
+                appState.lastBackupTimestamp = now.toISOString(); // Prioridade 2
+                updateBackupStatus(now); // Prioridade 1
             } else { throw new Error('Formato de arquivo inválido.'); }
         } catch (error) {
             alert('Erro ao importar o arquivo. Verifique se é um JSON válido.');
@@ -482,7 +524,6 @@ function handleImportFile(event) {
     reader.readAsText(file);
 }
 
-// ... (Funções do Modal e de Inicialização permanecem as mesmas)
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
