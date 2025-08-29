@@ -127,20 +127,17 @@ function render() {
 }
 
 function renderTabs() {
-    // Referências aos containers
     const inactiveTabsContainer = document.getElementById('tabs-container');
     const activeTabContainer = document.getElementById('active-tab-container');
     const activeContentArea = document.getElementById('active-content-area');
     
-    // Limpa os containers
     inactiveTabsContainer.innerHTML = '';
     activeTabContainer.innerHTML = '';
 
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
 
-    // Renderiza as abas inativas
     appState.tabs.forEach(tab => {
-        if (tab.id === appState.activeTabId) return; // Pula a aba ativa aqui
+        if (tab.id === appState.activeTabId) return;
 
         const tabEl = document.createElement('button');
         tabEl.className = 'tab-item';
@@ -158,16 +155,11 @@ function renderTabs() {
         inactiveTabsContainer.appendChild(tabEl);
     });
     
-    // Renderiza a aba ativa e colore a área de conteúdo
     if (activeTab) {
         const activeTabEl = document.createElement('button');
         activeTabEl.className = 'tab-item active';
         activeTabEl.dataset.tabId = activeTab.id;
 
-        // ==========================================================
-        //  CORREÇÃO APLICADA AQUI
-        //  Este bloco garante que a aba ativa tenha sua cor.
-        // ==========================================================
         if (activeTab.color) {
             activeTabEl.style.backgroundColor = activeTab.color;
             activeTabEl.style.borderColor = activeTab.color;
@@ -175,11 +167,14 @@ function renderTabs() {
         
         activeTabEl.textContent = activeTab.name + (activeTab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
         
-        // Adiciona botão de fechar apenas se não for a aba de Favoritos e houver mais de uma aba regular
         const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
         if (activeTab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
             const closeBtn = document.createElement('span');
-            closeBtn.className = 'action-btn close-tab-btn';
+            // ==========================================================
+            //  PEQUENA ALTERAÇÃO AQUI
+            //  Removemos 'action-btn' para o novo estilo funcionar.
+            // ==========================================================
+            closeBtn.className = 'close-tab-btn';
             closeBtn.innerHTML = '&times;';
             closeBtn.title = 'Excluir aba';
             closeBtn.onclick = (e) => { e.stopPropagation(); deleteTab(activeTab.id); };
@@ -187,11 +182,9 @@ function renderTabs() {
         }
         activeTabContainer.appendChild(activeTabEl);
 
-        // Aplica a cor da aba ativa na borda da área de conteúdo
         activeContentArea.style.borderColor = activeTab.color || '#ccc';
         tabsContainer.style.borderBottomColor = activeTab.color || '#ccc';
     } else {
-        // Fallback caso nenhuma aba esteja ativa
         activeContentArea.style.borderColor = '#ccc';
         tabsContainer.style.borderBottomColor = '#ccc';
     }
@@ -204,7 +197,6 @@ function renderModels(modelsToRender) {
         const li = document.createElement('li');
         li.className = 'model-item';
 
-        // --- Cabeçalho do Modelo (Linha 1) ---
         const headerDiv = document.createElement('div');
         headerDiv.className = 'model-header';
 
@@ -217,12 +209,11 @@ function renderModels(modelsToRender) {
         colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
         nameSpan.appendChild(colorIndicator);
         
-        const textNode = document.createTextNode(" " + model.name); // Espaço para separar
+        const textNode = document.createTextNode(" " + model.name);
         nameSpan.appendChild(textNode);
         
         headerDiv.appendChild(nameSpan);
 
-        // --- Ações do Modelo (Linha 2) ---
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'model-actions';
         
@@ -256,11 +247,10 @@ function renderModels(modelsToRender) {
         favoriteButton.title = 'Favoritar/Desfavoritar';
         favoriteButton.onclick = () => toggleFavorite(model.id);
 
-        // Adiciona o ícone de favorito no cabeçalho se for favorito
         if (model.isFavorite) {
             const favIcon = document.createElement('span');
             favIcon.innerHTML = '⭐';
-            favIcon.style.marginLeft = 'auto'; // Alinha à direita
+            favIcon.style.marginLeft = 'auto';
             favIcon.style.paddingLeft = '10px';
             headerDiv.appendChild(favIcon);
         }
@@ -271,7 +261,6 @@ function renderModels(modelsToRender) {
         actionsDiv.appendChild(deleteButton);
         actionsDiv.appendChild(favoriteButton);
 
-        // Monta o item final
         li.appendChild(headerDiv);
         li.appendChild(actionsDiv);
         modelList.appendChild(li);
@@ -301,7 +290,6 @@ function filterModels() {
     return modelsInScope.filter(model => model.name.toLowerCase().includes(query));
 }
 
-// --- FUNÇÕES DE GERENCIAMENTO DE ABAS E MODELOS ---
 function addNewTab() {
     const name = prompt("Digite o nome da nova aba:");
     if (name && name.trim()) {
@@ -435,7 +423,6 @@ function moveModelToAnotherTab(modelId) {
     }
 }
 
-// --- FUNÇÕES DE IMPORTAÇÃO/EXPORTAÇÃO ---
 function exportModels() {
     const dataStr = JSON.stringify(appState, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -444,7 +431,7 @@ function exportModels() {
     a.href = url;
     a.download = 'modelos_backup.json';
     document.body.appendChild(a);
-a.click();
+    a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
@@ -474,7 +461,6 @@ function handleImportFile(event) {
     reader.readAsText(file);
 }
 
-// --- FUNÇÕES DO MODAL ---
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
@@ -495,12 +481,10 @@ function closeModal() {
     currentOnSave = null;
 }
 
-// --- INICIALIZAÇÃO E LISTENERS ---
 window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage();
     render();
 
-    // INICIALIZAÇÃO DO MÓDULO DE DITADO
     const dictateBtn = document.getElementById('dictate-btn');
     const dictationModal = document.getElementById('dictation-modal');
     const dictationCloseBtn = document.getElementById('dictation-close-btn');

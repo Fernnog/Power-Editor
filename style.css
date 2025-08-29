@@ -43,7 +43,7 @@ body, html {
     flex-grow: 1;
     border: 1px solid #ccc;
     padding: 15px;
-    background-color: #ffd580; /* AJUSTADO */
+    background-color: #ffd580;
     overflow-y: auto;
     font-size: 16px;
     line-height: 1.5;
@@ -84,7 +84,7 @@ body, html {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    border-bottom: 2px solid #ccc; /* Borda que combina com a da área ativa */
+    border-bottom: 3px solid #ccc; /* Alinhado com a borda da área ativa */
     margin-bottom: 0;
     padding-bottom: 0;
 }
@@ -101,7 +101,7 @@ body, html {
     align-items: center;
     gap: 5px;
     border-bottom: none;
-    margin-bottom: -2px; /* Sobe a aba para cobrir a borda inferior */
+    margin-bottom: -3px; /* Sobe a aba para cobrir a borda inferior */
     position: relative;
     top: 1px;
 }
@@ -114,47 +114,43 @@ body, html {
     filter: brightness(1.1);
 }
 
-/* ALTERAÇÃO PRINCIPAL AQUI */
 .tab-item.active {
-    /* O fundo agora é definido pelo JS, mantendo a cor original da aba. */
-    color: white; /* Garante que o texto seja legível sobre fundos coloridos. */
+    color: white;
     font-weight: bold;
     z-index: 2;
-    /* A borda inferior é removida pela regra base '.tab-item' para criar o efeito de conexão. */
 }
 
+/* Botão de fechar simplificado */
 .close-tab-btn {
-    font-size: 16px;
+    background: none;
+    border: none;
+    padding: 0 0 0 8px; /* Espaçamento à esquerda */
+    cursor: pointer;
+    font-size: 20px; /* Maior para ser mais fácil de clicar */
     font-weight: bold;
-    color: #333; /* Cor escura */
     line-height: 1;
-}
-.close-tab-btn:hover {
-    color: #dc3545; /* Vermelho no hover para indicar perigo */
-}
-.tab-item:not(.active) .close-tab-btn {
-    color: rgba(255,255,255,0.7);
-}
-.tab-item .close-tab-btn {
-    /* Torna o 'x' branco na aba ativa também */
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.7); /* Cor padrão para abas ativas e inativas */
+    transition: color 0.2s;
 }
 .tab-item:hover .close-tab-btn {
     color: white;
+}
+.close-tab-btn:hover {
+    color: #ffdddd !important; /* Vermelho claro no hover para indicar exclusão */
 }
 
 
 #model-list {
     list-style-type: none;
-    padding: 10px; /* Adiciona padding interno */
+    padding: 10px;
     margin: 0;
     overflow-y: auto;
     flex-grow: 1;
 }
 
 .model-item {
-    background-color: #ffd580; /* Cor laranja solicitada */
-    border: 1px solid #daa520; /* Borda correspondente */
+    background-color: #ffd580;
+    border: 1px solid #daa520;
     border-radius: 5px;
     padding: 8px 12px;
     margin-bottom: 10px;
@@ -164,9 +160,8 @@ body, html {
     transition: background-color 0.2s;
 }
 .model-item:hover {
-    background-color: #ffc75f; /* Laranja um pouco mais claro no hover */
+    background-color: #ffc75f;
 }
-
 
 .model-item .model-name {
     font-weight: bold;
@@ -195,7 +190,7 @@ body, html {
     flex-shrink: 0;
     justify-content: flex-start;
     padding-top: 5px;
-    border-top: 1px solid #f9e0a8; /* Borda mais clara */
+    border-top: 1px solid #f9e0a8;
 }
 
 .action-btn {
@@ -431,15 +426,15 @@ body, html {
     100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
 }
 
-/* NOVAS REGRAS ADICIONADAS */
+/* --- NOVAS REGRAS E AJUSTES FINAIS --- */
 .active-content-area {
     display: flex;
-    flex-direction: column-reverse; /* Inverte a ordem para a aba ficar embaixo */
+    flex-direction: column-reverse;
     flex-grow: 1;
     margin-top: 0;
     border-radius: 0 5px 5px 5px;
     overflow: hidden;
-    border: 2px solid #ccc;
+    border: 3px solid #ccc; /* Borda mais grossa */
     background-color: #fff;
     transition: border-color 0.3s;
 }
@@ -448,24 +443,20 @@ body, html {
     padding: 0 5px;
     background-color: #e9ecef;
     border-top: 1px solid #ccc;
-    flex-shrink: 0; /* Impede que o container da aba encolha */
+    flex-shrink: 0;
 }
 
 .active-tab-container .tab-item.active {
     border-left: none;
     border-right: none;
     border-top: none;
-    border-radius: 0;
     margin-bottom: 0;
     top: 1px;
+    border-radius: 8px 8px 0 0; /* Cantos arredondados na aba ativa */
 }
 
 .model-header {
     display: flex;
     align-items: center;
     margin-bottom: 8px;
-}
-
-.tab-item .close-tab-btn {
-    margin-left: 8px;
 }
