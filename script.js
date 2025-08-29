@@ -1,12 +1,25 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
+const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6'];
+let colorIndex = 0;
 
 const defaultModels = [
     { name: "IDPJ - Criação de Relatório de Sentença", content: "Este é o texto para a criação do relatório de sentença. Inclui seções sobre <b>fatos</b>, <i>fundamentos</i> e <u>dispositivo</u>." },
     { name: "IDPJ - Criar texto de ADMISSIBILIDADE", content: "Texto padrão para a análise de admissibilidade do Incidente de Desconsideração da Personalidade Jurídica." },
     { name: "IDPJ - RELATÓRIO de endereços", content: "Relatório gerado a partir da consulta de endereços nos sistemas conveniados. Segue abaixo a tabela:" }
 ];
+
+// --- FUNÇÃO UTILITÁRIA DE DEBOUNCE ---
+function debounce(func, delay = 250) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+}
 
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
 const editor = document.getElementById('editor');
@@ -35,12 +48,18 @@ function saveStateToStorage() {
     localStorage.setItem('editorModelosApp', JSON.stringify(appState));
 }
 
-// CORRIGIDO: Função loadStateFromStorage agora é mais robusta
+function getNextColor() {
+    const color = TAB_COLORS[colorIndex % TAB_COLORS.length];
+    colorIndex++;
+    return color;
+}
+
 function loadStateFromStorage() {
     const savedState = localStorage.getItem('editorModelosApp');
     
     const setDefaultState = () => {
         const defaultTabId = `tab-${Date.now()}`;
+        colorIndex = 0; 
         appState = {
             models: defaultModels.map((m, i) => ({
                 id: `model-${Date.now() + i}`,
@@ -50,8 +69,8 @@ function loadStateFromStorage() {
                 isFavorite: false
             })),
             tabs: [
-                { id: FAVORITES_TAB_ID, name: 'Favoritos' },
-                { id: defaultTabId, name: 'Geral' }
+                { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
+                { id: defaultTabId, name: 'Geral', color: getNextColor() }
             ],
             activeTabId: defaultTabId
         };
@@ -60,16 +79,17 @@ function loadStateFromStorage() {
     if (savedState) {
         try {
             const parsedState = JSON.parse(savedState);
-            // Validação para garantir que a estrutura carregada é válida
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
-                // Garante que a aba de favoritos sempre exista
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
-                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos' });
+                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
-            } else {
-                throw new Error("Formato de estado inválido.");
-            }
+                appState.tabs.forEach(tab => {
+                    if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
+                        tab.color = getNextColor();
+                    }
+                });
+            } else { throw new Error("Formato de estado inválido."); }
         } catch (e) {
             console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
             setDefaultState();
@@ -78,9 +98,7 @@ function loadStateFromStorage() {
         setDefaultState();
     }
 
-    // Garante que uma aba válida esteja sempre ativa
     if (!appState.tabs.find(t => t.id === appState.activeTabId)) {
-        // Tenta a primeira aba não-favorita, ou a de favoritos se for a única
         appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null;
     }
 }
@@ -104,7 +122,7 @@ function indentFirstLine() {
         node = node.parentNode;
     }
     if (node && node.nodeName === 'P') {
-        node.style.textIndent = node.style.textIndent ? '' : '2em';
+        node.style.textIndent = node.style.textIndent ? '' : '3cm';
     }
     editor.focus();
 }
@@ -119,39 +137,135 @@ function render() {
 function renderTabs() {
     tabsContainer.innerHTML = '';
     appState.tabs.forEach(tab => {
-        const tabEl = document.createElement('button');
+        const tabEl = document.createElement('div');
         tabEl.className = 'tab-item';
         tabEl.dataset.tabId = tab.id;
+
         if (tab.id === appState.activeTabId) {
             tabEl.classList.add('active');
+        } else if (tab.color) {
+            const isDark = (parseInt(tab.color.substring(1), 16) > 0xffffff / 2) ? false : true;
+            tabEl.style.backgroundColor = tab.color;
+            tabEl.style.color = isDark ? '#fff' : '#333';
         }
 
-        const tabName = document.createElement('span');
-        tabName.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
-        tabEl.appendChild(tabName);
-
         tabEl.addEventListener('click', () => {
-            appState.activeTabId = tab.id;
-            searchBox.value = '';
-            render();
+            if (appState.activeTabId !== tab.id) {
+                appState.activeTabId = tab.id;
+                searchBox.value = '';
+                render();
+            }
         });
 
-        // Adiciona botão de fechar, exceto para Favoritos e se for a última aba regular
+        const tabNameSpan = document.createElement('span');
+        tabNameSpan.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
+
+        const tabNameInput = document.createElement('input');
+        tabNameInput.type = 'text';
+        tabNameInput.className = 'tab-name-input';
+        tabNameInput.value = tab.name;
+        tabNameInput.style.display = 'none';
+
+        tabEl.appendChild(tabNameSpan);
+        tabEl.appendChild(tabNameInput);
+
+        // Lógica de Edição de Nome (apenas para abas não-favoritas)
+        if (tab.id !== FAVORITES_TAB_ID) {
+            tabNameSpan.addEventListener('dblclick', () => {
+                tabNameSpan.style.display = 'none';
+                tabNameInput.style.display = 'inline-block';
+                tabNameInput.focus();
+                tabNameInput.select();
+            });
+
+            const saveTabName = () => {
+                const newName = tabNameInput.value.trim();
+                if (newName && newName !== tab.name) {
+                    tab.name = newName;
+                    render();
+                } else {
+                    tabNameInput.style.display = 'none';
+                    tabNameSpan.style.display = 'inline-block';
+                }
+            };
+
+            tabNameInput.addEventListener('blur', saveTabName);
+            tabNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveTabName();
+                if (e.key === 'Escape') {
+                    tabNameInput.value = tab.name;
+                    tabNameInput.style.display = 'none';
+                    tabNameSpan.style.display = 'inline-block';
+                }
+            });
+        }
+        
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'tab-actions';
+
+        // Lógica de Edição de Cor (apenas para abas não-favoritas)
+        if (tab.id !== FAVORITES_TAB_ID) {
+            const colorBtn = document.createElement('button');
+            colorBtn.className = 'action-btn-tab';
+            colorBtn.innerHTML = '🎨';
+            colorBtn.title = 'Mudar cor da aba';
+            colorBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleColorPalette(tab.id, colorBtn);
+            };
+            actionsContainer.appendChild(colorBtn);
+        }
+
+        // Botão de fechar
         const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
         if (tab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'action-btn close-tab-btn';
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'action-btn-tab';
             closeBtn.innerHTML = '&times;';
             closeBtn.title = 'Excluir aba';
             closeBtn.onclick = (e) => {
-                e.stopPropagation(); // Evita que o clique ative a aba
+                e.stopPropagation();
                 deleteTab(tab.id);
             };
-            tabEl.appendChild(closeBtn);
+            actionsContainer.appendChild(closeBtn);
         }
-
+        
+        tabEl.appendChild(actionsContainer);
         tabsContainer.appendChild(tabEl);
     });
+}
+
+function toggleColorPalette(tabId, buttonEl) {
+    closeColorPalette(); // Fecha qualquer outra paleta aberta
+    const palette = document.createElement('div');
+    palette.className = 'color-palette';
+    palette.id = 'active-color-palette';
+    
+    TAB_COLORS.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.onclick = (e) => {
+            e.stopPropagation();
+            const tab = appState.tabs.find(t => t.id === tabId);
+            if (tab) {
+                tab.color = color;
+                render();
+            }
+            closeColorPalette();
+        };
+        palette.appendChild(swatch);
+    });
+
+    buttonEl.parentElement.appendChild(palette);
+    document.addEventListener('click', closeColorPalette, { once: true });
+}
+
+function closeColorPalette() {
+    const existingPalette = document.getElementById('active-color-palette');
+    if (existingPalette) {
+        existingPalette.remove();
+    }
 }
 
 
@@ -160,10 +274,21 @@ function renderModels(modelsToRender) {
     modelsToRender.forEach(model => {
         const li = document.createElement('li');
         li.className = 'model-item';
+        
         const nameSpan = document.createElement('span');
         nameSpan.className = 'model-name';
-        nameSpan.textContent = model.name;
 
+        const parentTab = appState.tabs.find(t => t.id === model.tabId);
+        if (parentTab && parentTab.color) {
+            const colorIndicator = document.createElement('span');
+            colorIndicator.className = 'model-color-indicator';
+            colorIndicator.style.backgroundColor = parentTab.color;
+            nameSpan.appendChild(colorIndicator);
+        }
+
+        const textNode = document.createTextNode(model.name);
+        nameSpan.appendChild(textNode);
+        
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'model-actions';
         
@@ -229,7 +354,8 @@ function addNewTab() {
     if (name && name.trim()) {
         const newTab = {
             id: `tab-${Date.now()}`,
-            name: name.trim()
+            name: name.trim(),
+            color: getNextColor()
         };
         appState.tabs.push(newTab);
         appState.activeTabId = newTab.id;
@@ -381,7 +507,6 @@ function handleImportFile(event) {
         }
         try {
             const importedState = JSON.parse(e.target.result);
-            // Validação básica da estrutura
             if (importedState.models && importedState.tabs && importedState.activeTabId) {
                 appState = importedState;
                 render();
@@ -423,7 +548,9 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
 });
 
-searchBox.addEventListener('input', () => renderModels(filterModels()));
+const debouncedRender = debounce(() => renderModels(filterModels()), 250);
+searchBox.addEventListener('input', debouncedRender);
+
 addNewTabBtn.addEventListener('click', addNewTab);
 addNewModelBtn.addEventListener('click', addNewModelFromEditor);
 indentBtn.addEventListener('click', indentFirstLine);

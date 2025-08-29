@@ -79,58 +79,112 @@ body, html {
     border-radius: 4px;
 }
 
-/* --- NOVOS ESTILOS DAS ABAS --- */
+/* --- ESTILOS DAS ABAS EM FORMATO FICHÁRIO --- */
 .tabs-container {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ccc;
+    margin-bottom: 0;
+    padding-left: 5px;
+    padding-bottom: 0;
+    border-bottom: 1px solid #daa520;
 }
 
 .tab-item {
-    padding: 5px 12px;
+    padding: 8px 12px;
     border: 1px solid #aaa;
-    background-color: #f8f9fa;
-    border-radius: 15px; /* Formato de pílula */
+    background-color: #d1d5db; /* Cor padrão para abas inativas */
+    border-radius: 8px 8px 0 0; /* Formato de fichário */
     cursor: pointer;
     font-size: 13px;
     transition: background-color 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     gap: 5px;
+    position: relative;
+    top: 1px;
+    border-bottom: none;
+    margin-bottom: -1px;
 }
 
 .tab-item:hover {
-    background-color: #e2e6ea;
+    opacity: 0.9;
 }
 
 .tab-item.active {
-    background-color: #ffc107; /* Amarelo/Laranja para combinar com os modelos */
+    background-color: #ffd580; /* Amarelo principal, como os modelos */
     color: #333;
     border-color: #daa520;
     font-weight: bold;
 }
 
-.close-tab-btn {
+.tab-name-input {
+    border: 1px solid #999;
+    padding: 2px 4px;
+    font-size: 13px;
+    border-radius: 3px;
+    width: 80px; /* Largura base, pode ajustar */
+}
+
+.tab-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 5px;
+}
+
+.action-btn-tab {
+    background: none;
+    border: none;
+    cursor: pointer;
     font-size: 16px;
-    font-weight: bold;
-    color: #888;
+    padding: 0;
     line-height: 1;
+    color: #555;
 }
-.close-tab-btn:hover {
-    color: #333;
+
+.action-btn-tab:hover {
+    color: #000;
 }
-/* --- FIM DOS ESTILOS DAS ABAS --- */
+
+/* --- ESTILOS DA PALETA DE CORES --- */
+.color-palette {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #eee;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    border: 1px solid #333;
+}
 
 
 #model-list {
     list-style-type: none;
-    padding: 0;
+    padding: 10px; /* Adicionado padding para separar da borda */
     margin: 0;
     overflow-y: auto;
     flex-grow: 1;
+    border: 1px solid #daa520; /* Borda para conectar com as abas */
+    border-top: none;
+    background-color: #fff; /* Fundo branco para a lista */
 }
 
 .model-item {
@@ -154,12 +208,23 @@ body, html {
     cursor: default;
     word-break: break-word;
     padding-right: 10px;
+    display: flex; /* Para alinhar o círculo de cor */
+    align-items: center;
+    gap: 8px;
+}
+
+.model-color-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.2);
+    flex-shrink: 0;
 }
 
 .model-actions {
     display: flex;
     gap: 8px;
-    flex-shrink: 0; /* Impede que os botões quebrem a linha */
+    flex-shrink: 0;
 }
 
 .action-btn {
@@ -196,7 +261,6 @@ body, html {
     background-color: #e9ecef;
 }
 
-/* NOVO: Estilo específico para o botão "Aba" */
 #add-new-tab-btn {
     background-color: #6c757d;
     color: white;
@@ -205,7 +269,6 @@ body, html {
 #add-new-tab-btn:hover {
     background-color: #5a6268;
 }
-
 
 /* --- ESTILOS DO MODAL --- */
 .modal-overlay {
@@ -256,7 +319,6 @@ body, html {
     font-size: 16px;
 }
 
-/* NOVAS REGRAS PARA A TOOLBAR DO MODAL */
 .modal-toolbar {
     background-color: #f8f9fa;
     border: 1px solid #ccc;
@@ -284,11 +346,11 @@ body, html {
     padding: 10px;
     box-sizing: border-box;
     border: 1px solid #ccc;
-    border-radius: 0 0 4px 4px; /* Ajustado para conectar com a toolbar */
+    border-radius: 0 0 4px 4px;
     background-color: #fff;
     overflow-y: auto;
     font-size: 16px;
-    margin-bottom: 15px; /* Movido de input/textarea para cá */
+    margin-bottom: 15px;
 }
 
 
