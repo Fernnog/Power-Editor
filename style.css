@@ -1,3 +1,4 @@
+--- START OF FILE style.css ---
 /* Configurações Globais */
 body, html {
     margin: 0;
@@ -70,10 +71,13 @@ body, html {
     color: #333;
 }
 
+.sidebar-controls {
+    margin-bottom: 15px;
+}
+
 #search-box {
     width: 100%;
     padding: 8px;
-    margin-bottom: 15px;
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -464,3 +468,38 @@ body, html {
     align-items: center;
     margin-bottom: 8px;
 }
+
+/* --- NOVAS REGRAS PARA CONTROLES DA SIDEBAR --- */
+.control-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.control-btn {
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: filter 0.2s;
+}
+
+.control-btn:hover {
+    filter: brightness(0.95);
+}
+
+.control-btn.btn-primary {
+    background-color: #d9534f;
+    color: white;
+    border-color: #d43f3a;
+}
+
+.control-btn.btn-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+    border-color: #ccc;
+}
+--- END OF FILE style.css ---
