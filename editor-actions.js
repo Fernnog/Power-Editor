@@ -63,10 +63,21 @@ const EditorActions = (() => {
         }
     }
 
+    /**
+     * Aplica ou remove a formatação de citação (blockquote) ao texto selecionado.
+     */
+    function formatAsBlockquote() {
+        if (!editor) return;
+        // O comando 'formatBlock' alterna a tag 'blockquote' no parágrafo atual.
+        document.execCommand('formatBlock', false, 'blockquote');
+        editor.focus();
+    }
+
     // Expõe as funções publicamente para serem chamadas a partir de script.js
     return {
         formatDocument,
         indentFirstLine,
-        clearDocument
+        clearDocument,
+        formatAsBlockquote
     };
 })();
