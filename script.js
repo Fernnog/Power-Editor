@@ -3,6 +3,7 @@ let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C'];
 let colorIndex = 0;
+let backupDebounceTimer; // Prioridade 3: Variável para o timer do debounce
 
 const defaultModels = [
     { name: "IDPJ - Criação de Relatório de Sentença", content: "Este é o texto para a criação do relatório de sentença. Inclui seções sobre <b>fatos</b>, <i>fundamentos</i> e <u>dispositivo</u>." },
@@ -25,6 +26,8 @@ const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
+const blockquoteBtn = document.getElementById('blockquote-btn');
+const backupStatusEl = document.getElementById('backup-status'); // Prioridade 1: Referência centralizada
 
 // --- REFERÊNCIAS DO MODAL ---
 const modalContainer = document.getElementById('modal-container');
@@ -36,9 +39,30 @@ const modalBtnCancel = document.getElementById('modal-btn-cancel');
 const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
 let currentOnSave = null;
 
-// --- LÓGICA DE BACKUP AUTOMÁTICO COM DEBOUNCE ---
-let backupDebounceTimer;
+// --- LÓGICA DE BACKUP INTELIGENTE (COM DEBOUNCE E PERSISTÊNCIA) ---
 
+/**
+ * Prioridade 1: Atualiza o texto do status de backup na interface.
+ * @param {Date} dateObject - O objeto Date do momento do backup.
+ */
+function updateBackupStatus(dateObject) {
+    if (!backupStatusEl) return;
+    
+    if (dateObject) {
+        const day = String(dateObject.getDate()).padStart(2, '0');
+        const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+        const year = dateObject.getFullYear();
+        const hours = String(dateObject.getHours()).padStart(2, '0');
+        const minutes = String(dateObject.getMinutes()).padStart(2, '0');
+        backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`;
+    } else {
+        backupStatusEl.textContent = 'Nenhum backup recente.';
+    }
+}
+
+/**
+ * Prioridade 1 & 2: Executa o download do backup e atualiza o estado.
+ */
 function triggerAutoBackup() {
     const now = new Date();
     const year = now.getFullYear();
@@ -49,6 +73,8 @@ function triggerAutoBackup() {
     
     const timestamp = `${year}${month}${day}_${hours}${minutes}`;
     const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
+
+    appState.lastBackupTimestamp = now.toISOString(); // Prioridade 2: Salva o timestamp no estado
 
     const dataStr = JSON.stringify(appState, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -61,18 +87,28 @@ function triggerAutoBackup() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    const backupStatusEl = document.getElementById('backup-status');
-    if (backupStatusEl) {
-        backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`;
-    }
+    updateBackupStatus(now); // Prioridade 1: Atualiza a UI
 }
 
-function modifyStateAndBackup(modificationFn) {
-    modificationFn(); // Executa a alteração de estado imediatamente
-
-    // Aciona o backup com debounce para evitar downloads excessivos
+/**
+ * Prioridade 3: Função "debounce" que evita backups excessivos.
+ * Só aciona o backup 2.5 segundos após a ÚLTIMA alteração.
+ */
+function debouncedTriggerAutoBackup() {
     clearTimeout(backupDebounceTimer);
-    backupDebounceTimer = setTimeout(triggerAutoBackup, 2000); // Espera 2 segundos de inatividade
+    backupDebounceTimer = setTimeout(() => {
+        triggerAutoBackup();
+    }, 2500); // 2.5 segundos de espera
+}
+
+/**
+ * Função central que executa uma modificação no estado e depois
+ * chama o backup com debounce.
+ * @param {Function} modificationFn - A função que altera o appState.
+ */
+function modifyStateAndBackup(modificationFn) {
+    modificationFn(); // Executa a modificação (ex: apagar modelo)
+    debouncedTriggerAutoBackup(); // Aciona o backup inteligente
 }
 
 // --- FUNÇÃO AUXILIAR DE COR ---
@@ -94,18 +130,10 @@ function loadStateFromStorage() {
         const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
-            models: defaultModels.map((m, i) => ({
-                id: `model-${Date.now() + i}`,
-                name: m.name,
-                content: m.content,
-                tabId: defaultTabId,
-                isFavorite: false
-            })),
-            tabs: [
-                { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
-                { id: defaultTabId, name: 'Geral', color: getNextColor() }
-            ],
-            activeTabId: defaultTabId
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
+            tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }],
+            activeTabId: defaultTabId,
+            lastBackupTimestamp: null // Prioridade 2: Inicializa a propriedade
         };
     };
 
@@ -117,20 +145,21 @@ function loadStateFromStorage() {
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
-                appState.tabs.forEach(tab => {
-                    if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
-                        tab.color = getNextColor();
-                    }
-                });
-            } else {
-                throw new Error("Formato de estado inválido.");
-            }
+                appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } });
+            } else { throw new Error("Formato de estado inválido."); }
         } catch (e) {
             console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
             setDefaultState();
         }
     } else {
         setDefaultState();
+    }
+    
+    // Prioridade 2: Atualiza o status de backup ao carregar a página
+    if (appState.lastBackupTimestamp) {
+        updateBackupStatus(new Date(appState.lastBackupTimestamp));
+    } else {
+        updateBackupStatus(null);
     }
 
     if (!appState.tabs.find(t => t.id === appState.activeTabId)) {
@@ -150,7 +179,7 @@ function insertModelContent(content, tabId) {
         render();
     }
     editor.focus();
-    document.execCommand('insertHTML', false, content);
+    execCmd('insertHTML', content);
 }
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
@@ -160,6 +189,7 @@ function render() {
     renderModels(filterModels());
 }
 
+// ... (O resto das funções de renderização como renderTabs, renderModels, filterModels, etc. permanecem idênticas)
 function renderTabs() {
     const inactiveTabsContainer = document.getElementById('tabs-container');
     const activeTabContainer = document.getElementById('active-tab-container');
@@ -339,16 +369,13 @@ function filterModels() {
         );
     }
 }
+// --- FUNÇÕES DE MANIPULAÇÃO DE DADOS (AGORA USANDO modifyStateAndBackup) ---
 
 function addNewTab() {
     const name = prompt("Digite o nome da nova aba:");
     if (name && name.trim()) {
         modifyStateAndBackup(() => {
-            const newTab = {
-                id: `tab-${Date.now()}`,
-                name: name.trim(),
-                color: getNextColor()
-            };
+            const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() };
             appState.tabs.push(newTab);
             appState.activeTabId = newTab.id;
             render();
@@ -358,14 +385,11 @@ function addNewTab() {
 
 function deleteTab(tabId) {
     const tabToDelete = appState.tabs.find(t => t.id === tabId);
-    if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) {
-        return;
-    }
+    if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return;
 
     const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID);
     const destinationOptions = regularTabs.filter(t => t.id !== tabId);
-    const promptMessage = `Para qual aba deseja mover os modelos?\n` +
-        destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
+    const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
     const choice = prompt(promptMessage);
     const choiceIndex = parseInt(choice, 10) - 1;
 
@@ -374,14 +398,9 @@ function deleteTab(tabId) {
         return;
     }
     
-    const destinationTabId = destinationOptions[choiceIndex].id;
     modifyStateAndBackup(() => {
-        appState.models.forEach(model => {
-            if (model.tabId === tabId) {
-                model.tabId = destinationTabId;
-            }
-        });
-
+        const destinationTabId = destinationOptions[choiceIndex].id;
+        appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } });
         appState.tabs = appState.tabs.filter(t => t.id !== tabId);
         appState.activeTabId = destinationTabId;
         render();
@@ -394,33 +413,22 @@ function addNewModelFromEditor() {
         alert('O editor está vazio. Escreva algo para salvar como modelo.');
         return;
     }
-
     let targetTabId = appState.activeTabId;
     if (targetTabId === FAVORITES_TAB_ID) {
         targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id;
-        if (!targetTabId) {
-            alert("Crie uma aba regular primeiro para poder adicionar modelos.");
-            return;
-        }
+        if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; }
     }
-
     openModal({
         title: 'Salvar Novo Modelo',
         onSave: (name) => {
             if (!name) { alert('O nome do modelo não pode ser vazio.'); return; }
             modifyStateAndBackup(() => {
-                const newModel = {
-                    id: `model-${Date.now()}`,
-                    name: name,
-                    content: content,
-                    tabId: targetTabId,
-                    isFavorite: false
-                };
+                const newModel = { id: `model-${Date.now()}`, name: name, content: content, tabId: targetTabId, isFavorite: false };
                 appState.models.push(newModel);
                 searchBox.value = '';
+                closeModal();
                 render();
             });
-            closeModal();
         }
     });
 }
@@ -428,17 +436,15 @@ function addNewModelFromEditor() {
 function editModel(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     openModal({
-        title: 'Editar Modelo',
-        initialName: model.name,
-        initialContent: model.content,
+        title: 'Editar Modelo', initialName: model.name, initialContent: model.content,
         onSave: (name, content) => {
             if (!name) { alert('O nome do modelo não pode ser vazio.'); return; }
             modifyStateAndBackup(() => {
                 model.name = name;
                 model.content = content;
+                closeModal();
                 render();
             });
-            closeModal();
         }
     });
 }
@@ -466,29 +472,29 @@ function toggleFavorite(modelId) {
 function moveModelToAnotherTab(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId);
-    
-    if (destinationOptions.length === 0) {
-        alert("Não há outras abas para mover este modelo.");
-        return;
-    }
-    
-    const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` +
-        destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
+    if (destinationOptions.length === 0) { alert("Não há outras abas para mover este modelo."); return; }
+    const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
     const choice = prompt(promptMessage);
     const choiceIndex = parseInt(choice, 10) - 1;
-
     if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
         modifyStateAndBackup(() => {
             model.tabId = destinationOptions[choiceIndex].id;
             render();
         });
-    } else if(choice) {
-        alert("Seleção inválida.");
-    }
+    } else if(choice) { alert("Seleção inválida."); }
 }
 
 function exportModels() {
-    triggerAutoBackup(); // A exportação manual também usa a função de backup.
+    const dataStr = JSON.stringify(appState, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'modelos_backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function handleImportFile(event) {
@@ -506,6 +512,9 @@ function handleImportFile(event) {
                 appState = importedState;
                 render();
                 alert('Modelos importados com sucesso!');
+                const now = new Date(); // Prioridade 1: Atualiza status na importação
+                appState.lastBackupTimestamp = now.toISOString(); // Prioridade 2
+                updateBackupStatus(now); // Prioridade 1
             } else { throw new Error('Formato de arquivo inválido.'); }
         } catch (error) {
             alert('Erro ao importar o arquivo. Verifique se é um JSON válido.');
@@ -516,6 +525,7 @@ function handleImportFile(event) {
     reader.readAsText(file);
 }
 
+// ... (Funções do Modal e de Inicialização permanecem as mesmas)
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
@@ -536,18 +546,30 @@ function closeModal() {
     currentOnSave = null;
 }
 
-// --- INICIALIZAÇÃO E EVENT LISTENERS ---
 window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage();
     render();
 
-    // --- Configuração dos Botões e Atalhos ---
     const dictateBtn = document.getElementById('dictate-btn');
-    const blockquoteBtn = document.getElementById('blockquote-btn');
     const dictationModal = document.getElementById('dictation-modal');
     const dictationCloseBtn = document.getElementById('dictation-close-btn');
     
-    // Atalhos do editor
+    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+        SpeechDictation.init({
+            micIcon: document.getElementById('dictation-mic-icon'),
+            langSelect: document.getElementById('dictation-lang-select'),
+            statusDisplay: document.getElementById('dictation-status'),
+            onResult: (transcript) => { insertModelContent(transcript); }
+        });
+        dictateBtn.addEventListener('click', () => { dictationModal.classList.add('visible'); });
+        dictationCloseBtn.addEventListener('click', () => {
+            SpeechDictation.stop();
+            dictationModal.classList.remove('visible');
+        });
+    } else {
+        dictateBtn.style.display = 'none';
+    }
+
     editor.addEventListener('keydown', (event) => {
         if (event.ctrlKey) {
             switch (event.key.toLowerCase()) {
@@ -560,56 +582,25 @@ window.addEventListener('DOMContentLoaded', () => {
             EditorActions.indentFirstLine();
         }
     });
-    
-    // Botão de citação
+
     if (blockquoteBtn) {
         blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote);
     }
-    
-    // Configuração do Ditado por Voz
-    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
-        SpeechDictation.init({
-            micIcon: document.getElementById('dictation-mic-icon'),
-            langSelect: document.getElementById('dictation-lang-select'),
-            statusDisplay: document.getElementById('dictation-status'),
-            onResult: (transcript) => {
-                insertModelContent(transcript);
-            }
-        });
-
-        dictateBtn.addEventListener('click', () => dictationModal.classList.add('visible'));
-        dictationCloseBtn.addEventListener('click', () => {
-            SpeechDictation.stop();
-            dictationModal.classList.remove('visible');
-        });
-    } else {
-        dictateBtn.style.display = 'none';
-    }
-
-    // Demais Listeners
-    searchBox.addEventListener('input', debouncedFilter);
-    searchBox.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            renderModels(filterModels());
-        }
-    });
-
-    addNewTabBtn.addEventListener('click', addNewTab);
-    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-    clearDocBtn.addEventListener('click', EditorActions.clearDocument);
-    searchBtn.addEventListener('click', () => renderModels(filterModels()));
-    clearSearchBtn.addEventListener('click', () => {
-        searchBox.value = '';
-        renderModels(filterModels());
-    });
-    exportBtn.addEventListener('click', exportModels);
-    importBtn.addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', handleImportFile);
-
-    modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
-    modalBtnCancel.addEventListener('click', closeModal);
-    modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
 });
+
+// --- EVENT LISTENERS ---
+searchBox.addEventListener('input', debouncedFilter);
+searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+addNewTabBtn.addEventListener('click', addNewTab);
+addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
+clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+exportBtn.addEventListener('click', exportModels);
+importBtn.addEventListener('click', () => importFileInput.click());
+importFileInput.addEventListener('change', handleImportFile);
+modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
+modalBtnCancel.addEventListener('click', closeModal);
+modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
