@@ -39,13 +39,23 @@
                 <input type="text" id="search-box" placeholder="Pesquisar modelos...">
             </div>
             
+            <!-- Container para abas inativas -->
             <div id="tabs-container" class="tabs-container">
-                <!-- As abas serão preenchidas pelo JavaScript -->
+                <!-- As abas inativas serão preenchidas pelo JavaScript -->
             </div>
 
-            <ul id="model-list">
-                <!-- A lista de modelos será preenchida pelo JavaScript -->
-            </ul>
+            <!-- Container para a lista e a aba ativa -->
+            <div id="active-content-area" class="active-content-area">
+                <ul id="model-list">
+                    <!-- A lista de modelos será preenchida pelo JavaScript -->
+                </ul>
+
+                <!-- Novo container exclusivo para a aba ativa -->
+                <div id="active-tab-container" class="active-tab-container">
+                    <!-- A aba ativa será inserida aqui pelo JavaScript -->
+                </div>
+            </div>
+            
             <div class="sidebar-footer">
                 <button id="add-new-tab-btn">Aba</button>
                 <button id="add-new-model-btn">Adicionar</button>

@@ -128,43 +128,51 @@ function render() {
 
 function renderTabs() {
     tabsContainer.innerHTML = '';
+    const activeTabContainer = document.getElementById('active-tab-container');
+    activeTabContainer.innerHTML = '';
+
+    const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
+
     appState.tabs.forEach(tab => {
+        if (tab.id === appState.activeTabId) return; // Pula a aba ativa aqui
+
         const tabEl = document.createElement('button');
         tabEl.className = 'tab-item';
         tabEl.dataset.tabId = tab.id;
-
-        if (tab.id === appState.activeTabId) {
-            tabEl.classList.add('active');
-        } else if (tab.color) {
+        if (tab.color) {
             tabEl.style.backgroundColor = tab.color;
             tabEl.style.borderColor = tab.color;
         }
-
-        const tabName = document.createElement('span');
-        tabName.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
-        tabEl.appendChild(tabName);
-
+        tabEl.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
         tabEl.addEventListener('click', () => {
             appState.activeTabId = tab.id;
             searchBox.value = '';
             render();
         });
-
+        tabsContainer.appendChild(tabEl);
+    });
+    
+    if (activeTab) {
+        const activeTabEl = document.createElement('button');
+        activeTabEl.className = 'tab-item active';
+        activeTabEl.dataset.tabId = activeTab.id;
+        activeTabEl.textContent = activeTab.name + (activeTab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
+        
         const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
-        if (tab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
+        if (activeTab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
             const closeBtn = document.createElement('span');
             closeBtn.className = 'action-btn close-tab-btn';
             closeBtn.innerHTML = '&times;';
             closeBtn.title = 'Excluir aba';
-            closeBtn.onclick = (e) => {
-                e.stopPropagation();
-                deleteTab(tab.id);
-            };
-            tabEl.appendChild(closeBtn);
+            closeBtn.onclick = (e) => { e.stopPropagation(); deleteTab(activeTab.id); };
+            activeTabEl.appendChild(closeBtn);
         }
+        activeTabContainer.appendChild(activeTabEl);
 
-        tabsContainer.appendChild(tabEl);
-    });
+        // Aplica a cor da aba ativa na área de conteúdo
+        const activeContentArea = document.getElementById('active-content-area');
+        activeContentArea.style.borderColor = activeTab.color || '#ccc';
+    }
 }
 
 
@@ -173,20 +181,26 @@ function renderModels(modelsToRender) {
     modelsToRender.forEach(model => {
         const li = document.createElement('li');
         li.className = 'model-item';
+
+        // --- Cabeçalho do Modelo (Linha 1) ---
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'model-header';
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'model-name';
 
+        const colorIndicator = document.createElement('span');
+        colorIndicator.className = 'model-color-indicator';
         const parentTab = appState.tabs.find(t => t.id === model.tabId);
-        if (parentTab && parentTab.color) {
-            const colorIndicator = document.createElement('span');
-            colorIndicator.className = 'model-color-indicator';
-            colorIndicator.style.backgroundColor = parentTab.color;
-            nameSpan.appendChild(colorIndicator);
-        }
+        colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
+        nameSpan.appendChild(colorIndicator);
         
-        const textNode = document.createTextNode(model.name);
+        const textNode = document.createTextNode(" " + model.name); // Espaço para separar
         nameSpan.appendChild(textNode);
+        
+        headerDiv.appendChild(nameSpan);
 
+        // --- Ações do Modelo (Linha 2) ---
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'model-actions';
         
@@ -220,12 +234,23 @@ function renderModels(modelsToRender) {
         favoriteButton.title = 'Favoritar/Desfavoritar';
         favoriteButton.onclick = () => toggleFavorite(model.id);
 
+        // Adiciona o ícone de favorito no cabeçalho se for favorito
+        if (model.isFavorite) {
+            const favIcon = document.createElement('span');
+            favIcon.innerHTML = '⭐';
+            favIcon.style.marginLeft = 'auto'; // Alinha à direita
+            favIcon.style.paddingLeft = '10px';
+            headerDiv.appendChild(favIcon);
+        }
+
         actionsDiv.appendChild(addButton);
         actionsDiv.appendChild(editButton);
         actionsDiv.appendChild(moveButton);
         actionsDiv.appendChild(deleteButton);
         actionsDiv.appendChild(favoriteButton);
-        li.appendChild(nameSpan);
+
+        // Monta o item final
+        li.appendChild(headerDiv);
         li.appendChild(actionsDiv);
         modelList.appendChild(li);
     });

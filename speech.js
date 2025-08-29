@@ -35,9 +35,21 @@ const SpeechDictation = (() => {
     
     function processVoiceCommands(transcript) {
         return transcript
+            // Remove espaço ANTES da pontuação
+            .replace(/\s+\bvírgula\b/gi, ',')
+            .replace(/\s+\bponto\b/gi, '.')
+            // Novos comandos
+            .replace(/\s+\bponto de interrogação\b/gi, '?')
+            .replace(/\s+\bponto de exclamação\b/gi, '!')
+            // Comandos sem espaço antes (caso seja a primeira palavra)
             .replace(/\bvírgula\b/gi, ',')
             .replace(/\bponto\b/gi, '.')
-            .replace(/\bnova linha\b/gi, '<br>');
+            .replace(/\bponto de interrogação\b/gi, '?')
+            .replace(/\bponto de exclamação\b/gi, '!')
+            // Comandos para nova linha e parênteses
+            .replace(/\bnova linha\b/gi, '<br>')
+            .replace(/\babrir parênteses\b/gi, '(')
+            .replace(/\bfechar parênteses\b/gi, ')');
     }
 
     const setupListeners = () => {
