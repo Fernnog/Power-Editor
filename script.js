@@ -3,7 +3,6 @@ let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C'];
 let colorIndex = 0;
-let backupDebounceTimer; // Prioridade 3: Variável para o timer do debounce
 
 const defaultModels = [
     { name: "IDPJ - Criação de Relatório de Sentença", content: "Este é o texto para a criação do relatório de sentença. Inclui seções sobre <b>fatos</b>, <i>fundamentos</i> e <u>dispositivo</u>." },
@@ -15,7 +14,6 @@ const defaultModels = [
 const editor = document.getElementById('editor');
 const modelList = document.getElementById('model-list');
 const searchBox = document.getElementById('search-box');
-const tabsContainer = document.getElementById('tabs-container');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
 const addNewModelBtn = document.getElementById('add-new-model-btn');
 const indentBtn = document.getElementById('indent-btn');
@@ -27,7 +25,7 @@ const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
-const backupStatusEl = document.getElementById('backup-status'); // Prioridade 1: Referência centralizada
+const backupStatusEl = document.getElementById('backup-status');
 
 // --- REFERÊNCIAS DO MODAL ---
 const modalContainer = document.getElementById('modal-container');
@@ -39,11 +37,11 @@ const modalBtnCancel = document.getElementById('modal-btn-cancel');
 const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
 let currentOnSave = null;
 
-// --- LÓGICA DE BACKUP INTELIGENTE (COM DEBOUNCE E PERSISTÊNCIA) ---
+// --- LÓGICA DE BACKUP INTELIGENTE E MANIPULAÇÃO DE ESTADO ---
 
 /**
- * Prioridade 1: Atualiza o texto do status de backup na interface.
- * @param {Date} dateObject - O objeto Date do momento do backup.
+ * Atualiza o texto do status de backup na interface, usado no carregamento da página e importação.
+ * @param {Date | null} dateObject - O objeto Date do momento do backup ou null.
  */
 function updateBackupStatus(dateObject) {
     if (!backupStatusEl) return;
@@ -61,54 +59,14 @@ function updateBackupStatus(dateObject) {
 }
 
 /**
- * Prioridade 1 & 2: Executa o download do backup e atualiza o estado.
- */
-function triggerAutoBackup() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    
-    const timestamp = `${year}${month}${day}_${hours}${minutes}`;
-    const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
-
-    appState.lastBackupTimestamp = now.toISOString(); // Prioridade 2: Salva o timestamp no estado
-
-    const dataStr = JSON.stringify(appState, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(dataBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    updateBackupStatus(now); // Prioridade 1: Atualiza a UI
-}
-
-/**
- * Prioridade 3: Função "debounce" que evita backups excessivos.
- * Só aciona o backup 2.5 segundos após a ÚLTIMA alteração.
- */
-function debouncedTriggerAutoBackup() {
-    clearTimeout(backupDebounceTimer);
-    backupDebounceTimer = setTimeout(() => {
-        triggerAutoBackup();
-    }, 2500); // 2.5 segundos de espera
-}
-
-/**
- * Função central que executa uma modificação no estado e depois
- * chama o backup com debounce.
+ * Função central que executa uma modificação no estado, salva no LocalStorage
+ * e agenda o backup automático via download.
  * @param {Function} modificationFn - A função que altera o appState.
  */
 function modifyStateAndBackup(modificationFn) {
-    modificationFn(); // Executa a modificação (ex: apagar modelo)
-    debouncedTriggerAutoBackup(); // Aciona o backup inteligente
+    modificationFn(); // Executa a modificação no estado (ex: apagar modelo)
+    saveStateToStorage(); // Salva o novo estado no LocalStorage
+    BackupManager.schedule(appState); // Agenda o backup automático via download
 }
 
 // --- FUNÇÃO AUXILIAR DE COR ---
@@ -133,7 +91,7 @@ function loadStateFromStorage() {
             models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
             tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }],
             activeTabId: defaultTabId,
-            lastBackupTimestamp: null // Prioridade 2: Inicializa a propriedade
+            lastBackupTimestamp: null
         };
     };
 
@@ -146,6 +104,9 @@ function loadStateFromStorage() {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
                 appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } });
+                if (!appState.hasOwnProperty('lastBackupTimestamp')) {
+                    appState.lastBackupTimestamp = null;
+                }
             } else { throw new Error("Formato de estado inválido."); }
         } catch (e) {
             console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
@@ -155,7 +116,6 @@ function loadStateFromStorage() {
         setDefaultState();
     }
     
-    // Prioridade 2: Atualiza o status de backup ao carregar a página
     if (appState.lastBackupTimestamp) {
         updateBackupStatus(new Date(appState.lastBackupTimestamp));
     } else {
@@ -189,7 +149,6 @@ function render() {
     renderModels(filterModels());
 }
 
-// ... (O resto das funções de renderização como renderTabs, renderModels, filterModels, etc. permanecem idênticas)
 function renderTabs() {
     const inactiveTabsContainer = document.getElementById('tabs-container');
     const activeTabContainer = document.getElementById('active-tab-container');
@@ -249,7 +208,6 @@ function renderTabs() {
         tabsContainer.style.borderBottomColor = '#ccc';
     }
 }
-
 
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
@@ -369,7 +327,7 @@ function filterModels() {
         );
     }
 }
-// --- FUNÇÕES DE MANIPULAÇÃO DE DADOS (AGORA USANDO modifyStateAndBackup) ---
+// --- FUNÇÕES DE MANIPULAÇÃO DE DADOS (USANDO modifyStateAndBackup) ---
 
 function addNewTab() {
     const name = prompt("Digite o nome da nova aba:");
@@ -512,9 +470,10 @@ function handleImportFile(event) {
                 appState = importedState;
                 render();
                 alert('Modelos importados com sucesso!');
-                const now = new Date(); // Prioridade 1: Atualiza status na importação
-                appState.lastBackupTimestamp = now.toISOString(); // Prioridade 2
-                updateBackupStatus(now); // Prioridade 1
+                const now = new Date();
+                appState.lastBackupTimestamp = now.toISOString();
+                updateBackupStatus(now);
+                saveStateToStorage();
             } else { throw new Error('Formato de arquivo inválido.'); }
         } catch (error) {
             alert('Erro ao importar o arquivo. Verifique se é um JSON válido.');
@@ -525,7 +484,7 @@ function handleImportFile(event) {
     reader.readAsText(file);
 }
 
-// ... (Funções do Modal e de Inicialização permanecem as mesmas)
+// --- FUNÇÕES DO MODAL ---
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
@@ -546,6 +505,7 @@ function closeModal() {
     currentOnSave = null;
 }
 
+// --- INICIALIZAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage();
     render();
