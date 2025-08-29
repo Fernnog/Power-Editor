@@ -14,6 +14,7 @@ const defaultModels = [
 const editor = document.getElementById('editor');
 const modelList = document.getElementById('model-list');
 const searchBox = document.getElementById('search-box');
+const tabsContainer = document.getElementById('tabs-container');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
 const addNewModelBtn = document.getElementById('add-new-model-btn');
 const indentBtn = document.getElementById('indent-btn');
@@ -37,10 +38,9 @@ const modalBtnCancel = document.getElementById('modal-btn-cancel');
 const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
 let currentOnSave = null;
 
-// --- LÓGICA DE BACKUP INTELIGENTE E MANIPULAÇÃO DE ESTADO ---
 
 /**
- * Atualiza o texto do status de backup na interface, usado no carregamento da página e importação.
+ * Atualiza o texto do status de backup na interface.
  * @param {Date | null} dateObject - O objeto Date do momento do backup ou null.
  */
 function updateBackupStatus(dateObject) {
@@ -58,15 +58,17 @@ function updateBackupStatus(dateObject) {
     }
 }
 
+
 /**
- * Função central que executa uma modificação no estado, salva no LocalStorage
- * e agenda o backup automático via download.
+ * Função central que executa uma modificação no estado e depois
+ * agenda um backup automático através do BackupManager.
  * @param {Function} modificationFn - A função que altera o appState.
  */
 function modifyStateAndBackup(modificationFn) {
-    modificationFn(); // Executa a modificação no estado (ex: apagar modelo)
-    saveStateToStorage(); // Salva o novo estado no LocalStorage
-    BackupManager.schedule(appState); // Agenda o backup automático via download
+    modificationFn(); // Executa a modificação (ex: apagar modelo)
+    appState.lastBackupTimestamp = new Date().toISOString(); // Atualiza o timestamp no estado
+    saveStateToStorage(); // Salva no LocalStorage imediatamente
+    BackupManager.schedule(appState); // Agenda o download do backup
 }
 
 // --- FUNÇÃO AUXILIAR DE COR ---
@@ -85,12 +87,11 @@ function loadStateFromStorage() {
     const savedState = localStorage.getItem('editorModelosApp');
     
     const setDefaultState = () => {
-        const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
-            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
-            tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }],
-            activeTabId: defaultTabId,
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: `tab-${Date.now()}`, isFavorite: false })),
+            tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: `tab-${Date.now()}`, name: 'Geral', color: getNextColor() }],
+            activeTabId: `tab-${Date.now()}`,
             lastBackupTimestamp: null
         };
     };
@@ -104,9 +105,6 @@ function loadStateFromStorage() {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
                 appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } });
-                if (!appState.hasOwnProperty('lastBackupTimestamp')) {
-                    appState.lastBackupTimestamp = null;
-                }
             } else { throw new Error("Formato de estado inválido."); }
         } catch (e) {
             console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
@@ -208,6 +206,7 @@ function renderTabs() {
         tabsContainer.style.borderBottomColor = '#ccc';
     }
 }
+
 
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
@@ -327,7 +326,7 @@ function filterModels() {
         );
     }
 }
-// --- FUNÇÕES DE MANIPULAÇÃO DE DADOS (USANDO modifyStateAndBackup) ---
+// --- FUNÇÕES DE MANIPULAÇÃO DE DADOS (AGORA USANDO modifyStateAndBackup) ---
 
 function addNewTab() {
     const name = prompt("Digite o nome da nova aba:");
@@ -468,12 +467,11 @@ function handleImportFile(event) {
             const importedState = JSON.parse(e.target.result);
             if (importedState.models && importedState.tabs && importedState.activeTabId) {
                 appState = importedState;
-                render();
-                alert('Modelos importados com sucesso!');
                 const now = new Date();
                 appState.lastBackupTimestamp = now.toISOString();
                 updateBackupStatus(now);
-                saveStateToStorage();
+                render();
+                alert('Modelos importados com sucesso!');
             } else { throw new Error('Formato de arquivo inválido.'); }
         } catch (error) {
             alert('Erro ao importar o arquivo. Verifique se é um JSON válido.');
@@ -484,7 +482,7 @@ function handleImportFile(event) {
     reader.readAsText(file);
 }
 
-// --- FUNÇÕES DO MODAL ---
+// ... (Funções do Modal e de Inicialização permanecem as mesmas)
 function openModal(config) {
     modalTitle.textContent = config.title;
     modalInputName.value = config.initialName || '';
@@ -505,7 +503,6 @@ function closeModal() {
     currentOnSave = null;
 }
 
-// --- INICIALIZAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage();
     render();
