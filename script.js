@@ -1,6 +1,8 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
+const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6'];
+let colorIndex = 0;
 
 const defaultModels = [
     { name: "IDPJ - Criação de Relatório de Sentença", content: "Este é o texto para a criação do relatório de sentença. Inclui seções sobre <b>fatos</b>, <i>fundamentos</i> e <u>dispositivo</u>." },
@@ -30,6 +32,13 @@ const modalBtnCancel = document.getElementById('modal-btn-cancel');
 const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
 let currentOnSave = null;
 
+// --- FUNÇÃO AUXILIAR DE COR ---
+function getNextColor() {
+    const color = TAB_COLORS[colorIndex % TAB_COLORS.length];
+    colorIndex++;
+    return color;
+}
+
 // --- FUNÇÕES DE PERSISTÊNCIA (LocalStorage) ---
 function saveStateToStorage() {
     localStorage.setItem('editorModelosApp', JSON.stringify(appState));
@@ -40,6 +49,7 @@ function loadStateFromStorage() {
     
     const setDefaultState = () => {
         const defaultTabId = `tab-${Date.now()}`;
+        colorIndex = 0;
         appState = {
             models: defaultModels.map((m, i) => ({
                 id: `model-${Date.now() + i}`,
@@ -49,8 +59,8 @@ function loadStateFromStorage() {
                 isFavorite: false
             })),
             tabs: [
-                { id: FAVORITES_TAB_ID, name: 'Favoritos' },
-                { id: defaultTabId, name: 'Geral' }
+                { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
+                { id: defaultTabId, name: 'Geral', color: getNextColor() }
             ],
             activeTabId: defaultTabId
         };
@@ -62,8 +72,13 @@ function loadStateFromStorage() {
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
-                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos' });
+                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
+                appState.tabs.forEach(tab => {
+                    if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
+                        tab.color = getNextColor();
+                    }
+                });
             } else {
                 throw new Error("Formato de estado inválido.");
             }
@@ -79,7 +94,6 @@ function loadStateFromStorage() {
         appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null;
     }
 }
-
 
 // --- FUNÇÕES DO EDITOR ---
 function execCmd(command) {
@@ -99,7 +113,7 @@ function indentFirstLine() {
         node = node.parentNode;
     }
     if (node && node.nodeName === 'P') {
-        node.style.textIndent = node.style.textIndent ? '' : '2em';
+        node.style.textIndent = node.style.textIndent ? '' : '3cm';
     }
     editor.focus();
 }
@@ -117,8 +131,13 @@ function renderTabs() {
         const tabEl = document.createElement('button');
         tabEl.className = 'tab-item';
         tabEl.dataset.tabId = tab.id;
+
         if (tab.id === appState.activeTabId) {
             tabEl.classList.add('active');
+        } else if (tab.color) {
+            tabEl.style.backgroundColor = tab.color;
+            tabEl.style.borderColor = tab.color;
+            tabEl.style.color = '#fff';
         }
 
         const tabName = document.createElement('span');
@@ -156,7 +175,17 @@ function renderModels(modelsToRender) {
         li.className = 'model-item';
         const nameSpan = document.createElement('span');
         nameSpan.className = 'model-name';
-        nameSpan.textContent = model.name;
+
+        const parentTab = appState.tabs.find(t => t.id === model.tabId);
+        if (parentTab && parentTab.color) {
+            const colorIndicator = document.createElement('span');
+            colorIndicator.className = 'model-color-indicator';
+            colorIndicator.style.backgroundColor = parentTab.color;
+            nameSpan.appendChild(colorIndicator);
+        }
+        
+        const textNode = document.createTextNode(model.name);
+        nameSpan.appendChild(textNode);
 
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'model-actions';
@@ -202,6 +231,14 @@ function renderModels(modelsToRender) {
     });
 }
 
+let debounceTimer;
+function debouncedFilter() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        renderModels(filterModels());
+    }, 250);
+}
+
 function filterModels() {
     const query = searchBox.value.toLowerCase();
     let modelsInScope;
@@ -223,7 +260,8 @@ function addNewTab() {
     if (name && name.trim()) {
         const newTab = {
             id: `tab-${Date.now()}`,
-            name: name.trim()
+            name: name.trim(),
+            color: getNextColor()
         };
         appState.tabs.push(newTab);
         appState.activeTabId = newTab.id;
@@ -443,7 +481,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-searchBox.addEventListener('input', () => renderModels(filterModels()));
+searchBox.addEventListener('input', debouncedFilter);
 addNewTabBtn.addEventListener('click', addNewTab);
 addNewModelBtn.addEventListener('click', addNewModelFromEditor);
 indentBtn.addEventListener('click', indentFirstLine);

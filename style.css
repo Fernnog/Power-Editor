@@ -79,27 +79,31 @@ body, html {
     border-radius: 4px;
 }
 
-/* --- ESTILOS DAS ABAS --- */
+/* --- ESTILOS DAS ABAS EM FORMATO FICHÁRIO --- */
 .tabs-container {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
     border-bottom: 1px solid #ccc;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .tab-item {
-    padding: 5px 12px;
+    padding: 8px 15px;
     border: 1px solid #aaa;
-    background-color: #f8f9fa;
-    border-radius: 15px;
+    background-color: #d1d5db;
+    border-radius: 8px 8px 0 0;
     cursor: pointer;
     font-size: 13px;
     transition: background-color 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     gap: 5px;
+    border-bottom: none;
+    margin-bottom: -1px;
+    position: relative;
+    top: 1px;
 }
 
 .tab-item:hover {
@@ -107,7 +111,7 @@ body, html {
 }
 
 .tab-item.active {
-    background-color: #ffc107;
+    background-color: #ffd580;
     color: #333;
     border-color: #daa520;
     font-weight: bold;
@@ -152,6 +156,18 @@ body, html {
     cursor: default;
     word-break: break-word;
     padding-right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.model-color-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.2);
+    flex-shrink: 0;
+    display: inline-block;
 }
 
 .model-actions {
@@ -161,15 +177,17 @@ body, html {
 }
 
 .action-btn {
-    background: none;
-    border: none;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 18px;
-    padding: 2px;
+    padding: 4px;
     line-height: 1;
+    transition: background-color 0.2s;
 }
 .action-btn:hover {
-    opacity: 0.7;
+    background-color: #ddd;
 }
 
 .sidebar-footer {
@@ -202,7 +220,6 @@ body, html {
 #add-new-tab-btn:hover {
     background-color: #5a6268;
 }
-
 
 /* --- ESTILOS DO MODAL --- */
 .modal-overlay {
@@ -287,7 +304,6 @@ body, html {
     margin-bottom: 15px;
 }
 
-
 .modal-buttons {
     display: flex;
     justify-content: flex-end;
@@ -323,7 +339,7 @@ body, html {
 .dictation-content {
     background-color: #fff;
     padding: 20px 30px;
-    border-radius: 50px; /* Formato de pílula horizontal */
+    border-radius: 50px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     display: flex;
     align-items: center;
@@ -341,7 +357,7 @@ body, html {
 #dictation-status {
     font-size: 16px;
     color: #555;
-    min-width: 250px; /* Evita que o layout pule */
+    min-width: 250px;
     text-align: center;
 }
 
