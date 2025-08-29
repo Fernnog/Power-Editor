@@ -1,61 +1,108 @@
-const BackupManager = (() => {
-    let debounceTimer = null;
-    const DEBOUNCE_DELAY = 2500; // 2.5 segundos de inatividade antes de salvar
+const EditorActions = (() => {
+    // Referência privada ao editor, mantendo o módulo autônomo.
+    const editor = document.getElementById('editor');
 
     /**
-     * Aciona o download do backup e atualiza o status na tela.
-     * @param {object} state O objeto de estado atual da aplicação (appState).
+     * Aplica formatação padrão (recuo e espaçamento) ao documento no editor.
+     * Percorre os elementos de primeiro nível para aplicar as regras.
      */
-    function triggerAutoBackup(state) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
+    function formatDocument() {
+        if (!editor) return;
         
-        const timestamp = `${year}${month}${day}_${hours}${minutes}`;
-        const filename = `${timestamp}_Modelos dos meus documentos.JSON`;
+        const elements = editor.querySelectorAll(':scope > *'); // Seleciona apenas filhos diretos
+        elements.forEach(el => {
+            // Aplica espaçamento 1.5 a todos os blocos
+            el.style.lineHeight = '1.5';
+    
+            // Aplica recuo a parágrafos e remove dos outros elementos
+            if (el.tagName === 'P') {
+                el.style.textIndent = '3cm';
+            } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+                // Para listas, usamos margin para indentar o bloco todo
+                el.style.marginLeft = '3cm';
+                el.style.textIndent = ''; // Garante que não haja recuo de primeira linha em listas
+            } else {
+                el.style.textIndent = '';
+            }
+        });
+        editor.focus();
+        alert('Documento formatado com sucesso!');
+    }
 
-        // Atualiza o timestamp no estado antes de salvar
-        state.lastBackupTimestamp = now.toISOString();
+    /**
+     * Alterna o recuo da primeira linha do parágrafo atual.
+     */
+    function indentFirstLine() {
+        if (!editor) return;
 
-        const dataStr = JSON.stringify(state, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        // Atualiza o status visual na tela
-        const backupStatusEl = document.getElementById('backup-status');
-        if (backupStatusEl) {
-            backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`;
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        let node = selection.getRangeAt(0).startContainer;
+
+        // Sobe na árvore DOM até encontrar um parágrafo (P) ou o próprio editor
+        while (node && node.nodeName !== 'P' && node !== editor) {
+            node = node.parentNode;
         }
-        console.log(`Backup automático realizado: ${filename}`);
+
+        // Se encontrou um parágrafo, alterna o recuo
+        if (node && node.nodeName === 'P') {
+            node.style.textIndent = node.style.textIndent ? '' : '3cm';
+        }
+        editor.focus();
     }
 
     /**
-     * Agenda a execução do backup automático após um período de inatividade.
-     * @param {object} state O objeto de estado atual da aplicação (appState).
+     * Limpa todo o conteúdo do editor, com uma confirmação prévia.
      */
-    function schedule(state) {
-        // Cancela qualquer backup agendado anteriormente
-        clearTimeout(debounceTimer);
+    function clearDocument() {
+        if (!editor) return;
 
-        // Agenda um novo backup
-        debounceTimer = setTimeout(() => {
-            triggerAutoBackup(state);
-        }, DEBOUNCE_DELAY);
+        if (confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
+            editor.innerHTML = '<p><br></p>';
+            editor.focus();
+        }
     }
 
-    // Expõe publicamente apenas a função de agendamento
+    /**
+     * Aplica ou remove a formatação de citação (blockquote) no parágrafo atual.
+     * Funciona como um interruptor (toggle).
+     */
+    function formatAsBlockquote() {
+        if (!editor) return;
+
+        // 1. Obter a seleção atual do usuário
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        let node = selection.getRangeAt(0).startContainer;
+        let inBlockquote = false;
+
+        // 2. Verificar se a seleção atual já está dentro de um elemento <blockquote>
+        // Para isso, subimos na árvore de elementos a partir do cursor.
+        while (node && node !== editor) {
+            if (node.nodeName === 'BLOCKQUOTE') {
+                inBlockquote = true;
+                break;
+            }
+            node = node.parentNode;
+        }
+
+        // 3. Executar o comando apropriado com base no estado encontrado
+        if (inBlockquote) {
+            // Se já for uma citação, o comando 'formatBlock' com 'p' reverte para um parágrafo normal.
+            document.execCommand('formatBlock', false, 'p');
+        } else {
+            // Caso contrário, aplica a formatação de citação como antes.
+            document.execCommand('formatBlock', false, 'blockquote');
+        }
+
+        editor.focus();
+    }
+
+    // Expõe as funções publicamente para serem chamadas a partir de script.js
     return {
-        schedule
+        formatDocument,
+        indentFirstLine,
+        clearDocument,
+        formatAsBlockquote
     };
 })();
