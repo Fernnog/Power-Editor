@@ -101,7 +101,12 @@ function execCmd(command) {
     document.execCommand(command, false, null);
 }
 
-function insertModelContent(content) {
+function insertModelContent(content, tabId) {
+    if (searchBox.value && tabId && appState.activeTabId !== tabId) {
+        appState.activeTabId = tabId;
+        searchBox.value = '';
+        render();
+    }
     editor.focus();
     document.execCommand('insertHTML', false, content);
 }
@@ -170,10 +175,6 @@ function renderTabs() {
         const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
         if (activeTab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
             const closeBtn = document.createElement('span');
-            // ==========================================================
-            //  PEQUENA ALTERAÇÃO AQUI
-            //  Removemos 'action-btn' para o novo estilo funcionar.
-            // ==========================================================
             closeBtn.className = 'close-tab-btn';
             closeBtn.innerHTML = '&times;';
             closeBtn.title = 'Excluir aba';
@@ -221,7 +222,7 @@ function renderModels(modelsToRender) {
         addButton.className = 'action-btn';
         addButton.innerHTML = '➕';
         addButton.title = 'Inserir modelo';
-        addButton.onclick = () => insertModelContent(model.content);
+        addButton.onclick = () => insertModelContent(model.content, model.tabId);
 
         const editButton = document.createElement('button');
         editButton.className = 'action-btn';
@@ -277,17 +278,26 @@ function debouncedFilter() {
 
 function filterModels() {
     const query = searchBox.value.toLowerCase();
-    let modelsInScope;
+    const activeContentArea = document.getElementById('active-content-area');
 
-    if (appState.activeTabId === FAVORITES_TAB_ID) {
-        modelsInScope = appState.models.filter(m => m.isFavorite);
+    if (query) {
+        activeContentArea.classList.add('searching');
     } else {
-        modelsInScope = appState.models.filter(m => m.tabId === appState.activeTabId);
+        activeContentArea.classList.remove('searching');
     }
     
-    if (!query) return modelsInScope;
+    if (query) {
+        return appState.models.filter(model =>
+            model.name.toLowerCase().includes(query) ||
+            model.content.toLowerCase().includes(query)
+        );
+    }
     
-    return modelsInScope.filter(model => model.name.toLowerCase().includes(query));
+    if (appState.activeTabId === FAVORITES_TAB_ID) {
+        return appState.models.filter(m => m.isFavorite);
+    } else {
+        return appState.models.filter(m => m.tabId === appState.activeTabId);
+    }
 }
 
 function addNewTab() {
@@ -336,7 +346,7 @@ function deleteTab(tabId) {
 
 function addNewModelFromEditor() {
     const content = editor.innerHTML.trim();
-    if (content === '' || content === '<p>Comece a escrever seu texto aqui...</p>' || content === '<p><br></p>') {
+    if (content === '' || content === '<p><br></p>') {
         alert('O editor está vazio. Escreva algo para salvar como modelo.');
         return;
     }
