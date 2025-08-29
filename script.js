@@ -5,6 +5,10 @@ const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD
 const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 const ICON_PALETTE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
 const ICON_PENCIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+const ICON_STAR_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+const ICON_STAR_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 let colorIndex = 0;
 let backupDebounceTimer;
 
@@ -194,7 +198,66 @@ function renderTabs() {
 }
 
 
-function renderModels(modelsToRender) { modelList.innerHTML = ''; modelsToRender.forEach(model => { const li = document.createElement('li'); li.className = 'model-item'; const headerDiv = document.createElement('div'); headerDiv.className = 'model-header'; const nameSpan = document.createElement('span'); nameSpan.className = 'model-name'; const colorIndicator = document.createElement('span'); colorIndicator.className = 'model-color-indicator'; const parentTab = appState.tabs.find(t => t.id === model.tabId); colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc'; nameSpan.appendChild(colorIndicator); const textNode = document.createTextNode(" " + model.name); nameSpan.appendChild(textNode); headerDiv.appendChild(nameSpan); const actionsDiv = document.createElement('div'); actionsDiv.className = 'model-actions'; const addButton = document.createElement('button'); addButton.className = 'action-btn'; addButton.innerHTML = '➕'; addButton.title = 'Inserir modelo'; addButton.onclick = () => insertModelContent(model.content, model.tabId); const editButton = document.createElement('button'); editButton.className = 'action-btn'; editButton.innerHTML = '✏️'; editButton.title = 'Editar modelo'; editButton.onclick = () => editModel(model.id); const deleteButton = document.createElement('button'); deleteButton.className = 'action-btn'; deleteButton.innerHTML = '🗑️'; deleteButton.title = 'Excluir modelo'; deleteButton.onclick = () => deleteModel(model.id); const moveButton = document.createElement('button'); moveButton.className = 'action-btn'; moveButton.innerHTML = '➡️'; moveButton.title = 'Mover para outra aba'; moveButton.onclick = () => moveModelToAnotherTab(model.id); const favoriteButton = document.createElement('button'); favoriteButton.className = 'action-btn'; favoriteButton.innerHTML = model.isFavorite ? '🌟' : '⭐'; favoriteButton.title = 'Favoritar/Desfavoritar'; favoriteButton.onclick = () => toggleFavorite(model.id); if (model.isFavorite) { const favIcon = document.createElement('span'); favIcon.innerHTML = '⭐'; favIcon.style.marginLeft = 'auto'; favIcon.style.paddingLeft = '10px'; headerDiv.appendChild(favIcon); } actionsDiv.appendChild(addButton); actionsDiv.appendChild(editButton); actionsDiv.appendChild(moveButton); actionsDiv.appendChild(deleteButton); actionsDiv.appendChild(favoriteButton); li.appendChild(headerDiv); li.appendChild(actionsDiv); modelList.appendChild(li); }); }
+function renderModels(modelsToRender) {
+    modelList.innerHTML = '';
+    modelsToRender.forEach(model => {
+        const li = document.createElement('li');
+        li.className = 'model-item';
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'model-header';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'model-name';
+        const colorIndicator = document.createElement('span');
+        colorIndicator.className = 'model-color-indicator';
+        const parentTab = appState.tabs.find(t => t.id === model.tabId);
+        colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
+        nameSpan.appendChild(colorIndicator);
+        const textNode = document.createTextNode(" " + model.name);
+        nameSpan.appendChild(textNode);
+        headerDiv.appendChild(nameSpan);
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'model-actions';
+        
+        const addButton = document.createElement('button');
+        addButton.className = 'action-btn';
+        addButton.innerHTML = ICON_PLUS;
+        addButton.title = 'Inserir modelo';
+        addButton.onclick = () => insertModelContent(model.content, model.tabId);
+        
+        const editButton = document.createElement('button');
+        editButton.className = 'action-btn';
+        editButton.innerHTML = ICON_PENCIL;
+        editButton.title = 'Editar modelo';
+        editButton.onclick = () => editModel(model.id);
+        
+        const moveButton = document.createElement('button');
+        moveButton.className = 'action-btn';
+        moveButton.innerHTML = ICON_MOVE;
+        moveButton.title = 'Mover para outra aba';
+        moveButton.onclick = () => moveModelToAnotherTab(model.id);
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'action-btn';
+        deleteButton.innerHTML = ICON_TRASH;
+        deleteButton.title = 'Excluir modelo';
+        deleteButton.onclick = () => deleteModel(model.id);
+        
+        const favoriteButton = document.createElement('button');
+        favoriteButton.className = 'action-btn';
+        favoriteButton.innerHTML = model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE;
+        favoriteButton.title = model.isFavorite ? 'Desfavoritar' : 'Favoritar';
+        favoriteButton.onclick = () => toggleFavorite(model.id);
+
+        actionsDiv.appendChild(addButton);
+        actionsDiv.appendChild(editButton);
+        actionsDiv.appendChild(moveButton);
+        actionsDiv.appendChild(deleteButton);
+        actionsDiv.appendChild(favoriteButton);
+        li.appendChild(headerDiv);
+        li.appendChild(actionsDiv);
+        modelList.appendChild(li);
+    });
+}
 let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
 function filterModels() { const query = searchBox.value.toLowerCase().trim(); const activeContentArea = document.getElementById('active-content-area'); activeContentArea.style.borderColor = appState.tabs.find(t=>t.id === appState.activeTabId)?.color || '#ccc'; if (query) { activeContentArea.style.borderColor = '#aaa'; } if (!query) { if (appState.activeTabId === FAVORITES_TAB_ID) { return appState.models.filter(m => m.isFavorite); } else { return appState.models.filter(m => m.tabId === appState.activeTabId); } } const models = appState.models; if (query.includes(' ou ')) { const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.some(term => modelText.includes(term)); }); } else if (query.includes(' e ')) { const terms = query.split(' e ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.every(term => modelText.includes(term)); }); } else { return models.filter(model => model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query) ); } }
