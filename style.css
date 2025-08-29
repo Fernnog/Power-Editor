@@ -114,13 +114,13 @@ body, html {
     filter: brightness(1.1);
 }
 
+/* ALTERAÇÃO PRINCIPAL AQUI */
 .tab-item.active {
-    background-color: white; /* Fundo branco para se destacar */
-    color: #333;
-    border-color: #ccc; /* Borda da cor da área de conteúdo */
-    border-bottom: 1px solid white; /* Truque para se fundir com a área de conteúdo */
+    /* O fundo agora é definido pelo JS, mantendo a cor original da aba. */
+    color: white; /* Garante que o texto seja legível sobre fundos coloridos. */
     font-weight: bold;
     z-index: 2;
+    /* A borda inferior é removida pela regra base '.tab-item' para criar o efeito de conexão. */
 }
 
 .close-tab-btn {
@@ -135,9 +135,14 @@ body, html {
 .tab-item:not(.active) .close-tab-btn {
     color: rgba(255,255,255,0.7);
 }
-.tab-item:not(.active):hover .close-tab-btn {
+.tab-item .close-tab-btn {
+    /* Torna o 'x' branco na aba ativa também */
+    color: rgba(255,255,255,0.8);
+}
+.tab-item:hover .close-tab-btn {
     color: white;
 }
+
 
 #model-list {
     list-style-type: none;
