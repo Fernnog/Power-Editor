@@ -21,6 +21,11 @@ const indentBtn = document.getElementById('indent-btn');
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
 const importFileInput = document.getElementById('import-file-input');
+const searchBtn = document.getElementById('search-btn');
+const clearSearchBtn = document.getElementById('clear-search-btn');
+const formatDocBtn = document.getElementById('format-doc-btn');
+const clearDocBtn = document.getElementById('clear-doc-btn');
+
 
 // --- REFERÊNCIAS DO MODAL ---
 const modalContainer = document.getElementById('modal-container');
@@ -109,19 +114,6 @@ function insertModelContent(content, tabId) {
     }
     editor.focus();
     document.execCommand('insertHTML', false, content);
-}
-
-function indentFirstLine() {
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-    let node = selection.getRangeAt(0).startContainer;
-    while (node && node.nodeName !== 'P' && node !== editor) {
-        node = node.parentNode;
-    }
-    if (node && node.nodeName === 'P') {
-        node.style.textIndent = node.style.textIndent ? '' : '3cm';
-    }
-    editor.focus();
 }
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
@@ -277,26 +269,39 @@ function debouncedFilter() {
 }
 
 function filterModels() {
-    const query = searchBox.value.toLowerCase();
+    const query = searchBox.value.toLowerCase().trim();
     const activeContentArea = document.getElementById('active-content-area');
 
-    if (query) {
-        activeContentArea.classList.add('searching');
-    } else {
-        activeContentArea.classList.remove('searching');
+    activeContentArea.classList.toggle('searching', !!query);
+
+    if (!query) {
+        if (appState.activeTabId === FAVORITES_TAB_ID) {
+            return appState.models.filter(m => m.isFavorite);
+        } else {
+            return appState.models.filter(m => m.tabId === appState.activeTabId);
+        }
     }
-    
-    if (query) {
-        return appState.models.filter(model =>
+
+    // Lógica de busca avançada
+    const models = appState.models;
+    if (query.includes(' ou ')) {
+        const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
+        return models.filter(model => {
+            const modelText = (model.name + ' ' + model.content).toLowerCase();
+            return terms.some(term => modelText.includes(term));
+        });
+    } else if (query.includes(' e ')) {
+        const terms = query.split(' e ').map(t => t.trim()).filter(Boolean);
+        return models.filter(model => {
+            const modelText = (model.name + ' ' + model.content).toLowerCase();
+            return terms.every(term => modelText.includes(term));
+        });
+    } else {
+        // Fallback para busca simples
+        return models.filter(model =>
             model.name.toLowerCase().includes(query) ||
             model.content.toLowerCase().includes(query)
         );
-    }
-    
-    if (appState.activeTabId === FAVORITES_TAB_ID) {
-        return appState.models.filter(m => m.isFavorite);
-    } else {
-        return appState.models.filter(m => m.tabId === appState.activeTabId);
     }
 }
 
@@ -522,13 +527,35 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// --- EVENT LISTENERS ---
 searchBox.addEventListener('input', debouncedFilter);
+
+searchBox.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Impede o comportamento padrão (ex: submeter formulário)
+        renderModels(filterModels());
+    }
+});
+
 addNewTabBtn.addEventListener('click', addNewTab);
 addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-indentBtn.addEventListener('click', indentFirstLine);
+indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+
+searchBtn.addEventListener('click', () => {
+    renderModels(filterModels());
+});
+
+clearSearchBtn.addEventListener('click', () => {
+    searchBox.value = '';
+    renderModels(filterModels());
+});
+
 exportBtn.addEventListener('click', exportModels);
 importBtn.addEventListener('click', () => importFileInput.click());
 importFileInput.addEventListener('change', handleImportFile);
+
 modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
 modalBtnCancel.addEventListener('click', closeModal);
 modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
