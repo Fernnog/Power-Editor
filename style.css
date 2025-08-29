@@ -439,6 +439,10 @@ body, html {
     transition: border-color 0.3s;
 }
 
+.active-content-area.searching {
+    border-color: #aaa !important; /* Cor neutra para a borda durante a busca */
+}
+
 .active-tab-container {
     padding: 0 5px;
     background-color: #e9ecef;
