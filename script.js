@@ -163,6 +163,16 @@ function renderTabs() {
         const activeTabEl = document.createElement('button');
         activeTabEl.className = 'tab-item active';
         activeTabEl.dataset.tabId = activeTab.id;
+
+        // ==========================================================
+        //  CORREÇÃO APLICADA AQUI
+        //  Este bloco garante que a aba ativa tenha sua cor.
+        // ==========================================================
+        if (activeTab.color) {
+            activeTabEl.style.backgroundColor = activeTab.color;
+            activeTabEl.style.borderColor = activeTab.color;
+        }
+        
         activeTabEl.textContent = activeTab.name + (activeTab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
         
         // Adiciona botão de fechar apenas se não for a aba de Favoritos e houver mais de uma aba regular
@@ -186,6 +196,7 @@ function renderTabs() {
         tabsContainer.style.borderBottomColor = '#ccc';
     }
 }
+
 
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
@@ -433,7 +444,7 @@ function exportModels() {
     a.href = url;
     a.download = 'modelos_backup.json';
     document.body.appendChild(a);
-    a.click();
+a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
