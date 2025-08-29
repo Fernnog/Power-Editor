@@ -74,6 +74,7 @@ function loadStateFromStorage() {
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
+                // Garante que abas antigas sem cor recebam uma
                 appState.tabs.forEach(tab => {
                     if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
                         tab.color = getNextColor();
@@ -137,7 +138,6 @@ function renderTabs() {
         } else if (tab.color) {
             tabEl.style.backgroundColor = tab.color;
             tabEl.style.borderColor = tab.color;
-            tabEl.style.color = '#fff';
         }
 
         const tabName = document.createElement('span');
@@ -464,7 +464,7 @@ window.addEventListener('DOMContentLoaded', () => {
             langSelect: document.getElementById('dictation-lang-select'),
             statusDisplay: document.getElementById('dictation-status'),
             onResult: (transcript) => {
-                insertModelContent(transcript + ' ');
+                insertModelContent(transcript);
             }
         });
 

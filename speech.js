@@ -33,10 +33,18 @@ const SpeechDictation = (() => {
         setupListeners();
     };
     
+    function processVoiceCommands(transcript) {
+        return transcript
+            .replace(/\bvírgula\b/gi, ',')
+            .replace(/\bponto\b/gi, '.')
+            .replace(/\bnova linha\b/gi, '<br>');
+    }
+
     const setupListeners = () => {
         ui.micIcon.addEventListener('click', toggle);
 
         recognition.onresult = (event) => {
+            ui.micIcon.classList.remove('processing');
             let transcript = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
@@ -44,7 +52,8 @@ const SpeechDictation = (() => {
                 }
             }
             if (transcript && typeof onResultCallback === 'function') {
-                onResultCallback(transcript);
+                const processedTranscript = processVoiceCommands(transcript.trim());
+                onResultCallback(processedTranscript + ' ');
             }
         };
 
@@ -55,8 +64,14 @@ const SpeechDictation = (() => {
 
         recognition.onend = () => {
             isListening = false;
-            ui.micIcon.classList.remove('listening');
+            ui.micIcon.classList.remove('listening', 'processing');
             updateStatus('Clique no microfone para recomeçar');
+        };
+
+        recognition.onspeechend = () => {
+            stop();
+            ui.micIcon.classList.add('processing');
+            updateStatus('Processando...');
         };
     };
 
@@ -66,6 +81,7 @@ const SpeechDictation = (() => {
             recognition.lang = ui.langSelect.value;
             recognition.start();
             isListening = true;
+            ui.micIcon.classList.remove('processing');
             ui.micIcon.classList.add('listening');
             updateStatus('Ouvindo... Fale agora.');
         } catch (error) {
@@ -77,6 +93,8 @@ const SpeechDictation = (() => {
     const stop = () => {
         if (!isListening || !recognition) return;
         recognition.stop();
+        isListening = false;
+        ui.micIcon.classList.remove('listening');
     };
 
     const toggle = () => {

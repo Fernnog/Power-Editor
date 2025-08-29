@@ -106,48 +106,63 @@ body, html {
     top: 1px;
 }
 
+.tab-item:not(.active) {
+    color: white;
+}
+
 .tab-item:hover {
-    background-color: #e2e6ea;
+    filter: brightness(1.1);
 }
 
 .tab-item.active {
-    background-color: #ffd580;
+    background-color: #fff;
     color: #333;
-    border-color: #daa520;
+    border-color: #ccc;
     font-weight: bold;
+    border-bottom: 1px solid #fff;
 }
 
 .close-tab-btn {
     font-size: 16px;
     font-weight: bold;
-    color: #888;
+    color: rgba(0,0,0,0.3);
     line-height: 1;
 }
 .close-tab-btn:hover {
     color: #333;
 }
+.tab-item:not(.active) .close-tab-btn {
+    color: rgba(255,255,255,0.7);
+}
+.tab-item:not(.active):hover .close-tab-btn {
+    color: white;
+}
 
 #model-list {
     list-style-type: none;
-    padding: 0;
+    padding: 10px;
     margin: 0;
     overflow-y: auto;
     flex-grow: 1;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-top: none;
 }
 
 .model-item {
-    background-color: #ffd580;
-    border: 1px solid #daa520;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
     border-radius: 5px;
     padding: 12px;
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, box-shadow 0.2s;
 }
 .model-item:hover {
-    background-color: #ffca60;
+    background-color: #f1f3f5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .model-item .model-name {
@@ -374,7 +389,11 @@ body, html {
 }
 
 .mic-icon.listening {
-    animation: pulse 1.5s infinite;
+    animation: pulse-red 1.5s infinite;
+}
+
+.mic-icon.processing {
+    animation: pulse-blue 1.5s infinite;
 }
 
 #dictation-close-btn {
@@ -393,8 +412,14 @@ body, html {
     font-weight: bold;
 }
 
-@keyframes pulse {
+@keyframes pulse-red {
     0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
     70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
     100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+@keyframes pulse-blue {
+    0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(0, 123, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
 }
