@@ -1,7 +1,7 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
-const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6'];
+const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C'];
 let colorIndex = 0;
 
 const defaultModels = [
@@ -127,12 +127,18 @@ function render() {
 }
 
 function renderTabs() {
-    tabsContainer.innerHTML = '';
+    // Referências aos containers
+    const inactiveTabsContainer = document.getElementById('tabs-container');
     const activeTabContainer = document.getElementById('active-tab-container');
+    const activeContentArea = document.getElementById('active-content-area');
+    
+    // Limpa os containers
+    inactiveTabsContainer.innerHTML = '';
     activeTabContainer.innerHTML = '';
 
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
 
+    // Renderiza as abas inativas
     appState.tabs.forEach(tab => {
         if (tab.id === appState.activeTabId) return; // Pula a aba ativa aqui
 
@@ -149,15 +155,17 @@ function renderTabs() {
             searchBox.value = '';
             render();
         });
-        tabsContainer.appendChild(tabEl);
+        inactiveTabsContainer.appendChild(tabEl);
     });
     
+    // Renderiza a aba ativa e colore a área de conteúdo
     if (activeTab) {
         const activeTabEl = document.createElement('button');
         activeTabEl.className = 'tab-item active';
         activeTabEl.dataset.tabId = activeTab.id;
         activeTabEl.textContent = activeTab.name + (activeTab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
         
+        // Adiciona botão de fechar apenas se não for a aba de Favoritos e houver mais de uma aba regular
         const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
         if (activeTab.id !== FAVORITES_TAB_ID && regularTabsCount > 1) {
             const closeBtn = document.createElement('span');
@@ -169,12 +177,15 @@ function renderTabs() {
         }
         activeTabContainer.appendChild(activeTabEl);
 
-        // Aplica a cor da aba ativa na área de conteúdo
-        const activeContentArea = document.getElementById('active-content-area');
+        // Aplica a cor da aba ativa na borda da área de conteúdo
         activeContentArea.style.borderColor = activeTab.color || '#ccc';
+        tabsContainer.style.borderBottomColor = activeTab.color || '#ccc';
+    } else {
+        // Fallback caso nenhuma aba esteja ativa
+        activeContentArea.style.borderColor = '#ccc';
+        tabsContainer.style.borderBottomColor = '#ccc';
     }
 }
-
 
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
@@ -483,7 +494,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const dictationModal = document.getElementById('dictation-modal');
     const dictationCloseBtn = document.getElementById('dictation-close-btn');
     
-    if (SpeechDictation.isSupported()) {
+    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
         SpeechDictation.init({
             micIcon: document.getElementById('dictation-mic-icon'),
             langSelect: document.getElementById('dictation-lang-select'),

@@ -84,7 +84,7 @@ body, html {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 2px solid #ccc; /* Borda que combina com a da área ativa */
     margin-bottom: 0;
     padding-bottom: 0;
 }
@@ -101,7 +101,7 @@ body, html {
     align-items: center;
     gap: 5px;
     border-bottom: none;
-    margin-bottom: -1px;
+    margin-bottom: -2px; /* Sobe a aba para cobrir a borda inferior */
     position: relative;
     top: 1px;
 }
@@ -115,20 +115,22 @@ body, html {
 }
 
 .tab-item.active {
-    background-color: #ffd580;
+    background-color: white; /* Fundo branco para se destacar */
     color: #333;
-    border-color: #daa520;
+    border-color: #ccc; /* Borda da cor da área de conteúdo */
+    border-bottom: 1px solid white; /* Truque para se fundir com a área de conteúdo */
     font-weight: bold;
+    z-index: 2;
 }
 
 .close-tab-btn {
     font-size: 16px;
     font-weight: bold;
-    color: #888; /* AJUSTADO */
+    color: #333; /* Cor escura */
     line-height: 1;
 }
 .close-tab-btn:hover {
-    color: #333;
+    color: #dc3545; /* Vermelho no hover para indicar perigo */
 }
 .tab-item:not(.active) .close-tab-btn {
     color: rgba(255,255,255,0.7);
@@ -139,15 +141,15 @@ body, html {
 
 #model-list {
     list-style-type: none;
-    padding: 0;
+    padding: 10px; /* Adiciona padding interno */
     margin: 0;
     overflow-y: auto;
     flex-grow: 1;
 }
 
 .model-item {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background-color: #ffd580; /* Cor laranja solicitada */
+    border: 1px solid #daa520; /* Borda correspondente */
     border-radius: 5px;
     padding: 8px 12px;
     margin-bottom: 10px;
@@ -157,8 +159,9 @@ body, html {
     transition: background-color 0.2s;
 }
 .model-item:hover {
-    background-color: #e9ecef;
+    background-color: #ffc75f; /* Laranja um pouco mais claro no hover */
 }
+
 
 .model-item .model-name {
     font-weight: bold;
@@ -187,7 +190,7 @@ body, html {
     flex-shrink: 0;
     justify-content: flex-start;
     padding-top: 5px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #f9e0a8; /* Borda mais clara */
 }
 
 .action-btn {
@@ -426,22 +429,30 @@ body, html {
 /* NOVAS REGRAS ADICIONADAS */
 .active-content-area {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse; /* Inverte a ordem para a aba ficar embaixo */
     flex-grow: 1;
-    margin-top: 15px;
-    border-radius: 5px;
+    margin-top: 0;
+    border-radius: 0 5px 5px 5px;
     overflow: hidden;
-    border: 1px solid #ccc;
-}
-
-#model-list {
+    border: 2px solid #ccc;
     background-color: #fff;
-    border-bottom: 1px solid #ccc;
+    transition: border-color 0.3s;
 }
 
 .active-tab-container {
-    padding: 5px;
+    padding: 0 5px;
     background-color: #e9ecef;
+    border-top: 1px solid #ccc;
+    flex-shrink: 0; /* Impede que o container da aba encolha */
+}
+
+.active-tab-container .tab-item.active {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    top: 1px;
 }
 
 .model-header {
