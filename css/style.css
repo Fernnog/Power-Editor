@@ -30,6 +30,7 @@ body, html {
     border-bottom: none;
     display: flex;
     flex-wrap: wrap;
+    align-items: center; /* Alinha verticalmente os itens da toolbar */
 }
 
 .toolbar button, .toolbar select {
@@ -308,4 +309,12 @@ body, html {
 .color-swatch:hover {
     transform: scale(1.15);
     box-shadow: 0 0 0 2px #adb5bd;
+}
+
+/* ADIÇÃO PARA O LOGOTIPO */
+#toolbar-logo {
+    max-height: 24px;
+    width: auto;
+    margin-right: 15px;
+    vertical-align: middle;
 }
