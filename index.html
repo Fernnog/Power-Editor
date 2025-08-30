@@ -29,6 +29,7 @@
                 </select>
                 <button id="indent-btn" title="Recuo da Primeira Linha">Recuo</button>
                 <button id="dictate-btn" title="Ditar texto">🎤</button>
+                <button id="replace-btn" title="Substituir Termos">A→B</button>
                 <div id="backup-status" class="backup-status">Nenhum backup recente.</div>
             </div>
             <div id="editor" class="text-editor" contenteditable="true">
@@ -90,6 +91,31 @@
             <div class="modal-buttons">
                 <button id="modal-btn-save">Salvar</button>
                 <button id="modal-btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estrutura do Modal de Substituição de Termos (Inicialmente Oculta) -->
+    <div id="replace-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Gerenciador de Substituições</h3>
+            
+            <label>Adicionar Nova Substituição:</label>
+            <div class="replace-form">
+                <input type="text" id="replace-find-input" placeholder="Localizar...">
+                <span>→</span>
+                <input type="text" id="replace-with-input" placeholder="Substituir por...">
+                <button id="replace-add-btn">Adicionar</button>
+            </div>
+
+            <label>Substituições Salvas:</label>
+            <ul id="replace-list" class="replace-list-container">
+                <!-- Itens de substituição serão preenchidos pelo JavaScript -->
+            </ul>
+
+            <div class="modal-buttons">
+                <button id="replace-apply-all-btn">Aplicar Todas</button>
+                <button id="replace-modal-close-btn">Fechar</button>
             </div>
         </div>
     </div>
