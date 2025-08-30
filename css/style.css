@@ -110,7 +110,7 @@ body, html {
     transition: all 0.25s ease-in-out;
     position: relative;
     /* Variavel para cor dinâmica */
-    --tab-color: #6c757d;
+    --tab-color: #6c757d; 
 }
 
 /* Aba ativa: no topo, destacada, com sombra e borda grossa */
@@ -201,21 +201,27 @@ body, html {
 .control-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .control-btn { padding: 10px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 13px; transition: filter 0.2s; }
 .control-btn:hover { filter: brightness(0.95); }
-.control-btn.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color-dark);
+
+/* --- ALTERAÇÃO SOLICITADA --- */
+.control-btn.btn-primary { 
+    background-color: var(--primary-color); 
+    color: white; 
+    border-color: var(--primary-color-dark); 
 }
+
 .control-btn.btn-secondary { background-color: #f0f0f0; color: #333; border-color: #ccc; }
-.backup-status {
-    margin-left: auto;
-    padding: 5px 10px;
-    font-size: 12px;
-    color: #ffffff;
-    background-color: var(--primary-color);
-    border-radius: 4px;
-    align-self: center;
+
+/* --- ALTERAÇÃO SOLICITADA --- */
+.backup-status { 
+    margin-left: auto; 
+    padding: 5px 10px; 
+    font-size: 12px; 
+    color: #ffffff; 
+    background-color: var(--primary-color); 
+    border-radius: 4px; 
+    align-self: center; 
 }
+
 .text-editor ol { list-style: none; counter-reset: list-counter; margin-left: 3cm; padding-left: 0; }
 .text-editor ol > li { counter-increment: list-counter; position: relative; padding-left: 1.5em; margin-bottom: 0.5em; text-indent: 0; }
 .text-editor ol > li::before { content: counter(list-counter) "."; position: absolute; left: -1.5em; top: 0; width: 1.2em; text-align: right; font-weight: bold; }
@@ -283,7 +289,7 @@ body, html {
 .action-btn svg,
 .tab-action-btn svg {
     stroke-width: 2;
-    color: var(--primary-color); /* --- ALTERAÇÃO SOLICITADA --- */
+    color: #495057;
 }
 
 /* Tamanhos específicos para ícones SVG */
@@ -328,9 +334,9 @@ body, html {
     box-shadow: 0 0 0 2px #adb5bd;
 }
 
-/* ADIÇÃO PARA O LOGOTIPO */
+/* --- ALTERAÇÃO SOLICITADA --- */
 #toolbar-logo {
-    max-height: 30px;
+    max-height: 30px; /* Aumentado de 24px para 30px */
     width: auto;
     margin-right: 15px;
     vertical-align: middle;
