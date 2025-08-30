@@ -341,3 +341,25 @@ body, html {
     margin-right: 15px;
     vertical-align: middle;
 }
+
+/* Animação para o spinner de carregamento */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Animação para o texto sendo processado */
+@keyframes pulse-yellow {
+    0% { background-color: rgba(255, 229, 100, 0.7); }
+    50% { background-color: rgba(255, 229, 100, 0.4); }
+    100% { background-color: rgba(255, 229, 100, 0.7); }
+}
+
+.ia-processing {
+    animation: pulse-yellow 1.5s infinite;
+    border-radius: 3px;
+}
