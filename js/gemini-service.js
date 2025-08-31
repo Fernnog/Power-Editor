@@ -11,7 +11,7 @@ const GeminiService = (() => {
      */
     async function correctText(textToCorrect, apiKey) {
         // Instrução clara para a IA
-        const prompt = `Corrija o seguinte texto, focando em erros de gramática, ortografia e pontuação. Mantenha o sentido original e a formatação básica. Retorne APENAS o texto corrigido, sem nenhuma introdução ou comentário seu.\n\nTEXTO:\n"${textToCorrect}"`;
+        const prompt = `Atue como um revisor e editor de texto profissional, especialista na norma culta do Português do Brasil, e corrija o seguinte texto. Sua tarefa é eliminar todos os erros de gramática, ortografia, pontuação, acentuação e concordância, melhorando a clareza e a fluidez quando necessário, mas sem alterar o significado, o tom ou a intenção originais do autor. É fundamental que a formatação básica seja mantida e que nenhuma informação, opinião ou comentário novo seja adicionado. Retorne APENAS e EXCLUSIVAMENTE o texto corrigido, sem qualquer tipo de introdução, saudação ou explicação.\n\nTEXTO:\n"${textToCorrect}"`;
 
         try {
             const response = await fetch(API_URL + apiKey, {
