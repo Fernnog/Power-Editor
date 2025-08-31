@@ -2,9 +2,9 @@
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
-const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-const ICON_PALETTE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
-const ICON_PENCIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+const ICON_TRASH = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const ICON_PALETTE = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
+const ICON_PENCIL = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
 const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 const ICON_STAR_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
@@ -251,51 +251,7 @@ function filterModels() { const query = searchBox.value.toLowerCase().trim(); co
 // --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 function deleteTab(tabId) { const tabToDelete = appState.tabs.find(t => t.id === tabId); if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return; const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID); const destinationOptions = regularTabs.filter(t => t.id !== tabId); const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) { alert("Seleção inválida. A exclusão foi cancelada."); return; } modifyStateAndBackup(() => { const destinationTabId = destinationOptions[choiceIndex].id; appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } }); appState.tabs = appState.tabs.filter(t => t.id !== tabId); appState.activeTabId = destinationTabId; render(); }); }
-
-// INÍCIO DA MODIFICAÇÃO (PRIORIDADE 1)
-function addNewModelFromEditor() {
-    let targetTabId = appState.activeTabId;
-    // Se a aba ativa for "Favoritos", encontre a primeira aba regular para associar o modelo
-    if (targetTabId === FAVORITES_TAB_ID) {
-        targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id;
-        if (!targetTabId) {
-            alert("Para adicionar modelos, por favor, crie primeiro uma aba de categoria.");
-            return;
-        }
-    }
-
-    // Abre o modal com um editor de conteúdo, em vez de usar o editor principal
-    openModal({
-        title: 'Criar Novo Modelo',
-        initialName: '',
-        initialContent: '<p><br></p>', // Garante que o editor de conteúdo do modal seja exibido
-        onSave: (name, content) => {
-            if (!name || !name.trim()) {
-                alert('O nome do modelo não pode ser vazio.');
-                return;
-            }
-            if (!content || content.trim() === '' || content.trim() === '<p><br></p>') {
-                alert('O conteúdo do modelo não pode ser vazio.');
-                return;
-            }
-
-            modifyStateAndBackup(() => {
-                const newModel = {
-                    id: `model-${Date.now()}`,
-                    name: name.trim(),
-                    content: content,
-                    tabId: targetTabId,
-                    isFavorite: false
-                };
-                appState.models.push(newModel);
-                closeModal();
-                render();
-            });
-        }
-    });
-}
-// FIM DA MODIFICAÇÃO
-
+function addNewModelFromEditor() { const content = editor.innerHTML.trim(); if (content === '' || content === '<p><br></p>') { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } openModal({ title: 'Salvar Novo Modelo', onSave: (name) => { if (!name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; closeModal(); render(); }); } }); }
 function editModel(modelId) { const model = appState.models.find(m => m.id === modelId); openModal({ title: 'Editar Modelo', initialName: model.name, initialContent: model.content, onSave: (name, content) => { if (!name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { model.name = name; model.content = content; closeModal(); render(); }); } }); }
 function deleteModel(modelId) { const model = appState.models.find(m => m.id === modelId); if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) { modifyStateAndBackup(() => { appState.models = appState.models.filter(m => m.id !== modelId); render(); }); } }
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }

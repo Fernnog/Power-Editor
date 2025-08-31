@@ -43,14 +43,12 @@ const ModalManager = (() => {
                 <input type="text" class="find-input" placeholder="Localizar..." value="${item.find || ''}">
                 <span class="arrow">→</span>
                 <input type="text" class="replace-input" placeholder="Substituir por..." value="${item.replace || ''}">
-                <button class="delete-rule-btn" title="Excluir regra">&times;</button>
+                <button class="delete-rule-btn">&times;</button>
             </div>
         `).join('');
 
         dynamicContentArea.innerHTML = `
-            <p class="modal-description" style="font-size: 14px; color: #555; margin-bottom: 15px;">
-                Crie regras para localizar e substituir textos no editor. As regras são salvas automaticamente ao fechar.
-            </p>
+            <p class="modal-description">Crie regras para localizar e substituir textos no editor. As regras são salvas automaticamente.</p>
             <div id="replacement-list-container">${replacementRowsHtml}</div>
             <button id="add-new-rule-btn" class="control-btn btn-secondary" style="width: 100%; margin-top: 10px;">Adicionar Nova Regra</button>
             <hr style="margin: 20px 0;">
@@ -67,7 +65,7 @@ const ModalManager = (() => {
                     <input type="text" class="find-input" placeholder="Localizar...">
                     <span class="arrow">→</span>
                     <input type="text" class="replace-input" placeholder="Substituir por...">
-                    <button class="delete-rule-btn" title="Excluir regra">&times;</button>
+                    <button class="delete-rule-btn">&times;</button>
                 `;
                 listContainer.appendChild(newRow);
             }
