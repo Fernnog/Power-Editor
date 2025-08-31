@@ -34,8 +34,8 @@ body, html {
     border: 1px solid #ccc;
     border-bottom: none;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center; /* Alinha verticalmente os itens da toolbar */
+    /* flex-wrap: wrap; */ /* Removido para forçar uma única linha */
+    align-items: center;
 }
 
 .toolbar button, .toolbar select {
@@ -56,6 +56,7 @@ body, html {
     overflow-y: auto;
     font-size: 16px;
     line-height: 1.5;
+    text-align: justify; /* Adicionado para justificar por padrão */
 }
 .text-editor p {
     margin-bottom: 1em;
@@ -175,7 +176,7 @@ body, html {
 .modal-overlay.visible { display: flex; }
 .modal-content { background-color: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
 .modal-content h3 { margin-top: 0; margin-bottom: 20px; }
-.modal-content label { margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+.modal-content label { margin-bottom: 5px; font-weight: bold; font-size: 14px; display: block; }
 .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
 .modal-toolbar { background-color: #f8f9fa; border: 1px solid #ccc; border-bottom: none; padding: 5px; border-radius: 4px 4px 0 0; }
 .modal-toolbar button { width: 30px; height: 30px; border: 1px solid #ddd; background-color: #fff; cursor: pointer; margin-right: 5px; }
@@ -187,6 +188,61 @@ body, html {
 #modal-btn-save:hover { background-color: #218838; }
 #modal-btn-cancel { background-color: #dc3545; color: white; }
 #modal-btn-cancel:hover { background-color: #c82333; }
+
+/* Estilos para o Modal de Substituição (Prioridade 2) */
+.replace-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.replace-form input {
+    flex: 1;
+    margin-bottom: 0;
+}
+.replace-form button {
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #007bff;
+    color: white;
+}
+.replace-list-container {
+    list-style: none;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+.replace-list-container li {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    gap: 8px;
+}
+.replace-list-container li:not(:last-child) {
+    border-bottom: 1px solid #eee;
+}
+.replace-list-container li span {
+    font-family: monospace;
+    background-color: #f0f0f0;
+    padding: 3px 6px;
+    border-radius: 3px;
+}
+#replace-apply-all-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+#replace-modal-close-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Estilos para o Modal de Ditado */
 .dictation-content { background-color: #fff; padding: 20px 30px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; position: relative; }
 #dictation-lang-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; background-color: #f8f9fa; }
 #dictation-status { font-size: 16px; color: #555; min-width: 250px; text-align: center; }
@@ -197,21 +253,27 @@ body, html {
 #dictation-close-btn { position: absolute; top: -10px; right: -5px; background: #e0e0e0; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 18px; line-height: 25px; text-align: center; cursor: pointer; font-weight: bold; }
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
 @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 123, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); } }
+
+/* Adicionado para feedback visual direto no botão da toolbar */
+#dictate-btn.listening {
+    border-radius: 50%;
+    animation: pulse-red 1.5s infinite;
+}
+#dictate-btn.processing {
+    border-radius: 50%;
+    animation: pulse-blue 1.5s infinite;
+}
+
 .model-header { display: flex; align-items: center; margin-bottom: 8px; }
 .control-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .control-btn { padding: 10px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 13px; transition: filter 0.2s; }
 .control-btn:hover { filter: brightness(0.95); }
-
-/* --- ALTERAÇÃO SOLICITADA --- */
 .control-btn.btn-primary { 
     background-color: var(--primary-color); 
     color: white; 
     border-color: var(--primary-color-dark); 
 }
-
 .control-btn.btn-secondary { background-color: #f0f0f0; color: #333; border-color: #ccc; }
-
-/* --- ALTERAÇÃO SOLICITADA --- */
 .backup-status { 
     margin-left: auto; 
     padding: 5px 10px; 
@@ -228,8 +290,6 @@ body, html {
 .text-editor blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }
 
 /* --- ESTILOS UNIFICADOS PARA BOTÕES DE ÍCONE E AÇÕES DE ABAS --- */
-
-/* Container para os botões de ação da aba */
 #tab-actions-container {
     position: absolute;
     bottom: 10px;
@@ -241,14 +301,11 @@ body, html {
     opacity: 0;
     pointer-events: none;
 }
-
 #tab-actions-container.visible {
     transform: translateY(0);
     opacity: 1;
     pointer-events: auto;
 }
-
-/* Estilos base compartilhados entre botões de ação do modelo e da aba */
 .action-btn,
 .tab-action-btn {
     background: #f8f9fa;
@@ -262,37 +319,29 @@ body, html {
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     padding: 0;
 }
-
 .action-btn:hover,
 .tab-action-btn:hover {
     background-color: #e9ecef;
     transform: scale(1.1);
     border-color: #adb5bd;
 }
-
 .tab-action-btn:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
-
-/* Estilos específicos por tipo de botão */
 .action-btn {
-    width: 32px; /* Menor para ações dentro do item */
+    width: 32px;
     height: 32px;
 }
 .tab-action-btn {
-    width: 34px; /* Maior para ações da aba */
+    width: 34px;
     height: 34px;
 }
-
-/* Estilos para os ícones SVG dentro dos botões */
 .action-btn svg,
 .tab-action-btn svg {
     stroke-width: 2;
     color: #495057;
 }
-
-/* Tamanhos específicos para ícones SVG */
 .action-btn svg {
     width: 16px;
     height: 16px;
@@ -302,11 +351,10 @@ body, html {
     height: 18px;
 }
 
-
 /* Pop-up da paleta de cores */
 .color-palette-popup {
     position: absolute;
-    bottom: 50px; /* Posiciona acima dos botões de ação */
+    bottom: 50px;
     right: 0;
     background: white;
     border: 1px solid #dee2e6;
@@ -318,8 +366,6 @@ body, html {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 1010;
 }
-
-/* Amostra de cor individual na paleta */
 .color-swatch {
     width: 24px;
     height: 24px;
@@ -328,15 +374,13 @@ body, html {
     border: 2px solid white;
     transition: transform 0.2s, box-shadow 0.2s;
 }
-
 .color-swatch:hover {
     transform: scale(1.15);
     box-shadow: 0 0 0 2px #adb5bd;
 }
 
-/* --- ALTERAÇÃO SOLICITADA --- */
 #toolbar-logo {
-    max-height: 30px; /* Aumentado de 24px para 30px */
+    max-height: 30px;
     width: auto;
     margin-right: 15px;
     vertical-align: middle;
