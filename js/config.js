@@ -1,5 +1,5 @@
 const CONFIG = {
     // IMPORTANTE: Cole sua chave de API do Google AI Studio aqui, dentro das aspas.
     // Exemplo: apiKey: "AIzaSyB..._wX4"
-    apiKey: "AIzaSyD6VAye1C6HV8Iq0SWQOk9aevP9DQgpw5E"
+    apiKey: "AIzaSyCz0Mm821FJm4JzY5m7G5zW8Bz3sxsU3Ks"
 };
