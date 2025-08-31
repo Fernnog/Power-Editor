@@ -19,15 +19,37 @@ const ModalManager = (() => {
      * @param {object} data - Dados iniciais { name, content }.
      */
     function _buildModelEditorContent(data = {}) {
+        // A função execCmd do modal precisa de um contexto. Vamos definir uma função global temporária.
+        // Assumimos que 'EditorActions' foi refatorado para aceitar um elemento alvo.
+        window.execModalCmd = (cmd, val = null) => {
+            document.execCommand(cmd, false, val);
+        };
+        window.execModalAction = (action) => {
+            const modalEditor = document.getElementById('modal-input-content');
+            if (EditorActions && typeof EditorActions[action] === 'function') {
+                EditorActions[action](modalEditor);
+            }
+        };
+
         dynamicContentArea.innerHTML = `
             <label for="modal-input-name">Nome do Modelo:</label>
             <input type="text" id="modal-input-name" placeholder="Digite o nome aqui..." value="${data.name || ''}">
             
             <label for="modal-input-content">Conteúdo do Modelo:</label>
             <div class="modal-toolbar">
-                <button onclick="document.execCommand('bold')"><b>B</b></button>
-                <button onclick="document.execCommand('italic')"><i>I</i></button>
-                <button onclick="document.execCommand('underline')"><u>U</u></button>
+                <button onclick="window.execModalCmd('bold')" title="Negrito"><b>B</b></button>
+                <button onclick="window.execModalCmd('italic')" title="Itálico"><i>I</i></button>
+                <button onclick="window.execModalCmd('underline')" title="Sublinhado"><u>U</u></button>
+                <button onclick="window.execModalCmd('insertUnorderedList')" title="Lista com Marcadores">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                </button>
+                <button onclick="window.execModalCmd('insertOrderedList')" title="Lista Numerada">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1.5"></path></svg>
+                </button>
+                <button onclick="window.execModalAction('formatAsBlockquote')" title="Citação">“</button>
+                <button onclick="window.execModalCmd('justifyFull')" title="Justificar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
+                </button>
             </div>
             <div id="modal-input-content" class="text-editor-modal" contenteditable="true">${data.content || ''}</div>
         `;
@@ -131,6 +153,9 @@ const ModalManager = (() => {
         modalContainer.classList.remove('visible');
         dynamicContentArea.innerHTML = ''; // Limpa o conteúdo para a próxima abertura
         currentConfig = null;
+        // Limpa as funções globais temporárias se existirem
+        if (window.execModalCmd) delete window.execModalCmd;
+        if (window.execModalAction) delete window.execModalAction;
     }
 
     /**
