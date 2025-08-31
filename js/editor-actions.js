@@ -25,6 +25,7 @@ const EditorActions = (() => {
                 el.style.textIndent = '';
             }
         });
+        document.execCommand('justifyFull'); // ADICIONADO: Garante que todo o texto seja justificado.
         editor.focus();
         alert('Documento formatado com sucesso!');
     }
