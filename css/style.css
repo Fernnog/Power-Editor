@@ -34,7 +34,6 @@ body, html {
     border: 1px solid #ccc;
     border-bottom: none;
     display: flex;
-    /* flex-wrap: wrap; */ /* Removido para forçar uma única linha */
     align-items: center;
 }
 
@@ -46,6 +45,20 @@ body, html {
     border: 1px solid #aaa;
     background-color: #fff;
     vertical-align: middle;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 38px;
+}
+
+.toolbar button svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
+    color: #333;
 }
 
 .text-editor {
@@ -256,11 +269,9 @@ body, html {
 
 /* Adicionado para feedback visual direto no botão da toolbar */
 #dictate-btn.listening {
-    border-radius: 50%;
     animation: pulse-red 1.5s infinite;
 }
 #dictate-btn.processing {
-    border-radius: 50%;
     animation: pulse-blue 1.5s infinite;
 }
 
