@@ -9,8 +9,6 @@ const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" f
 const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 const ICON_STAR_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 const ICON_STAR_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
-const ICON_SPARKLES = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L14.34 8.66L20 11L14.34 13.34L12 19L9.66 13.34L4 11L9.66 8.66L12 3z"/></svg>`;
-const ICON_SPINNER = `<svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>`;
 let colorIndex = 0;
 let backupDebounceTimer;
 
@@ -272,18 +270,27 @@ window.addEventListener('DOMContentLoaded', () => {
     const dictateBtn = document.getElementById('dictate-btn'); 
     const dictationModal = document.getElementById('dictation-modal'); 
     const dictationCloseBtn = document.getElementById('dictation-close-btn'); 
+    
     if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) { 
         SpeechDictation.init({ 
             micIcon: document.getElementById('dictation-mic-icon'), 
             langSelect: document.getElementById('dictation-lang-select'), 
             statusDisplay: document.getElementById('dictation-status'), 
-            onResult: (transcript) => { insertModelContent(transcript); } 
+            onResult: (transcript) => { 
+                insertModelContent(transcript); 
+            } 
         }); 
-        dictateBtn.addEventListener('click', () => { dictationModal.classList.add('visible'); }); 
-        dictationCloseBtn.addEventListener('click', () => { SpeechDictation.stop(); dictationModal.classList.remove('visible'); }); 
+        dictateBtn.addEventListener('click', () => { 
+            dictationModal.classList.add('visible'); 
+        }); 
+        dictationCloseBtn.addEventListener('click', () => { 
+            SpeechDictation.stop(); 
+            dictationModal.classList.remove('visible'); 
+        }); 
     } else { 
         dictateBtn.style.display = 'none'; 
     } 
+    
     editor.addEventListener('keydown', (event) => { 
         if (event.ctrlKey) { 
             switch (event.key.toLowerCase()) { 
@@ -296,9 +303,11 @@ window.addEventListener('DOMContentLoaded', () => {
             EditorActions.indentFirstLine(); 
         } 
     }); 
+    
     if (blockquoteBtn) { 
         blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote); 
     } 
+    
     const replaceBtn = document.getElementById('replace-btn'); 
     if (replaceBtn) { 
         replaceBtn.addEventListener('click', () => { 
@@ -311,11 +320,38 @@ window.addEventListener('DOMContentLoaded', () => {
         }); 
     }
 
+    // --- CÓDIGO DA FUNCIONALIDADE DE CORREÇÃO ---
     const correctTextBtn = document.getElementById('correct-text-btn');
+
     if (correctTextBtn) {
-        correctTextBtn.innerHTML = ICON_SPARKLES;
-        correctTextBtn.addEventListener('click', handleTextCorrection);
+        correctTextBtn.addEventListener('click', async () => {
+            if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
+                alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
+                return;
+            }
+
+            const apiKey = CONFIG.apiKey;
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+
+            if (!selectedText) {
+                alert("Por favor, selecione o texto que deseja corrigir.");
+                return;
+            }
+            
+            const originalButtonText = correctTextBtn.textContent;
+            correctTextBtn.textContent = 'Corrigindo...';
+            correctTextBtn.disabled = true;
+
+            const correctedText = await GeminiService.correctText(selectedText, apiKey);
+            
+            document.execCommand('insertText', false, correctedText);
+
+            correctTextBtn.textContent = originalButtonText;
+            correctTextBtn.disabled = false;
+        });
     }
+    // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
 });
 
 // --- EVENT LISTENERS ---
@@ -334,62 +370,3 @@ importFileInput.addEventListener('change', handleImportFile);
 modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
 modalBtnCancel.addEventListener('click', closeModal);
 modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
-
-async function handleTextCorrection() {
-    const GEMINI_API_KEY_STORAGE = 'geminiApiKey';
-    let apiKey = localStorage.getItem(GEMINI_API_KEY_STORAGE);
-
-    if (!apiKey) {
-        apiKey = prompt("Insira sua chave de API do Google AI Studio:");
-        if (!apiKey || !apiKey.trim()) {
-            alert("Operação cancelada.");
-            return;
-        }
-        localStorage.setItem(GEMINI_API_KEY_STORAGE, apiKey.trim());
-    }
-
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0 || selection.toString().trim() === '') {
-        alert("Por favor, selecione um texto para corrigir.");
-        return;
-    }
-
-    const range = selection.getRangeAt(0);
-    const selectedText = selection.toString();
-    
-    // Aplica o feedback visual
-    const processingSpan = document.createElement('span');
-    processingSpan.className = 'ia-processing';
-    try {
-        range.surroundContents(processingSpan);
-    } catch(e) {
-        alert("Não foi possível aplicar o destaque. Tente selecionar um texto mais simples (sem quebras de linha parciais).");
-        return;
-    }
-    
-    const correctTextBtn = document.getElementById('correct-text-btn');
-    correctTextBtn.disabled = true;
-    correctTextBtn.innerHTML = ICON_SPINNER;
-
-    try {
-        const correctedText = await GeminiService.correctText(selectedText, apiKey);
-        processingSpan.textContent = correctedText; // Substitui o conteúdo do span
-    } catch (error) {
-        alert(`Ocorreu um erro: ${error.message}`);
-        if (error.message.includes('API key not valid')) {
-            localStorage.removeItem(GEMINI_API_KEY_STORAGE);
-        }
-    } finally {
-        // Remove o span de destaque, mantendo o conteúdo corrigido (ou original em caso de erro)
-        if (processingSpan.parentNode) {
-            const parent = processingSpan.parentNode;
-            while (processingSpan.firstChild) {
-                parent.insertBefore(processingSpan.firstChild, processingSpan);
-            }
-            parent.removeChild(processingSpan);
-        }
-        selection.removeAllRanges(); // Limpa a seleção
-        correctTextBtn.disabled = false;
-        correctTextBtn.innerHTML = ICON_SPARKLES;
-    }
-}
