@@ -5,9 +5,11 @@ const SpeechDictation = (() => {
 
     // Elementos da UI
     let ui = {
-        micIcon: null,
+        micIcon: null,          // O ícone do microfone DENTRO do modal
         langSelect: null,
         statusDisplay: null,
+        dictationModal: null,   // O modal completo
+        toolbarMicButton: null  // O botão do microfone na toolbar principal
     };
 
     // Callback
@@ -24,6 +26,8 @@ const SpeechDictation = (() => {
         ui.micIcon = config.micIcon;
         ui.langSelect = config.langSelect;
         ui.statusDisplay = config.statusDisplay;
+        ui.dictationModal = config.dictationModal;
+        ui.toolbarMicButton = config.toolbarMicButton;
         onResultCallback = config.onResult;
 
         recognition = new SpeechRecognition();
@@ -68,9 +72,8 @@ const SpeechDictation = (() => {
     }
 
     const setupListeners = () => {
-        ui.micIcon.addEventListener('click', toggle);
-
         recognition.onresult = (event) => {
+            ui.toolbarMicButton.classList.remove('processing');
             ui.micIcon.classList.remove('processing');
             let transcript = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -87,16 +90,21 @@ const SpeechDictation = (() => {
         recognition.onerror = (event) => {
             console.error('Erro no reconhecimento de voz:', event.error);
             updateStatus('Erro: ' + event.error);
+            stop(); // Garante que o modal feche e o estado seja limpo em caso de erro.
         };
 
         recognition.onend = () => {
             isListening = false;
+            ui.toolbarMicButton.classList.remove('listening', 'processing');
             ui.micIcon.classList.remove('listening', 'processing');
             updateStatus('Clique no microfone para recomeçar');
+            ui.dictationModal.classList.remove('visible'); // Esconde o modal ao final da sessão.
         };
 
         recognition.onspeechend = () => {
-            stop();
+            ui.toolbarMicButton.classList.remove('listening');
+            ui.toolbarMicButton.classList.add('processing');
+            ui.micIcon.classList.remove('listening');
             ui.micIcon.classList.add('processing');
             updateStatus('Processando...');
         };
@@ -108,9 +116,12 @@ const SpeechDictation = (() => {
             recognition.lang = ui.langSelect.value;
             recognition.start();
             isListening = true;
+            ui.toolbarMicButton.classList.remove('processing');
+            ui.toolbarMicButton.classList.add('listening');
             ui.micIcon.classList.remove('processing');
             ui.micIcon.classList.add('listening');
             updateStatus('Ouvindo... Fale agora.');
+            ui.dictationModal.classList.add('visible'); // Exibe o modal ao iniciar.
         } catch (error) {
             console.error("Erro ao iniciar a gravação:", error);
             updateStatus('Não foi possível iniciar.');
@@ -119,17 +130,7 @@ const SpeechDictation = (() => {
 
     const stop = () => {
         if (!isListening || !recognition) return;
-        recognition.stop();
-        isListening = false;
-        ui.micIcon.classList.remove('listening');
-    };
-
-    const toggle = () => {
-        if (isListening) {
-            stop();
-        } else {
-            start();
-        }
+        recognition.stop(); // A limpeza da UI agora é centralizada no evento 'onend'.
     };
 
     const updateStatus = (text) => {
@@ -142,7 +143,6 @@ const SpeechDictation = (() => {
         init,
         start,
         stop,
-        toggle,
         isSupported
     };
 
