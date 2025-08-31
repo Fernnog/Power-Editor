@@ -191,41 +191,9 @@ body, html {
 .modal-content h3 { margin-top: 0; margin-bottom: 20px; }
 .modal-content label { margin-bottom: 5px; font-weight: bold; font-size: 14px; display: block; }
 .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-
-/* INÍCIO DA MODIFICAÇÃO: Estilos para o toolbar do modal, garantindo consistência com o toolbar principal */
-.modal-toolbar { 
-    background-color: #f8f9fa; 
-    border: 1px solid #ccc; 
-    border-bottom: none; 
-    padding: 5px; 
-    border-radius: 4px 4px 0 0; 
-}
-.modal-toolbar button, .modal-toolbar select {
-    padding: 5px 10px;
-    margin-right: 5px;
-    cursor: pointer;
-    border: 1px solid #aaa;
-    background-color: #fff;
-    vertical-align: middle;
-    border-radius: 6px;
-    transition: background-color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 38px;
-    min-height: 38px;
-}
-.modal-toolbar button:hover { 
-    background-color: #e9ecef; 
-}
-.modal-toolbar button svg {
-    width: 20px;
-    height: 20px;
-    stroke-width: 1.5;
-    color: #333;
-}
-/* FIM DA MODIFICAÇÃO */
-
+.modal-toolbar { background-color: #f8f9fa; border: 1px solid #ccc; border-bottom: none; padding: 5px; border-radius: 4px 4px 0 0; }
+.modal-toolbar button { width: 30px; height: 30px; border: 1px solid #ddd; background-color: #fff; cursor: pointer; margin-right: 5px; }
+.modal-toolbar button:hover { background-color: #e9ecef; }
 .text-editor-modal { width: 100%; min-height: 150px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 0 0 4px 4px; background-color: #fff; overflow-y: auto; font-size: 16px; margin-bottom: 15px; }
 .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .modal-buttons button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
@@ -234,38 +202,26 @@ body, html {
 #modal-btn-cancel { background-color: #dc3545; color: white; }
 #modal-btn-cancel:hover { background-color: #c82333; }
 
-/* INÍCIO DA MODIFICAÇÃO: Estilos para o Gerenciador de Substituição simplificado */
-.replacement-row {
+/* Estilos para o Modal de Substituição (Prioridade 2) */
+.replace-form {
     display: flex;
     align-items: center;
-    padding: 8px;
-    gap: 8px;
+    gap: 10px;
+    margin-bottom: 15px;
 }
-.replacement-row:not(:last-child) {
-    border-bottom: 1px solid #eee;
-}
-.replacement-row input {
+.replace-form input {
     flex: 1;
-    margin-bottom: 0; /* Sobrescreve o estilo geral de input do modal */
+    margin-bottom: 0;
 }
-.replacement-row .arrow {
-    font-weight: bold;
-    color: #555;
-}
-.delete-rule-btn {
-    background: transparent;
+.replace-form button {
+    padding: 10px 15px;
+    border-radius: 5px;
     border: none;
-    color: #dc3545;
-    font-size: 1.5rem;
     cursor: pointer;
-    padding: 0 5px;
-    line-height: 1;
     font-weight: bold;
+    background-color: #007bff;
+    color: white;
 }
-.delete-rule-btn:hover {
-    color: #a12050;
-}
-
 .replace-list-container {
     list-style: none;
     padding: 0;
@@ -275,7 +231,21 @@ body, html {
     border-radius: 4px;
     margin-bottom: 15px;
 }
-
+.replace-list-container li {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    gap: 8px;
+}
+.replace-list-container li:not(:last-child) {
+    border-bottom: 1px solid #eee;
+}
+.replace-list-container li span {
+    font-family: monospace;
+    background-color: #f0f0f0;
+    padding: 3px 6px;
+    border-radius: 3px;
+}
 #replace-apply-all-btn {
     background-color: var(--primary-color);
     color: white;
@@ -284,8 +254,6 @@ body, html {
     background-color: #6c757d;
     color: white;
 }
-/* FIM DA MODIFICAÇÃO */
-
 
 /* Estilos para o Modal de Ditado */
 .dictation-content { background-color: #fff; padding: 20px 30px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; position: relative; }
