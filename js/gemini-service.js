@@ -1,7 +1,4 @@
-// js/gemini-service.js (COMPLETO E CORRIGIDO)
-
-const AICorrector = (() => {
-    // --- ALTERAÇÃO REALIZADA AQUI ---
+const GeminiService = (() => {
     // O nome do modelo foi atualizado de "gemini-pro" para "gemini-1.5-pro-latest",
     // que é a versão mais recente e recomendada para esta tarefa.
     const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=';
