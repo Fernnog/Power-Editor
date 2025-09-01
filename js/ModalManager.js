@@ -32,7 +32,7 @@ const ModalManager = (() => {
             <div id="modal-input-content" class="text-editor-modal" contenteditable="true">${data.content || ''}</div>
         `;
     }
-    
+
     /**
      * Função principal para exibir o modal com uma configuração específica.
      * @param {object} config - Objeto de configuração do modal.
@@ -42,12 +42,13 @@ const ModalManager = (() => {
         modalTitleEl.textContent = config.title;
 
         // Constrói o conteúdo com base no tipo
-        // A lógica de 'replacementManager' foi removida, simplificando o módulo.
-        if (config.type === 'modelEditor') {
-            _buildModelEditorContent(config.initialData);
-        } else {
-            console.error('Tipo de modal desconhecido:', config.type);
-            return;
+        switch (config.type) {
+            case 'modelEditor':
+                _buildModelEditorContent(config.initialData);
+                break;
+            default:
+                console.error('Tipo de modal desconhecido:', config.type);
+                return;
         }
 
         modalContainer.classList.add('visible');
@@ -73,15 +74,17 @@ const ModalManager = (() => {
         if (!currentConfig || typeof currentConfig.onSave !== 'function') return;
 
         let dataToSave;
-        if (currentConfig.type === 'modelEditor') {
-            dataToSave = {
-                name: document.getElementById('modal-input-name').value,
-                content: document.getElementById('modal-input-content').innerHTML
-            };
+        switch (currentConfig.type) {
+            case 'modelEditor':
+                dataToSave = {
+                    name: document.getElementById('modal-input-name').value,
+                    content: document.getElementById('modal-input-content').innerHTML
+                };
+                break;
         }
         
         currentConfig.onSave(dataToSave);
-        hide();
+        hide(); // O callback onSave é responsável por fechar, mas garantimos aqui.
     }
 
     // Adiciona os listeners de eventos uma única vez
