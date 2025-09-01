@@ -18,8 +18,14 @@ const defaultModels = [
     { name: "IDPJ - RELATÓRIO de endereços", content: "Relatório gerado a partir da consulta de endereços nos sistemas conveniados. Segue abaixo a tabela:" }
 ];
 
+// --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
+let editor, modelList, searchBox, tabsContainer, addNewTabBtn, addNewModelBtn, indentBtn, exportBtn, importBtn, importFileInput, searchBtn, clearSearchBtn, formatDocBtn, clearDocBtn, blockquoteBtn, backupStatusEl, tabActionsContainer;
+// --- REFERÊNCIAS DO MODAL ---
+let modalContainer, modalTitle, modalInputName, modalInputContent, modalBtnSave, modalBtnCancel, modalContentLabel, currentOnSave;
+
+
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function updateBackupStatus(dateObject) { const backupStatusEl = document.getElementById('backup-status'); if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
+function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
 function triggerAutoBackup() { const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); const timestamp = `${year}${month}${day}_${hours}${minutes}`; const filename = `${timestamp}_ModelosDosMeusDocumentos.json`; appState.lastBackupTimestamp = now.toISOString(); const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); updateBackupStatus(now); }
 function debouncedTriggerAutoBackup() { clearTimeout(backupDebounceTimer); backupDebounceTimer = setTimeout(() => { triggerAutoBackup(); }, 2500); }
 function modifyStateAndBackup(modificationFn) { modificationFn(); saveStateToStorage(); debouncedTriggerAutoBackup(); }
@@ -31,11 +37,10 @@ function loadStateFromStorage() { const savedState = localStorage.getItem('edito
 
 // --- FUNÇÕES DO EDITOR ---
 function execCmd(command, value = null) { document.execCommand(command, false, value); }
-function insertModelContent(content, tabId) { const searchBox = document.getElementById('search-box'); const editor = document.getElementById('editor'); if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); execCmd('justifyFull'); }
+function insertModelContent(content, tabId) { if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); execCmd('justifyFull'); }
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
-    const tabActionsContainer = document.getElementById('tab-actions-container');
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
 
@@ -46,7 +51,6 @@ function renderTabActions() {
 
     const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
 
-    // Botão de Excluir
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'tab-action-btn';
     deleteBtn.innerHTML = ICON_TRASH;
@@ -57,7 +61,6 @@ function renderTabActions() {
     deleteBtn.onclick = () => deleteTab(appState.activeTabId);
     tabActionsContainer.appendChild(deleteBtn);
 
-    // Botão de Alterar Cor
     const colorBtn = document.createElement('button');
     colorBtn.className = 'tab-action-btn';
     colorBtn.innerHTML = ICON_PALETTE;
@@ -68,7 +71,6 @@ function renderTabActions() {
     };
     tabActionsContainer.appendChild(colorBtn);
 
-    // Botão de Renomear
     const renameBtn = document.createElement('button');
     renameBtn.className = 'tab-action-btn';
     renameBtn.innerHTML = ICON_PENCIL;
@@ -125,7 +127,6 @@ function render() {
 }
 
 function renderTabs() {
-    const tabsContainer = document.getElementById('tabs-container');
     tabsContainer.innerHTML = '';
     const activeContentArea = document.getElementById('active-content-area');
     let activeTabColor = '#ccc';
@@ -147,7 +148,7 @@ function renderTabs() {
         
         tabEl.addEventListener('click', () => {
             appState.activeTabId = tab.id;
-            document.getElementById('search-box').value = '';
+            searchBox.value = '';
             render();
         });
         
@@ -158,7 +159,6 @@ function renderTabs() {
 }
 
 function renderModels(modelsToRender) {
-    const modelList = document.getElementById('model-list');
     modelList.innerHTML = '';
     modelsToRender.forEach(model => {
         const li = document.createElement('li');
@@ -220,59 +220,54 @@ function renderModels(modelsToRender) {
 }
 let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
-function filterModels() { const searchBox = document.getElementById('search-box'); const query = searchBox.value.toLowerCase().trim(); const activeContentArea = document.getElementById('active-content-area'); activeContentArea.style.borderColor = appState.tabs.find(t=>t.id === appState.activeTabId)?.color || '#ccc'; if (query) { activeContentArea.style.borderColor = '#aaa'; } if (!query) { if (appState.activeTabId === FAVORITES_TAB_ID) { return appState.models.filter(m => m.isFavorite); } else { return appState.models.filter(m => m.tabId === appState.activeTabId); } } const models = appState.models; if (query.includes(' ou ')) { const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.some(term => modelText.includes(term)); }); } else if (query.includes(' e ')) { const terms = query.split(' e ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.every(term => modelText.includes(term)); }); } else { return models.filter(model => model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query) ); } }
+function filterModels() { const query = searchBox.value.toLowerCase().trim(); const activeContentArea = document.getElementById('active-content-area'); activeContentArea.style.borderColor = appState.tabs.find(t=>t.id === appState.activeTabId)?.color || '#ccc'; if (query) { activeContentArea.style.borderColor = '#aaa'; } if (!query) { if (appState.activeTabId === FAVORITES_TAB_ID) { return appState.models.filter(m => m.isFavorite); } else { return appState.models.filter(m => m.tabId === appState.activeTabId); } } const models = appState.models; if (query.includes(' ou ')) { const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.some(term => modelText.includes(term)); }); } else if (query.includes(' e ')) { const terms = query.split(' e ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.every(term => modelText.includes(term)); }); } else { return models.filter(model => model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query) ); } }
 
 // --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 function deleteTab(tabId) { const tabToDelete = appState.tabs.find(t => t.id === tabId); if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return; const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID); const destinationOptions = regularTabs.filter(t => t.id !== tabId); const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) { alert("Seleção inválida. A exclusão foi cancelada."); return; } modifyStateAndBackup(() => { const destinationTabId = destinationOptions[choiceIndex].id; appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } }); appState.tabs = appState.tabs.filter(t => t.id !== tabId); appState.activeTabId = destinationTabId; render(); }); }
-function addNewModelFromEditor() { const editor = document.getElementById('editor'); const content = editor.innerHTML.trim(); if (content === '' || content === '<p><br></p>') { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } openModal({ title: 'Salvar Novo Modelo', onSave: (name) => { if (!name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); document.getElementById('search-box').value = ''; closeModal(); render(); }); } }); }
+function addNewModelFromEditor() { const content = editor.innerHTML.trim(); if (content === '' || content === '<p><br></p>') { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } openModal({ title: 'Salvar Novo Modelo', onSave: (name) => { if (!name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; closeModal(); render(); }); } }); }
 function editModel(modelId) { const model = appState.models.find(m => m.id === modelId); openModal({ title: 'Editar Modelo', initialName: model.name, initialContent: model.content, onSave: (name, content) => { if (!name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { model.name = name; model.content = content; closeModal(); render(); }); } }); }
 function deleteModel(modelId) { const model = appState.models.find(m => m.id === modelId); if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) { modifyStateAndBackup(() => { appState.models = appState.models.filter(m => m.id !== modelId); render(); }); } }
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
 function moveModelToAnotherTab(modelId) { const model = appState.models.find(m => m.id === modelId); const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId); if (destinationOptions.length === 0) { alert("Não há outras abas para mover este modelo."); return; } const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) { modifyStateAndBackup(() => { model.tabId = destinationOptions[choiceIndex].id; render(); }); } else if(choice) { alert("Seleção inválida."); } }
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
-function handleImportFile(event) { const importFileInput = document.getElementById('import-file-input'); const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
+function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
 
 // --- FUNÇÕES DO MODAL ---
-function openModal(config) { const modalContainer = document.getElementById('modal-container'); const modalTitle = document.getElementById('modal-title'); const modalInputName = document.getElementById('modal-input-name'); const modalInputContent = document.getElementById('modal-input-content'); const modalContentLabel = document.querySelector('label[for="modal-input-content"]'); modalTitle.textContent = config.title; modalInputName.value = config.initialName || ''; modalInputContent.innerHTML = config.initialContent || ''; const isContentVisible = config.initialContent !== undefined; modalInputContent.style.display = isContentVisible ? 'block' : 'none'; modalContentLabel.style.display = isContentVisible ? 'block' : 'none'; window.currentOnSave = () => config.onSave(modalInputName.value, modalInputContent.innerHTML); modalContainer.classList.add('visible'); modalInputName.focus(); }
-function closeModal() { const modalContainer = document.getElementById('modal-container'); modalContainer.classList.remove('visible'); window.currentOnSave = null; }
+function openModal(config) { modalTitle.textContent = config.title; modalInputName.value = config.initialName || ''; modalInputContent.innerHTML = config.initialContent || ''; const isContentVisible = config.initialContent !== undefined; modalInputContent.style.display = isContentVisible ? 'block' : 'none'; modalContentLabel.style.display = isContentVisible ? 'block' : 'none'; currentOnSave = () => config.onSave(modalInputName.value, modalInputContent.innerHTML); modalContainer.classList.add('visible'); modalInputName.focus(); }
+function closeModal() { modalContainer.classList.remove('visible'); currentOnSave = null; }
 
 // --- INICIALIZAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
-    // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
-    const editor = document.getElementById('editor');
-    const modelList = document.getElementById('model-list');
-    const searchBox = document.getElementById('search-box');
-    const tabsContainer = document.getElementById('tabs-container');
-    const addNewTabBtn = document.getElementById('add-new-tab-btn');
-    const addNewModelBtn = document.getElementById('add-new-model-btn');
-    const indentBtn = document.getElementById('indent-btn');
-    const exportBtn = document.getElementById('export-btn');
-    const importBtn = document.getElementById('import-btn');
-    const importFileInput = document.getElementById('import-file-input');
-    const searchBtn = document.getElementById('search-btn');
-    const clearSearchBtn = document.getElementById('clear-search-btn');
-    const formatDocBtn = document.getElementById('format-doc-btn');
-    const clearDocBtn = document.getElementById('clear-doc-btn');
-    const blockquoteBtn = document.getElementById('blockquote-btn');
-    const backupStatusEl = document.getElementById('backup-status');
-    const tabActionsContainer = document.getElementById('tab-actions-container');
-
-    // --- REFERÊNCIAS DO MODAL ---
-    const modalContainer = document.getElementById('modal-container');
-    const modalTitle = document.getElementById('modal-title');
-    const modalInputName = document.getElementById('modal-input-name');
-    const modalInputContent = document.getElementById('modal-input-content');
-    const modalBtnSave = document.getElementById('modal-btn-save');
-    const modalBtnCancel = document.getElementById('modal-btn-cancel');
-    const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
-    let currentOnSave = null;
-    
-    // Anexa a função ao objeto window para torná-la globalmente acessível
-    window.currentOnSave = null;
+    editor = document.getElementById('editor');
+    modelList = document.getElementById('model-list');
+    searchBox = document.getElementById('search-box');
+    tabsContainer = document.getElementById('tabs-container');
+    addNewTabBtn = document.getElementById('add-new-tab-btn');
+    addNewModelBtn = document.getElementById('add-new-model-btn');
+    indentBtn = document.getElementById('indent-btn');
+    exportBtn = document.getElementById('export-btn');
+    importBtn = document.getElementById('import-btn');
+    importFileInput = document.getElementById('import-file-input');
+    searchBtn = document.getElementById('search-btn');
+    clearSearchBtn = document.getElementById('clear-search-btn');
+    formatDocBtn = document.getElementById('format-doc-btn');
+    clearDocBtn = document.getElementById('clear-doc-btn');
+    blockquoteBtn = document.getElementById('blockquote-btn');
+    backupStatusEl = document.getElementById('backup-status');
+    tabActionsContainer = document.getElementById('tab-actions-container');
+    modalContainer = document.getElementById('modal-container');
+    modalTitle = document.getElementById('modal-title');
+    modalInputName = document.getElementById('modal-input-name');
+    modalInputContent = document.getElementById('modal-input-content');
+    modalBtnSave = document.getElementById('modal-btn-save');
+    modalBtnCancel = document.getElementById('modal-btn-cancel');
+    modalContentLabel = document.querySelector('label[for="modal-input-content"]');
+    currentOnSave = null;
 
     loadStateFromStorage(); 
     render(); 
+    
     const dictateBtn = document.getElementById('dictate-btn'); 
     const dictationModal = document.getElementById('dictation-modal'); 
     const dictationCloseBtn = document.getElementById('dictation-close-btn'); 
@@ -313,54 +308,135 @@ window.addEventListener('DOMContentLoaded', () => {
         blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote); 
     } 
     
-    const replaceBtn = document.getElementById('replace-btn'); 
-    if (replaceBtn) { 
-        replaceBtn.addEventListener('click', () => {
-            ModalManager.show({
-                type: 'replacementManager',
-                title: 'Gerenciador de Substituições',
-                initialData: {
-                    replacements: appState.replacements || []
-                },
-                onSave: (data) => {
-                    modifyStateAndBackup(() => {
-                        appState.replacements = data.replacements;
-                    });
-                },
-                onApply: () => {
-                    const rules = appState.replacements;
-                    if (!rules || rules.length === 0) {
-                        alert("Nenhuma regra de substituição foi salva para aplicar.");
-                        return;
-                    }
+    // --- [INÍCIO] LÓGICA REFORMULADA PARA SUBSTITUIÇÕES AUTOMÁTICAS ---
+    const replaceBtn = document.getElementById('replace-btn');
+    const replaceModal = document.getElementById('replace-modal');
 
-                    let content = editor.innerHTML;
-                    let replacementsMade = 0;
+    if (replaceBtn && replaceModal) {
+        const replaceSearchInput = document.getElementById('replace-search-input');
+        const replaceList = document.getElementById('replace-list');
+        const addNewRuleBtn = document.getElementById('replace-add-new-rule-btn');
+        const closeModalBtn = document.getElementById('replace-modal-close-btn');
+        const paginationControls = document.getElementById('replace-pagination-controls');
 
-                    rules.forEach(rule => {
-                        if (rule.find) {
-                            const regex = new RegExp(rule.find.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-                            if (content.match(regex)) {
-                                content = content.replace(regex, rule.replace);
-                                replacementsMade++;
-                            }
-                        }
-                    });
+        let currentReplacePage = 1;
+        const itemsPerPage = 5;
 
-                    if (replacementsMade > 0) {
-                        editor.innerHTML = content;
-                        alert("Substituições aplicadas com sucesso!");
-                    } else {
-                        alert("Nenhum texto correspondente às regras foi encontrado no editor.");
-                    }
-                }
+        const renderReplacementRules = () => {
+            if (!appState.replacements) appState.replacements = [];
+            
+            const searchTerm = replaceSearchInput.value.toLowerCase();
+            const filteredRules = appState.replacements.filter(rule =>
+                (rule.find || '').toLowerCase().includes(searchTerm) ||
+                (rule.replace || '').toLowerCase().includes(searchTerm)
+            );
+
+            const totalPages = Math.ceil(filteredRules.length / itemsPerPage) || 1;
+            if (currentReplacePage > totalPages) currentReplacePage = totalPages;
+
+            const startIndex = (currentReplacePage - 1) * itemsPerPage;
+            const paginatedRules = filteredRules.slice(startIndex, startIndex + itemsPerPage);
+
+            replaceList.innerHTML = '';
+            paginatedRules.forEach((rule) => {
+                const globalIndex = appState.replacements.findIndex(r => r === rule);
+                const li = document.createElement('li');
+                li.className = 'replace-item';
+                li.innerHTML = `
+                    <input type="text" class="find-input" value="${rule.find || ''}" placeholder="Localizar..." data-index="${globalIndex}">
+                    <span class="arrow">→</span>
+                    <input type="text" class="replace-input" value="${rule.replace || ''}" placeholder="Substituir por..." data-index="${globalIndex}">
+                    <button class="delete-btn" data-index="${globalIndex}">&times;</button>
+                `;
+                replaceList.appendChild(li);
             });
+            renderPagination(totalPages);
+        };
+        
+        const renderPagination = (totalPages) => {
+            paginationControls.innerHTML = '';
+            if (totalPages <= 1) return;
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                if (i === currentReplacePage) pageBtn.classList.add('active');
+                pageBtn.onclick = () => {
+                    currentReplacePage = i;
+                    renderReplacementRules();
+                };
+                paginationControls.appendChild(pageBtn);
+            }
+        };
+
+        replaceBtn.addEventListener('click', () => {
+            currentReplacePage = 1;
+            replaceSearchInput.value = '';
+            renderReplacementRules();
+            replaceModal.classList.add('visible');
+            replaceSearchInput.focus();
+        });
+
+        closeModalBtn.addEventListener('click', () => replaceModal.classList.remove('visible'));
+        addNewRuleBtn.addEventListener('click', () => {
+            modifyStateAndBackup(() => appState.replacements.unshift({ find: '', replace: '' }));
+            renderReplacementRules();
+        });
+
+        replaceSearchInput.addEventListener('input', () => {
+            currentReplacePage = 1;
+            renderReplacementRules();
+        });
+        
+        replaceList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const index = parseInt(e.target.dataset.index, 10);
+                modifyStateAndBackup(() => appState.replacements.splice(index, 1));
+                renderReplacementRules();
+            }
+        });
+
+        replaceList.addEventListener('input', (e) => {
+            if (e.target.classList.contains('find-input') || e.target.classList.contains('replace-input')) {
+                const index = parseInt(e.target.dataset.index, 10);
+                const field = e.target.classList.contains('find-input') ? 'find' : 'replace';
+                appState.replacements[index][field] = e.target.value;
+                saveStateToStorage();
+            }
         });
     }
 
-    // --- CÓDIGO DA FUNCIONALIDADE DE CORREÇÃO ---
-    const correctTextBtn = document.getElementById('correct-text-btn');
+    editor.addEventListener('input', (event) => {
+        if (event.inputType !== 'insertText' || ![' ', 'Enter', 'Tab'].includes(event.data)) {
+            if (event.inputType !== 'insertParagraph') return;
+        }
+        
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
 
+        const range = selection.getRangeAt(0);
+        const container = range.startContainer;
+
+        if (container.nodeType !== Node.TEXT_NODE) return;
+        const textContent = container.textContent.substring(0, range.startOffset);
+        
+        for (const rule of appState.replacements) {
+            if (rule.find && textContent.endsWith(rule.find)) {
+                event.preventDefault(); 
+                
+                const rangeToDelete = document.createRange();
+                rangeToDelete.setStart(container, range.startOffset - rule.find.length);
+                rangeToDelete.setEnd(container, range.startOffset);
+                rangeToDelete.deleteContents();
+
+                document.execCommand('insertText', false, rule.replace + (event.data === ' ' ? ' ' : ''));
+                
+                break;
+            }
+        }
+    });
+    // --- [FIM] LÓGICA REFORMULADA ---
+
+    const correctTextBtn = document.getElementById('correct-text-btn');
     if (correctTextBtn) {
         correctTextBtn.addEventListener('click', async () => {
             if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -389,9 +465,14 @@ window.addEventListener('DOMContentLoaded', () => {
             correctTextBtn.disabled = false;
         });
     }
-    // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
+});
 
-    // --- EVENT LISTENERS ---
+// --- EVENT LISTENERS GLOBAIS ---
+document.addEventListener('DOMContentLoaded', () => {
+    // A inicialização principal foi movida para cima para garantir que as variáveis
+    // sejam definidas antes de qualquer listener ser anexado a elas.
+    // Listeners que dependem das variáveis inicializadas precisam estar aqui
+    // ou no bloco principal, como já estão.
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
@@ -404,7 +485,7 @@ window.addEventListener('DOMContentLoaded', () => {
     exportBtn.addEventListener('click', exportModels);
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
-    modalBtnSave.addEventListener('click', () => { if (window.currentOnSave) window.currentOnSave(); });
+    modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
     modalBtnCancel.addEventListener('click', closeModal);
     modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
 });
