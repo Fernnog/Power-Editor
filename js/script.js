@@ -2,7 +2,7 @@
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
-const ICON_TRASH = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 const ICON_PALETTE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
 const ICON_PENCIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
@@ -36,8 +36,8 @@ const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
 const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
-const exportDocxBtn = document.getElementById('export-docx-btn');
-const exportPdfBtn = document.getElementById('export-pdf-btn');
+const exportDocxBtn = document.getElementById('export-docx-btn'); // Referência adicionada
+const exportPdfBtn = document.getElementById('export-pdf-btn'); // Referência adicionada
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -54,49 +54,25 @@ function loadStateFromStorage() { const savedState = localStorage.getItem('edito
 function execCmd(command, value = null) { document.execCommand(command, false, value); }
 function insertModelContent(content, tabId) { if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); execCmd('justifyFull'); }
 
-// --- FUNÇÕES DE EXPORTAÇÃO ---
-const ICON_DOCX_DEFAULT = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 18v-7"></path><path d="m9 14 3 3 3-3"></path></svg>`;
-const ICON_PDF_DEFAULT = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
-const ICON_SPINNER = `<svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>`;
+// --- [INÍCIO] SEÇÃO DE CÓDIGO MODIFICADO PARA EXPORTAÇÃO ---
 
 /**
- * Cria um contêiner de impressão temporário com o conteúdo do editor.
- * @param {string} htmlContent - O conteúdo HTML do editor.
- * @returns {HTMLElement} O elemento div criado e estilizado.
- */
-function _createPrintableContainer(htmlContent) {
-    const printContainer = document.createElement('div');
-    printContainer.style.position = 'absolute';
-    printContainer.style.left = '-9999px';
-    printContainer.style.width = '210mm';
-    printContainer.style.padding = '20mm';
-    printContainer.style.backgroundColor = 'white';
-    printContainer.style.color = 'black';
-    printContainer.style.fontSize = '12pt';
-    printContainer.style.fontFamily = 'Arial, sans-serif';
-    printContainer.style.lineHeight = '1.5';
-    printContainer.style.textAlign = 'justify';
-    printContainer.innerHTML = htmlContent;
-    document.body.appendChild(printContainer);
-    return printContainer;
-}
-
-/**
- * Converte o conteúdo do editor para um arquivo .docx e inicia o download.
+ * Converte o conteúdo do editor principal para um arquivo .docx e inicia o download.
+ * VERSÃO FINAL: Usa a biblioteca correta e acessa via 'window.docx', com feedback de carregamento.
  */
 async function saveAsDocx() {
-    if (!exportDocxBtn) return;
     const editorContent = editor.innerText.trim();
     if (!editorContent) {
         alert("O editor está vazio. Adicione conteúdo antes de exportar para .docx");
         return;
     }
 
+    const svg = exportDocxBtn.querySelector('svg');
     exportDocxBtn.disabled = true;
-    exportDocxBtn.innerHTML = ICON_SPINNER;
+    if (svg) svg.classList.add('spinner');
 
     try {
-        const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+        const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = editor.innerHTML;
@@ -137,25 +113,38 @@ async function saveAsDocx() {
         alert("Ocorreu um erro ao tentar gerar o arquivo Word. Verifique o console do desenvolvedor (F12) para mais detalhes.");
     } finally {
         exportDocxBtn.disabled = false;
-        exportDocxBtn.innerHTML = ICON_DOCX_DEFAULT;
+        if (svg) svg.classList.remove('spinner');
     }
 }
 
 /**
- * Converte o conteúdo do editor para um PDF limpo, sem o estilo do editor.
+ * Converte o conteúdo do editor para um PDF limpo, usando um contêiner de impressão.
+ * VERSÃO FINAL: Usa contêiner temporário e inclui feedback de carregamento.
  */
 function saveAsPdf() {
-    if (!exportPdfBtn) return;
     const editorContent = editor.innerHTML.trim();
     if (editorContent === '' || editorContent === '<p><br></p>') {
         alert("O editor está vazio. Adicione conteúdo antes de exportar para PDF.");
         return;
     }
 
+    const svg = exportPdfBtn.querySelector('svg');
     exportPdfBtn.disabled = true;
-    exportPdfBtn.innerHTML = ICON_SPINNER;
-    
-    const printContainer = _createPrintableContainer(editorContent);
+    if (svg) svg.classList.add('spinner');
+
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.left = '-9999px';
+    printContainer.style.width = '210mm';
+    printContainer.style.padding = '20mm';
+    printContainer.style.backgroundColor = 'white';
+    printContainer.style.color = 'black';
+    printContainer.style.fontSize = '12pt';
+    printContainer.style.fontFamily = 'Arial, sans-serif';
+    printContainer.style.lineHeight = '1.5';
+    printContainer.style.textAlign = 'justify';
+    printContainer.innerHTML = editorContent;
+    document.body.appendChild(printContainer);
 
     try {
         const { jsPDF } = window.jspdf;
@@ -175,7 +164,7 @@ function saveAsPdf() {
         }).finally(() => {
             document.body.removeChild(printContainer);
             exportPdfBtn.disabled = false;
-            exportPdfBtn.innerHTML = ICON_PDF_DEFAULT;
+            if (svg) svg.classList.remove('spinner');
         });
 
     } catch (error) {
@@ -183,9 +172,11 @@ function saveAsPdf() {
         alert("Ocorreu um erro ao tentar gerar o arquivo PDF. Verifique o console do desenvolvedor (F12) para mais detalhes.");
         document.body.removeChild(printContainer);
         exportPdfBtn.disabled = false;
-        exportPdfBtn.innerHTML = ICON_PDF_DEFAULT;
+        if (svg) svg.classList.remove('spinner');
     }
 }
+
+// --- [FIM] SEÇÃO DE CÓDIGO MODIFICADO PARA EXPORTAÇÃO ---
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
@@ -199,7 +190,6 @@ function renderTabActions() {
 
     const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
 
-    // Botão de Excluir
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'tab-action-btn';
     deleteBtn.innerHTML = ICON_TRASH;
@@ -210,7 +200,6 @@ function renderTabActions() {
     deleteBtn.onclick = () => deleteTab(appState.activeTabId);
     tabActionsContainer.appendChild(deleteBtn);
 
-    // Botão de Alterar Cor
     const colorBtn = document.createElement('button');
     colorBtn.className = 'tab-action-btn';
     colorBtn.innerHTML = ICON_PALETTE;
@@ -221,7 +210,6 @@ function renderTabActions() {
     };
     tabActionsContainer.appendChild(colorBtn);
 
-    // Botão de Renomear
     const renameBtn = document.createElement('button');
     renameBtn.className = 'tab-action-btn';
     renameBtn.innerHTML = ICON_PENCIL;
@@ -389,23 +377,19 @@ let replacementDebounceTimer;
 function applyAutomaticReplacements() {
     if (!appState.replacements || appState.replacements.length === 0) return;
 
-    // Função auxiliar para escapar caracteres especiais para uso em RegExp
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    // 1. Obter o conteúdo do nó onde o cursor está
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
     const range = selection.getRangeAt(0);
     const node = range.startContainer;
     
-    // Processar apenas se estivermos dentro de um nó de texto
     if (node.nodeType !== Node.TEXT_NODE) return;
 
     const originalText = node.textContent;
     let newText = originalText;
     let replacementMade = false;
 
-    // Ordenar regras da mais longa para a mais curta para evitar substituições parciais
     const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
 
     for (const rule of sortedRules) {
@@ -418,7 +402,6 @@ function applyAutomaticReplacements() {
     if (replacementMade) {
         const cursorPosition = range.startOffset;
         node.textContent = newText;
-        // Restaurar a posição do cursor no nó modificado
         range.setStart(node, Math.min(cursorPosition, newText.length));
         range.collapse(true);
         selection.removeAllRanges();
@@ -427,7 +410,7 @@ function applyAutomaticReplacements() {
 }
 function debouncedApplyReplacements() {
     clearTimeout(replacementDebounceTimer);
-    replacementDebounceTimer = setTimeout(applyAutomaticReplacements, 500); // 500ms de delay
+    replacementDebounceTimer = setTimeout(applyAutomaticReplacements, 500);
 }
 
 // --- INICIALIZAÇÃO ---
@@ -457,7 +440,6 @@ window.addEventListener('DOMContentLoaded', () => {
         dictateBtn.style.display = 'none'; 
     } 
     
-    // Listener para substituições automáticas
     editor.addEventListener('input', debouncedApplyReplacements);
 
     editor.addEventListener('keydown', (event) => { 
@@ -495,7 +477,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- CÓDIGO DA FUNCIONALIDADE DE CORREÇÃO ---
     const correctTextBtn = document.getElementById('correct-text-btn');
 
     if (correctTextBtn) {
@@ -526,23 +507,20 @@ window.addEventListener('DOMContentLoaded', () => {
             correctTextBtn.disabled = false;
         });
     }
-    // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
-
-    // --- EVENT LISTENERS (GERAL) ---
-    searchBox.addEventListener('input', debouncedFilter);
-    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
-    addNewTabBtn.addEventListener('click', addNewTab);
-    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-    clearDocBtn.addEventListener('click', EditorActions.clearDocument);
-    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
-    exportBtn.addEventListener('click', exportModels);
-    importBtn.addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', handleImportFile);
-
-    // --- EVENT LISTENERS (EXPORTAÇÃO) ---
-    if(exportDocxBtn) exportDocxBtn.addEventListener('click', saveAsDocx);
-    if(exportPdfBtn) exportPdfBtn.addEventListener('click', saveAsPdf);
 });
+
+// --- EVENT LISTENERS ---
+searchBox.addEventListener('input', debouncedFilter);
+searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+addNewTabBtn.addEventListener('click', addNewTab);
+addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
+clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+exportBtn.addEventListener('click', exportModels);
+importBtn.addEventListener('click', () => importFileInput.click());
+importFileInput.addEventListener('change', handleImportFile);
+exportDocxBtn.addEventListener('click', saveAsDocx); // Listener adicionado
+exportPdfBtn.addEventListener('click', saveAsPdf);   // Listener adicionado
