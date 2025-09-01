@@ -2,9 +2,9 @@
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
-const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-const ICON_PALETTE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
-const ICON_PENCIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+const ICON_TRASH = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const ICON_PALETTE = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
+const ICON_PENCIL = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
 const ICON_MOVE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 const ICON_STAR_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
@@ -19,10 +19,33 @@ const defaultModels = [
 ];
 
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
-let editor, modelList, searchBox, tabsContainer, addNewTabBtn, addNewModelBtn, indentBtn, exportBtn, importBtn, importFileInput, searchBtn, clearSearchBtn, formatDocBtn, clearDocBtn, blockquoteBtn, backupStatusEl, tabActionsContainer;
-// --- REFERÊNCIAS DO MODAL ---
-let modalContainer, modalTitle, modalInputName, modalInputContent, modalBtnSave, modalBtnCancel, modalContentLabel, currentOnSave;
+const editor = document.getElementById('editor');
+const modelList = document.getElementById('model-list');
+const searchBox = document.getElementById('search-box');
+const tabsContainer = document.getElementById('tabs-container');
+const addNewTabBtn = document.getElementById('add-new-tab-btn');
+const addNewModelBtn = document.getElementById('add-new-model-btn');
+const indentBtn = document.getElementById('indent-btn');
+const exportBtn = document.getElementById('export-btn');
+const importBtn = document.getElementById('import-btn');
+const importFileInput = document.getElementById('import-file-input');
+const searchBtn = document.getElementById('search-btn');
+const clearSearchBtn = document.getElementById('clear-search-btn');
+const formatDocBtn = document.getElementById('format-doc-btn');
+const clearDocBtn = document.getElementById('clear-doc-btn');
+const blockquoteBtn = document.getElementById('blockquote-btn');
+const backupStatusEl = document.getElementById('backup-status');
+const tabActionsContainer = document.getElementById('tab-actions-container');
 
+// --- REFERÊNCIAS DO MODAL ---
+const modalContainer = document.getElementById('modal-container');
+const modalTitle = document.getElementById('modal-title');
+const modalInputName = document.getElementById('modal-input-name');
+const modalInputContent = document.getElementById('modal-input-content');
+const modalBtnSave = document.getElementById('modal-btn-save');
+const modalBtnCancel = document.getElementById('modal-btn-cancel');
+const modalContentLabel = document.querySelector('label[for="modal-input-content"]');
+let currentOnSave = null;
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -51,6 +74,7 @@ function renderTabActions() {
 
     const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
 
+    // Botão de Excluir
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'tab-action-btn';
     deleteBtn.innerHTML = ICON_TRASH;
@@ -61,6 +85,7 @@ function renderTabActions() {
     deleteBtn.onclick = () => deleteTab(appState.activeTabId);
     tabActionsContainer.appendChild(deleteBtn);
 
+    // Botão de Alterar Cor
     const colorBtn = document.createElement('button');
     colorBtn.className = 'tab-action-btn';
     colorBtn.innerHTML = ICON_PALETTE;
@@ -71,6 +96,7 @@ function renderTabActions() {
     };
     tabActionsContainer.appendChild(colorBtn);
 
+    // Botão de Renomear
     const renameBtn = document.createElement('button');
     renameBtn.className = 'tab-action-btn';
     renameBtn.innerHTML = ICON_PENCIL;
@@ -239,35 +265,8 @@ function closeModal() { modalContainer.classList.remove('visible'); currentOnSav
 
 // --- INICIALIZAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
-    editor = document.getElementById('editor');
-    modelList = document.getElementById('model-list');
-    searchBox = document.getElementById('search-box');
-    tabsContainer = document.getElementById('tabs-container');
-    addNewTabBtn = document.getElementById('add-new-tab-btn');
-    addNewModelBtn = document.getElementById('add-new-model-btn');
-    indentBtn = document.getElementById('indent-btn');
-    exportBtn = document.getElementById('export-btn');
-    importBtn = document.getElementById('import-btn');
-    importFileInput = document.getElementById('import-file-input');
-    searchBtn = document.getElementById('search-btn');
-    clearSearchBtn = document.getElementById('clear-search-btn');
-    formatDocBtn = document.getElementById('format-doc-btn');
-    clearDocBtn = document.getElementById('clear-doc-btn');
-    blockquoteBtn = document.getElementById('blockquote-btn');
-    backupStatusEl = document.getElementById('backup-status');
-    tabActionsContainer = document.getElementById('tab-actions-container');
-    modalContainer = document.getElementById('modal-container');
-    modalTitle = document.getElementById('modal-title');
-    modalInputName = document.getElementById('modal-input-name');
-    modalInputContent = document.getElementById('modal-input-content');
-    modalBtnSave = document.getElementById('modal-btn-save');
-    modalBtnCancel = document.getElementById('modal-btn-cancel');
-    modalContentLabel = document.querySelector('label[for="modal-input-content"]');
-    currentOnSave = null;
-
     loadStateFromStorage(); 
     render(); 
-    
     const dictateBtn = document.getElementById('dictate-btn'); 
     const dictationModal = document.getElementById('dictation-modal'); 
     const dictationCloseBtn = document.getElementById('dictation-close-btn'); 
@@ -308,135 +307,54 @@ window.addEventListener('DOMContentLoaded', () => {
         blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote); 
     } 
     
-    // --- [INÍCIO] LÓGICA REFORMULADA PARA SUBSTITUIÇÕES AUTOMÁTICAS ---
-    const replaceBtn = document.getElementById('replace-btn');
-    const replaceModal = document.getElementById('replace-modal');
-
-    if (replaceBtn && replaceModal) {
-        const replaceSearchInput = document.getElementById('replace-search-input');
-        const replaceList = document.getElementById('replace-list');
-        const addNewRuleBtn = document.getElementById('replace-add-new-rule-btn');
-        const closeModalBtn = document.getElementById('replace-modal-close-btn');
-        const paginationControls = document.getElementById('replace-pagination-controls');
-
-        let currentReplacePage = 1;
-        const itemsPerPage = 5;
-
-        const renderReplacementRules = () => {
-            if (!appState.replacements) appState.replacements = [];
-            
-            const searchTerm = replaceSearchInput.value.toLowerCase();
-            const filteredRules = appState.replacements.filter(rule =>
-                (rule.find || '').toLowerCase().includes(searchTerm) ||
-                (rule.replace || '').toLowerCase().includes(searchTerm)
-            );
-
-            const totalPages = Math.ceil(filteredRules.length / itemsPerPage) || 1;
-            if (currentReplacePage > totalPages) currentReplacePage = totalPages;
-
-            const startIndex = (currentReplacePage - 1) * itemsPerPage;
-            const paginatedRules = filteredRules.slice(startIndex, startIndex + itemsPerPage);
-
-            replaceList.innerHTML = '';
-            paginatedRules.forEach((rule) => {
-                const globalIndex = appState.replacements.findIndex(r => r === rule);
-                const li = document.createElement('li');
-                li.className = 'replace-item';
-                li.innerHTML = `
-                    <input type="text" class="find-input" value="${rule.find || ''}" placeholder="Localizar..." data-index="${globalIndex}">
-                    <span class="arrow">→</span>
-                    <input type="text" class="replace-input" value="${rule.replace || ''}" placeholder="Substituir por..." data-index="${globalIndex}">
-                    <button class="delete-btn" data-index="${globalIndex}">&times;</button>
-                `;
-                replaceList.appendChild(li);
-            });
-            renderPagination(totalPages);
-        };
-        
-        const renderPagination = (totalPages) => {
-            paginationControls.innerHTML = '';
-            if (totalPages <= 1) return;
-            for (let i = 1; i <= totalPages; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.textContent = i;
-                if (i === currentReplacePage) pageBtn.classList.add('active');
-                pageBtn.onclick = () => {
-                    currentReplacePage = i;
-                    renderReplacementRules();
-                };
-                paginationControls.appendChild(pageBtn);
-            }
-        };
-
+    const replaceBtn = document.getElementById('replace-btn'); 
+    if (replaceBtn) { 
         replaceBtn.addEventListener('click', () => {
-            currentReplacePage = 1;
-            replaceSearchInput.value = '';
-            renderReplacementRules();
-            replaceModal.classList.add('visible');
-            replaceSearchInput.focus();
-        });
+            ModalManager.show({
+                type: 'replacementManager',
+                title: 'Gerenciador de Substituições',
+                initialData: {
+                    replacements: appState.replacements || []
+                },
+                onSave: (data) => {
+                    modifyStateAndBackup(() => {
+                        appState.replacements = data.replacements;
+                    });
+                },
+                onApply: () => {
+                    const rules = appState.replacements;
+                    if (!rules || rules.length === 0) {
+                        alert("Nenhuma regra de substituição foi salva para aplicar.");
+                        return;
+                    }
 
-        closeModalBtn.addEventListener('click', () => replaceModal.classList.remove('visible'));
-        addNewRuleBtn.addEventListener('click', () => {
-            modifyStateAndBackup(() => appState.replacements.unshift({ find: '', replace: '' }));
-            renderReplacementRules();
-        });
+                    let content = editor.innerHTML;
+                    let replacementsMade = 0;
 
-        replaceSearchInput.addEventListener('input', () => {
-            currentReplacePage = 1;
-            renderReplacementRules();
-        });
-        
-        replaceList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-btn')) {
-                const index = parseInt(e.target.dataset.index, 10);
-                modifyStateAndBackup(() => appState.replacements.splice(index, 1));
-                renderReplacementRules();
-            }
-        });
+                    rules.forEach(rule => {
+                        if (rule.find) {
+                            const regex = new RegExp(rule.find.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+                            if (content.match(regex)) {
+                                content = content.replace(regex, rule.replace);
+                                replacementsMade++;
+                            }
+                        }
+                    });
 
-        replaceList.addEventListener('input', (e) => {
-            if (e.target.classList.contains('find-input') || e.target.classList.contains('replace-input')) {
-                const index = parseInt(e.target.dataset.index, 10);
-                const field = e.target.classList.contains('find-input') ? 'find' : 'replace';
-                appState.replacements[index][field] = e.target.value;
-                saveStateToStorage();
-            }
+                    if (replacementsMade > 0) {
+                        editor.innerHTML = content;
+                        alert("Substituições aplicadas com sucesso!");
+                    } else {
+                        alert("Nenhum texto correspondente às regras foi encontrado no editor.");
+                    }
+                }
+            });
         });
     }
 
-    editor.addEventListener('input', (event) => {
-        if (event.inputType !== 'insertText' || ![' ', 'Enter', 'Tab'].includes(event.data)) {
-            if (event.inputType !== 'insertParagraph') return;
-        }
-        
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return;
-
-        const range = selection.getRangeAt(0);
-        const container = range.startContainer;
-
-        if (container.nodeType !== Node.TEXT_NODE) return;
-        const textContent = container.textContent.substring(0, range.startOffset);
-        
-        for (const rule of appState.replacements) {
-            if (rule.find && textContent.endsWith(rule.find)) {
-                event.preventDefault(); 
-                
-                const rangeToDelete = document.createRange();
-                rangeToDelete.setStart(container, range.startOffset - rule.find.length);
-                rangeToDelete.setEnd(container, range.startOffset);
-                rangeToDelete.deleteContents();
-
-                document.execCommand('insertText', false, rule.replace + (event.data === ' ' ? ' ' : ''));
-                
-                break;
-            }
-        }
-    });
-    // --- [FIM] LÓGICA REFORMULADA ---
-
+    // --- CÓDIGO DA FUNCIONALIDADE DE CORREÇÃO ---
     const correctTextBtn = document.getElementById('correct-text-btn');
+
     if (correctTextBtn) {
         correctTextBtn.addEventListener('click', async () => {
             if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -465,27 +383,22 @@ window.addEventListener('DOMContentLoaded', () => {
             correctTextBtn.disabled = false;
         });
     }
+    // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
 });
 
-// --- EVENT LISTENERS GLOBAIS ---
-document.addEventListener('DOMContentLoaded', () => {
-    // A inicialização principal foi movida para cima para garantir que as variáveis
-    // sejam definidas antes de qualquer listener ser anexado a elas.
-    // Listeners que dependem das variáveis inicializadas precisam estar aqui
-    // ou no bloco principal, como já estão.
-    searchBox.addEventListener('input', debouncedFilter);
-    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
-    addNewTabBtn.addEventListener('click', addNewTab);
-    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-    clearDocBtn.addEventListener('click', EditorActions.clearDocument);
-    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
-    exportBtn.addEventListener('click', exportModels);
-    importBtn.addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', handleImportFile);
-    modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
-    modalBtnCancel.addEventListener('click', closeModal);
-    modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
-});
+// --- EVENT LISTENERS ---
+searchBox.addEventListener('input', debouncedFilter);
+searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+addNewTabBtn.addEventListener('click', addNewTab);
+addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
+clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+exportBtn.addEventListener('click', exportModels);
+importBtn.addEventListener('click', () => importFileInput.click());
+importFileInput.addEventListener('change', handleImportFile);
+modalBtnSave.addEventListener('click', () => { if (currentOnSave) currentOnSave(); });
+modalBtnCancel.addEventListener('click', closeModal);
+modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
