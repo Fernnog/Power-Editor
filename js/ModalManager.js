@@ -1,15 +1,10 @@
 const ModalManager = (() => {
     // Referências aos elementos do DOM do modal principal
     const modalContainer = document.getElementById('modal-container');
-    const modalContentContainer = document.querySelector('.modal-content');
     const modalTitleEl = document.getElementById('modal-title');
+    const modalDynamicContent = document.getElementById('modal-dynamic-content');
     const modalBtnSave = document.getElementById('modal-btn-save');
     const modalBtnCancel = document.getElementById('modal-btn-cancel');
-
-    // Corpo dinâmico que será substituído
-    const dynamicContentArea = document.createElement('div');
-    dynamicContentArea.className = 'modal-dynamic-content';
-    modalContentContainer.insertBefore(dynamicContentArea, modalBtnSave.parentElement);
 
     // Armazena a configuração atual, incluindo o callback onSave
     let currentConfig = null;
@@ -19,7 +14,7 @@ const ModalManager = (() => {
      * @param {object} data - Dados iniciais { name, content }.
      */
     function _buildModelEditorContent(data = {}) {
-        dynamicContentArea.innerHTML = `
+        modalDynamicContent.innerHTML = `
             <label for="modal-input-name">Nome do Modelo:</label>
             <input type="text" id="modal-input-name" placeholder="Digite o nome aqui..." value="${data.name || ''}">
             
@@ -38,46 +33,62 @@ const ModalManager = (() => {
      * @param {object} data - Dados iniciais { replacements }.
      */
     function _buildReplacementManagerContent(data = {}) {
-        let replacementRowsHtml = (data.replacements || []).map((item, index) => `
-            <div class="replacement-row" data-index="${index}">
+        let replacementRowsHtml = (data.replacements || []).map(item => `
+            <div class="replacement-row">
                 <input type="text" class="find-input" placeholder="Localizar..." value="${item.find || ''}">
                 <span class="arrow">→</span>
                 <input type="text" class="replace-input" placeholder="Substituir por..." value="${item.replace || ''}">
-                <button class="delete-rule-btn">&times;</button>
+                <button type="button" class="delete-rule-btn">&times;</button>
             </div>
         `).join('');
 
-        dynamicContentArea.innerHTML = `
-            <p class="modal-description">Crie regras para localizar e substituir textos no editor. As regras são salvas automaticamente.</p>
+        modalDynamicContent.innerHTML = `
+            <p class="modal-description">Gerencie suas regras de substituição. Elas serão aplicadas automaticamente enquanto você digita no editor.</p>
+            <input type="text" id="replacement-search-input" placeholder="Buscar por uma regra...">
             <div id="replacement-list-container">${replacementRowsHtml}</div>
             <button id="add-new-rule-btn" class="control-btn btn-secondary" style="width: 100%; margin-top: 10px;">Adicionar Nova Regra</button>
-            <hr style="margin: 20px 0;">
-            <button id="apply-all-btn" class="control-btn btn-primary" style="width: 100%;">Aplicar Todas as Substituições no Editor</button>
         `;
+    }
 
-        // Adicionar listeners de eventos para os botões dinâmicos
-        dynamicContentArea.addEventListener('click', (e) => {
-            if (e.target.id === 'add-new-rule-btn') {
-                const listContainer = document.getElementById('replacement-list-container');
+    /**
+     * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
+     */
+    function _attachDynamicEventListeners() {
+        // Eventos para o Gerenciador de Substituições
+        if (currentConfig.type === 'replacementManager') {
+            const listContainer = modalDynamicContent.querySelector('#replacement-list-container');
+            
+            // Adicionar nova regra
+            modalDynamicContent.querySelector('#add-new-rule-btn').addEventListener('click', () => {
                 const newRow = document.createElement('div');
                 newRow.className = 'replacement-row';
                 newRow.innerHTML = `
                     <input type="text" class="find-input" placeholder="Localizar...">
                     <span class="arrow">→</span>
                     <input type="text" class="replace-input" placeholder="Substituir por...">
-                    <button class="delete-rule-btn">&times;</button>
+                    <button type="button" class="delete-rule-btn">&times;</button>
                 `;
                 listContainer.appendChild(newRow);
-            }
-            if (e.target.classList.contains('delete-rule-btn')) {
-                e.target.parentElement.remove();
-            }
-            if (e.target.id === 'apply-all-btn') {
-                if (currentConfig && typeof currentConfig.onApply === 'function') {
-                    currentConfig.onApply();
+                newRow.querySelector('.find-input').focus();
+            });
+
+            // Remover regra (delegação de evento)
+            modalDynamicContent.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-rule-btn')) {
+                    e.target.parentElement.remove();
                 }
-            }
-        });
+            });
+
+            // Filtrar/Buscar regra
+            modalDynamicContent.querySelector('#replacement-search-input').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                listContainer.querySelectorAll('.replacement-row').forEach(row => {
+                    const findValue = row.querySelector('.find-input').value.toLowerCase();
+                    const replaceValue = row.querySelector('.replace-input').value.toLowerCase();
+                    row.style.display = (findValue.includes(query) || replaceValue.includes(query)) ? 'flex' : 'none';
+                });
+            });
+        }
     }
     
     /**
@@ -86,15 +97,26 @@ const ModalManager = (() => {
      */
     function _getReplacementData() {
         const replacements = [];
-        document.querySelectorAll('.replacement-row').forEach(row => {
+        modalDynamicContent.querySelectorAll('.replacement-row').forEach(row => {
             const find = row.querySelector('.find-input').value.trim();
-            const replace = row.querySelector('.replace-input').value.trim();
+            const replace = row.querySelector('.replace-input').value; // Não usar trim() no "replace" para permitir espaços
             if (find) { // Salva a regra apenas se o campo "Localizar" estiver preenchido
                 replacements.push({ find, replace });
             }
         });
         return replacements;
     }
+    
+    /**
+     * Coleta os dados do formulário de edição de modelo.
+     */
+    function _getModelEditorData() {
+        return {
+            name: modalDynamicContent.querySelector('#modal-input-name').value.trim(),
+            content: modalDynamicContent.querySelector('#modal-input-content').innerHTML
+        };
+    }
+
 
     /**
      * Função principal para exibir o modal com uma configuração específica.
@@ -103,6 +125,7 @@ const ModalManager = (() => {
     function show(config) {
         currentConfig = config;
         modalTitleEl.textContent = config.title;
+        modalBtnSave.textContent = config.saveButtonText || 'Salvar e Fechar';
 
         // Constrói o conteúdo com base no tipo
         switch (config.type) {
@@ -118,7 +141,8 @@ const ModalManager = (() => {
         }
 
         modalContainer.classList.add('visible');
-        const firstInput = dynamicContentArea.querySelector('input[type="text"]');
+        _attachDynamicEventListeners(); // Adiciona os eventos ao conteúdo recém-criado
+        const firstInput = modalDynamicContent.querySelector('input[type="text"]');
         if (firstInput) {
             firstInput.focus();
         }
@@ -129,7 +153,7 @@ const ModalManager = (() => {
      */
     function hide() {
         modalContainer.classList.remove('visible');
-        dynamicContentArea.innerHTML = ''; // Limpa o conteúdo para a próxima abertura
+        modalDynamicContent.innerHTML = ''; // Limpa o conteúdo para a próxima abertura
         currentConfig = null;
     }
 
@@ -137,15 +161,12 @@ const ModalManager = (() => {
      * Handler do botão Salvar. Coleta os dados e chama o callback.
      */
     function onSaveClick() {
-        if (!currentConfig || typeof currentConfig.onSave !== 'function') return;
+        if (!currentConfig || typeof currentConfig.onSave !== 'function') return hide();
 
         let dataToSave;
         switch (currentConfig.type) {
             case 'modelEditor':
-                dataToSave = {
-                    name: document.getElementById('modal-input-name').value,
-                    content: document.getElementById('modal-input-content').innerHTML
-                };
+                dataToSave = _getModelEditorData();
                 break;
             case 'replacementManager':
                  dataToSave = {
@@ -155,7 +176,7 @@ const ModalManager = (() => {
         }
         
         currentConfig.onSave(dataToSave);
-        hide(); // O callback onSave é responsável por fechar, mas garantimos aqui.
+        hide();
     }
 
     // Adiciona os listeners de eventos uma única vez
