@@ -39,6 +39,12 @@
                 <button id="dictate-btn" title="Ditar texto">🎤</button>
                 <button id="correct-text-btn" title="Corrigir Texto com IA">✨</button>
                 <button id="replace-btn" title="Substituir Termos">A→B</button>
+                <button id="export-docx-btn" title="Salvar como Word (.docx)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 18v-7"></path><path d="m9 14 3 3 3-3"></path></svg>
+                </button>
+                <button id="export-pdf-btn" title="Salvar como PDF">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </button>
                 <div id="backup-status" class="backup-status">Nenhum backup recente.</div>
             </div>
             <div id="editor" class="text-editor" contenteditable="true">
@@ -117,6 +123,12 @@
     <script src="js/backup-manager.js"></script>
     <script src="js/ModalManager.js"></script>
     <script src="js/gemini-service.js"></script>
+    
+    <!-- Bibliotecas para exportação DOCX e PDF -->
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
+
     <script src="js/script.js"></script>
 </body>
 </html>
