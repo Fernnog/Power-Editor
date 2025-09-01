@@ -82,49 +82,17 @@
         </div>
     </div>
 
-    <!-- Estrutura do Modal de Edição (Inicialmente Oculta) -->
+    <!-- Estrutura do Modal Genérico e Dinâmico (Inicialmente Oculta) -->
     <div id="modal-container" class="modal-overlay">
         <div class="modal-content">
             <h3 id="modal-title">Título do Modal</h3>
-            <label for="modal-input-name">Nome do Modelo:</label>
-            <input type="text" id="modal-input-name" placeholder="Digite o nome aqui...">
             
-            <label for="modal-input-content">Conteúdo do Modelo:</label>
-            <div class="modal-toolbar">
-                <button onclick="execCmd('bold')"><b>B</b></button>
-                <button onclick="execCmd('italic')"><i>I</i></button>
-                <button onclick="execCmd('underline')"><u>U</u></button>
-            </div>
-            <div id="modal-input-content" class="text-editor-modal" contenteditable="true"></div>
+            <!-- O conteúdo específico (editor de modelo ou gerenciador de substituição) será inserido aqui -->
+            <div id="modal-dynamic-content"></div>
             
             <div class="modal-buttons">
                 <button id="modal-btn-save">Salvar</button>
                 <button id="modal-btn-cancel">Cancelar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Estrutura do Modal de Substituição de Termos (Inicialmente Oculta) -->
-    <div id="replace-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Gerenciador de Substituições</h3>
-            
-            <label>Adicionar Nova Substituição:</label>
-            <div class="replace-form">
-                <input type="text" id="replace-find-input" placeholder="Localizar...">
-                <span>→</span>
-                <input type="text" id="replace-with-input" placeholder="Substituir por...">
-                <button id="replace-add-btn">Adicionar</button>
-            </div>
-
-            <label>Substituições Salvas:</label>
-            <ul id="replace-list" class="replace-list-container">
-                <!-- Itens de substituição serão preenchidos pelo JavaScript -->
-            </ul>
-
-            <div class="modal-buttons">
-                <button id="replace-apply-all-btn">Aplicar Todas</button>
-                <button id="replace-modal-close-btn">Fechar</button>
             </div>
         </div>
     </div>
