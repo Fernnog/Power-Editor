@@ -104,26 +104,26 @@
         </div>
     </div>
     
-    <!-- Estrutura do Modal de Substituição de Termos (REFORMULADO) -->
+    <!-- Estrutura do Modal de Substituição de Termos (Inicialmente Oculta) -->
     <div id="replace-modal" class="modal-overlay">
         <div class="modal-content">
-            <h3>Gerenciador de Substituições Automáticas</h3>
-            <p class="modal-description">As regras abaixo serão aplicadas automaticamente enquanto você digita no editor.</p>
-
-            <div class="replace-controls">
-                <input type="text" id="replace-search-input" placeholder="Buscar regra...">
-                <button id="replace-add-new-rule-btn" class="control-btn btn-secondary">Nova Regra</button>
-            </div>
+            <h3>Gerenciador de Substituições</h3>
             
+            <label>Adicionar Nova Substituição:</label>
+            <div class="replace-form">
+                <input type="text" id="replace-find-input" placeholder="Localizar...">
+                <span>→</span>
+                <input type="text" id="replace-with-input" placeholder="Substituir por...">
+                <button id="replace-add-btn">Adicionar</button>
+            </div>
+
+            <label>Substituições Salvas:</label>
             <ul id="replace-list" class="replace-list-container">
                 <!-- Itens de substituição serão preenchidos pelo JavaScript -->
             </ul>
 
-            <div id="replace-pagination-controls" class="pagination-controls">
-                <!-- Controles de página serão gerados pelo JavaScript -->
-            </div>
-
             <div class="modal-buttons">
+                <button id="replace-apply-all-btn">Aplicar Todas</button>
                 <button id="replace-modal-close-btn">Fechar</button>
             </div>
         </div>
@@ -143,16 +143,12 @@
         </div>
     </div>
 
-    <!-- Container para notificações (Toast) -->
-    <div id="toast-container"></div>
-
-    <script src="js/config.js"></script>
-    <script src="js/speech.js"></script>
-    <script src="js/editor-actions.js"></script>
-    <script src="js/backup-manager.js"></script>
-    <script src="js/ModalManager.js"></script>
-    <script src="js/gemini-service.js"></script>
-    <script src="js/ReplacementEngine.js"></script>
-    <script src="js/script.js"></script>
+    <script src="js/config.js" defer></script>
+    <script src="js/speech.js" defer></script>
+    <script src="js/editor-actions.js" defer></script>
+    <script src="js/backup-manager.js" defer></script>
+    <script src="js/ModalManager.js" defer></script>
+    <script src="js/gemini-service.js" defer></script>
+    <script src="js/script.js" defer></script>
 </body>
 </html>
