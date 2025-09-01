@@ -32,7 +32,7 @@ const ModalManager = (() => {
             <div id="modal-input-content" class="text-editor-modal" contenteditable="true">${data.content || ''}</div>
         `;
     }
-
+    
     /**
      * Função principal para exibir o modal com uma configuração específica.
      * @param {object} config - Objeto de configuração do modal.
