@@ -36,6 +36,8 @@ const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
 const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
+const exportDocxBtn = document.getElementById('export-docx-btn');
+const exportPdfBtn = document.getElementById('export-pdf-btn');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -249,6 +251,115 @@ function moveModelToAnotherTab(modelId) { const model = appState.models.find(m =
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
 function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
 
+/**
+ * Converte o conteúdo do editor principal para um arquivo .docx e inicia o download.
+ * VERSÃO REVISADA COM TRATAMENTO DE ERROS E VALIDAÇÃO.
+ */
+async function saveAsDocx() {
+    // 1. Validação: verificar se o editor tem conteúdo real.
+    const editorContent = editor.innerText.trim();
+    if (!editorContent) {
+        alert("O editor está vazio. Adicione conteúdo antes de exportar para .docx");
+        return;
+    }
+
+    // 2. Adicionado bloco try...catch para capturar qualquer erro durante o processo.
+    try {
+        // 3. Acesso explícito e seguro ao objeto global criado pela biblioteca UMD.
+        const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = editor.innerHTML;
+
+        const paragraphs = Array.from(tempDiv.childNodes).map(node => {
+            // Apenas processa nós que contêm texto visível
+            if (node.textContent && node.textContent.trim() !== '') {
+                return new Paragraph({
+                    children: [new TextRun(node.textContent)],
+                    alignment: AlignmentType.JUSTIFIED,
+                });
+            }
+            return null;
+        }).filter(p => p !== null); // Filtra quaisquer parágrafos nulos
+
+        if (paragraphs.length === 0) {
+             alert("Não foi encontrado conteúdo de texto válido para exportar.");
+             return;
+        }
+
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: paragraphs,
+            }],
+        });
+
+        const blob = await Packer.toBlob(doc);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'documento.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        console.error("Erro ao gerar o arquivo .docx:", error);
+        alert("Ocorreu um erro ao tentar gerar o arquivo Word. Verifique o console do desenvolvedor (F12) para mais detalhes.");
+    }
+}
+
+/**
+ * Converte o conteúdo do editor principal para um arquivo .pdf e inicia o download.
+ * VERSÃO REVISADA COM TRATAMENTO DE ERROS E VALIDAÇÃO.
+ */
+function saveAsPdf() {
+    // 1. Validação de conteúdo
+    const editorContent = editor.innerText.trim();
+    if (!editorContent) {
+        alert("O editor está vazio. Adicione conteúdo antes de exportar para PDF.");
+        return;
+    }
+
+    // 2. Adicionado bloco try...catch
+    try {
+        // 3. Acesso explícito aos objetos globais
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const content = editor;
+        const originalBg = content.style.backgroundColor;
+        content.style.backgroundColor = 'white'; 
+        
+        console.log("Iniciando captura do canvas para o PDF...");
+
+        window.html2canvas(content, { scale: 2 }).then(canvas => {
+            console.log("Captura do canvas concluída com sucesso.");
+            content.style.backgroundColor = originalBg; 
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth() - 20; // Adiciona margens
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); // Adiciona margens
+            doc.save('documento.pdf');
+        }).catch(canvasError => {
+            console.error("Erro durante a fase do html2canvas:", canvasError);
+            alert("Ocorreu um erro ao capturar o conteúdo visual para o PDF.");
+            content.style.backgroundColor = originalBg; // Garante a restauração da cor em caso de erro
+        });
+
+    } catch (error) {
+        console.error("Erro ao gerar o arquivo PDF:", error);
+        alert("Ocorreu um erro ao tentar gerar o arquivo PDF. Verifique o console do desenvolvedor (F12) para mais detalhes.");
+    }
+}
+
 // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
 let replacementDebounceTimer;
 function applyAutomaticReplacements() {
@@ -407,3 +518,5 @@ clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderMod
 exportBtn.addEventListener('click', exportModels);
 importBtn.addEventListener('click', () => importFileInput.click());
 importFileInput.addEventListener('change', handleImportFile);
+exportDocxBtn.addEventListener('click', saveAsDocx);
+exportPdfBtn.addEventListener('click', saveAsPdf);
