@@ -2,7 +2,7 @@
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
-const ICON_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+const ICON_TRASH = `<svg xmlns="http://www.w.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 const ICON_PALETTE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.73c0 .27.16.58.67.5A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path></svg>`;
 const ICON_PENCIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
@@ -53,6 +53,139 @@ function loadStateFromStorage() { const savedState = localStorage.getItem('edito
 // --- FUNÇÕES DO EDITOR ---
 function execCmd(command, value = null) { document.execCommand(command, false, value); }
 function insertModelContent(content, tabId) { if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); execCmd('justifyFull'); }
+
+// --- FUNÇÕES DE EXPORTAÇÃO ---
+const ICON_DOCX_DEFAULT = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 18v-7"></path><path d="m9 14 3 3 3-3"></path></svg>`;
+const ICON_PDF_DEFAULT = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+const ICON_SPINNER = `<svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>`;
+
+/**
+ * Cria um contêiner de impressão temporário com o conteúdo do editor.
+ * @param {string} htmlContent - O conteúdo HTML do editor.
+ * @returns {HTMLElement} O elemento div criado e estilizado.
+ */
+function _createPrintableContainer(htmlContent) {
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.left = '-9999px';
+    printContainer.style.width = '210mm';
+    printContainer.style.padding = '20mm';
+    printContainer.style.backgroundColor = 'white';
+    printContainer.style.color = 'black';
+    printContainer.style.fontSize = '12pt';
+    printContainer.style.fontFamily = 'Arial, sans-serif';
+    printContainer.style.lineHeight = '1.5';
+    printContainer.style.textAlign = 'justify';
+    printContainer.innerHTML = htmlContent;
+    document.body.appendChild(printContainer);
+    return printContainer;
+}
+
+/**
+ * Converte o conteúdo do editor para um arquivo .docx e inicia o download.
+ */
+async function saveAsDocx() {
+    if (!exportDocxBtn) return;
+    const editorContent = editor.innerText.trim();
+    if (!editorContent) {
+        alert("O editor está vazio. Adicione conteúdo antes de exportar para .docx");
+        return;
+    }
+
+    exportDocxBtn.disabled = true;
+    exportDocxBtn.innerHTML = ICON_SPINNER;
+
+    try {
+        const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = editor.innerHTML;
+
+        const paragraphs = Array.from(tempDiv.childNodes).map(node => {
+            if (node.textContent && node.textContent.trim() !== '') {
+                return new Paragraph({
+                    children: [new TextRun(node.textContent)],
+                    alignment: AlignmentType.JUSTIFIED,
+                });
+            }
+            return null;
+        }).filter(p => p !== null);
+
+        if (paragraphs.length === 0) {
+             alert("Não foi encontrado conteúdo de texto válido para exportar.");
+             return;
+        }
+
+        const doc = new Document({
+            sections: [{
+                children: paragraphs,
+            }],
+        });
+
+        const blob = await Packer.toBlob(doc);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'documento.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        console.error("Erro ao gerar o arquivo .docx:", error);
+        alert("Ocorreu um erro ao tentar gerar o arquivo Word. Verifique o console do desenvolvedor (F12) para mais detalhes.");
+    } finally {
+        exportDocxBtn.disabled = false;
+        exportDocxBtn.innerHTML = ICON_DOCX_DEFAULT;
+    }
+}
+
+/**
+ * Converte o conteúdo do editor para um PDF limpo, sem o estilo do editor.
+ */
+function saveAsPdf() {
+    if (!exportPdfBtn) return;
+    const editorContent = editor.innerHTML.trim();
+    if (editorContent === '' || editorContent === '<p><br></p>') {
+        alert("O editor está vazio. Adicione conteúdo antes de exportar para PDF.");
+        return;
+    }
+
+    exportPdfBtn.disabled = true;
+    exportPdfBtn.innerHTML = ICON_SPINNER;
+    
+    const printContainer = _createPrintableContainer(editorContent);
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        window.html2canvas(printContainer, { scale: 2, useCORS: true }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            doc.save('documento.pdf');
+        }).catch(canvasError => {
+            console.error("Erro durante a fase do html2canvas:", canvasError);
+            alert("Ocorreu um erro ao capturar o conteúdo visual para o PDF.");
+        }).finally(() => {
+            document.body.removeChild(printContainer);
+            exportPdfBtn.disabled = false;
+            exportPdfBtn.innerHTML = ICON_PDF_DEFAULT;
+        });
+
+    } catch (error) {
+        console.error("Erro ao gerar o arquivo PDF:", error);
+        alert("Ocorreu um erro ao tentar gerar o arquivo PDF. Verifique o console do desenvolvedor (F12) para mais detalhes.");
+        document.body.removeChild(printContainer);
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.innerHTML = ICON_PDF_DEFAULT;
+    }
+}
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
@@ -251,115 +384,6 @@ function moveModelToAnotherTab(modelId) { const model = appState.models.find(m =
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
 function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
 
-/**
- * Converte o conteúdo do editor principal para um arquivo .docx e inicia o download.
- * VERSÃO REVISADA COM TRATAMENTO DE ERROS E VALIDAÇÃO.
- */
-async function saveAsDocx() {
-    // 1. Validação: verificar se o editor tem conteúdo real.
-    const editorContent = editor.innerText.trim();
-    if (!editorContent) {
-        alert("O editor está vazio. Adicione conteúdo antes de exportar para .docx");
-        return;
-    }
-
-    // 2. Adicionado bloco try...catch para capturar qualquer erro durante o processo.
-    try {
-        // 3. Acesso explícito e seguro ao objeto global criado pela biblioteca UMD.
-        const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = editor.innerHTML;
-
-        const paragraphs = Array.from(tempDiv.childNodes).map(node => {
-            // Apenas processa nós que contêm texto visível
-            if (node.textContent && node.textContent.trim() !== '') {
-                return new Paragraph({
-                    children: [new TextRun(node.textContent)],
-                    alignment: AlignmentType.JUSTIFIED,
-                });
-            }
-            return null;
-        }).filter(p => p !== null); // Filtra quaisquer parágrafos nulos
-
-        if (paragraphs.length === 0) {
-             alert("Não foi encontrado conteúdo de texto válido para exportar.");
-             return;
-        }
-
-        const doc = new Document({
-            sections: [{
-                properties: {},
-                children: paragraphs,
-            }],
-        });
-
-        const blob = await Packer.toBlob(doc);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'documento.docx';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-    } catch (error) {
-        console.error("Erro ao gerar o arquivo .docx:", error);
-        alert("Ocorreu um erro ao tentar gerar o arquivo Word. Verifique o console do desenvolvedor (F12) para mais detalhes.");
-    }
-}
-
-/**
- * Converte o conteúdo do editor principal para um arquivo .pdf e inicia o download.
- * VERSÃO REVISADA COM TRATAMENTO DE ERROS E VALIDAÇÃO.
- */
-function saveAsPdf() {
-    // 1. Validação de conteúdo
-    const editorContent = editor.innerText.trim();
-    if (!editorContent) {
-        alert("O editor está vazio. Adicione conteúdo antes de exportar para PDF.");
-        return;
-    }
-
-    // 2. Adicionado bloco try...catch
-    try {
-        // 3. Acesso explícito aos objetos globais
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4'
-        });
-
-        const content = editor;
-        const originalBg = content.style.backgroundColor;
-        content.style.backgroundColor = 'white'; 
-        
-        console.log("Iniciando captura do canvas para o PDF...");
-
-        window.html2canvas(content, { scale: 2 }).then(canvas => {
-            console.log("Captura do canvas concluída com sucesso.");
-            content.style.backgroundColor = originalBg; 
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth() - 20; // Adiciona margens
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
-            doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); // Adiciona margens
-            doc.save('documento.pdf');
-        }).catch(canvasError => {
-            console.error("Erro durante a fase do html2canvas:", canvasError);
-            alert("Ocorreu um erro ao capturar o conteúdo visual para o PDF.");
-            content.style.backgroundColor = originalBg; // Garante a restauração da cor em caso de erro
-        });
-
-    } catch (error) {
-        console.error("Erro ao gerar o arquivo PDF:", error);
-        alert("Ocorreu um erro ao tentar gerar o arquivo PDF. Verifique o console do desenvolvedor (F12) para mais detalhes.");
-    }
-}
-
 // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
 let replacementDebounceTimer;
 function applyAutomaticReplacements() {
@@ -503,20 +527,22 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
     // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
-});
 
-// --- EVENT LISTENERS ---
-searchBox.addEventListener('input', debouncedFilter);
-searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
-addNewTabBtn.addEventListener('click', addNewTab);
-addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-clearDocBtn.addEventListener('click', EditorActions.clearDocument);
-searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
-exportBtn.addEventListener('click', exportModels);
-importBtn.addEventListener('click', () => importFileInput.click());
-importFileInput.addEventListener('change', handleImportFile);
-exportDocxBtn.addEventListener('click', saveAsDocx);
-exportPdfBtn.addEventListener('click', saveAsPdf);
+    // --- EVENT LISTENERS (GERAL) ---
+    searchBox.addEventListener('input', debouncedFilter);
+    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+    addNewTabBtn.addEventListener('click', addNewTab);
+    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+    clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
+    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+    exportBtn.addEventListener('click', exportModels);
+    importBtn.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', handleImportFile);
+
+    // --- EVENT LISTENERS (EXPORTAÇÃO) ---
+    if(exportDocxBtn) exportDocxBtn.addEventListener('click', saveAsDocx);
+    if(exportPdfBtn) exportPdfBtn.addEventListener('click', saveAsPdf);
+});
