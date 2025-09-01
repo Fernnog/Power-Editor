@@ -418,3 +418,127 @@ body, html {
     animation: pulse-yellow 1.5s infinite;
     border-radius: 3px;
 }
+
+/* --- NOVOS ESTILOS - PRIORIDADE 1: REFORMULAÇÃO DO MODAL DE SUBSTITUIÇÃO --- */
+.modal-description {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.replace-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.replace-controls input {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+#replace-list .replace-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+}
+
+#replace-list .replace-item:not(:last-child) {
+    border-bottom: 1px solid #eee;
+}
+
+.replace-item input {
+    flex: 1;
+    font-family: monospace;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.replace-item .arrow {
+    font-weight: bold;
+}
+
+.replace-item .delete-btn {
+    background: transparent;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 0 5px;
+    line-height: 1;
+}
+.replace-item .delete-btn:hover {
+    color: #c82333;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.pagination-controls button {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.pagination-controls button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.pagination-controls button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color-dark);
+}
+
+/* --- NOVOS ESTILOS - PRIORIDADE 2: NOTIFICAÇÃO 'TOAST' DE DESFAZER --- */
+.undo-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, bottom 0.3s, visibility 0.3s;
+}
+
+.undo-toast.visible {
+    opacity: 1;
+    bottom: 30px;
+    visibility: visible;
+}
+
+.undo-toast span {
+    font-size: 14px;
+}
+
+.undo-toast button {
+    background: transparent;
+    border: none;
+    color: #FBBF24; /* Amarelo-dourado para destaque */
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    text-transform: uppercase;
+    padding: 5px;
+}
