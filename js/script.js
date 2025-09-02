@@ -57,8 +57,7 @@ function insertModelContent(content, tabId) { if (searchBox.value && tabId && ap
 // --- [INÍCIO] SEÇÃO DE CÓDIGO MODIFICADO PARA EXPORTAÇÃO ---
 
 /**
- * Converte o conteúdo do editor principal para um arquivo .docx e inicia o download.
- * VERSÃO FINAL: Usa a biblioteca correta e acessa via 'window.docx', com feedback de carregamento.
+ * Converte o conteúdo do editor principal para um arquivo .docx, preservando a formatação.
  */
 async function saveAsDocx() {
     const editorContent = editor.innerText.trim();
@@ -74,28 +73,86 @@ async function saveAsDocx() {
     try {
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
+        // --- Função auxiliar para converter CM para Twips ---
+        const convertCmToTwip = (cm) => Math.round(cm * 567);
+
+        // --- Função recursiva para processar nós e sua formatação ---
+        const processChildNodes = (parentNode, options = {}) => {
+            let runs = [];
+            for (const child of parentNode.childNodes) {
+                // Herda a formatação do pai e adiciona a do nó atual
+                const currentOptions = {
+                    bold: options.bold || child.nodeName === 'B' || child.nodeName === 'STRONG',
+                    italics: options.italics || child.nodeName === 'I' || child.nodeName === 'EM',
+                    underline: options.underline || child.nodeName === 'U' ? {} : undefined,
+                };
+                
+                if (child.nodeType === Node.TEXT_NODE) {
+                     if(child.textContent) { // Adiciona mesmo se for só espaço em branco, para manter a formatação
+                        runs.push(new TextRun({
+                            text: child.textContent,
+                            ...currentOptions
+                        }));
+                     }
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    runs = runs.concat(processChildNodes(child, currentOptions));
+                }
+            }
+            return runs;
+        };
+
+        // --- Processamento dos nós principais do editor ---
+        const docChildren = [];
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = editor.innerHTML;
+        
+        for (const node of tempDiv.childNodes) {
+            if (node.nodeType !== Node.ELEMENT_NODE || !node.textContent.trim()) continue;
 
-        const paragraphs = Array.from(tempDiv.childNodes).map(node => {
-            if (node.textContent && node.textContent.trim() !== '') {
-                return new Paragraph({
-                    children: [new TextRun(node.textContent)],
+            const style = window.getComputedStyle(node);
+            
+            // Trata parágrafos, citações e divs
+            if (['P', 'BLOCKQUOTE', 'DIV'].includes(node.nodeName)) {
+                const children = processChildNodes(node);
+                if (children.length === 0) continue;
+
+                const paragraph = new Paragraph({
+                    children: children,
                     alignment: AlignmentType.JUSTIFIED,
+                    indentation: {
+                        firstLine: node.nodeName !== 'BLOCKQUOTE' ? convertCmToTwip(parseFloat(style.textIndent) / 96 * 2.54 || 0) : undefined,
+                        left: convertCmToTwip(parseFloat(style.marginLeft) / 96 * 2.54 || 0),
+                    },
                 });
+                docChildren.push(paragraph);
+            } 
+            // Trata listas
+            else if (['UL', 'OL'].includes(node.nodeName)) {
+                 for(const li of node.querySelectorAll('li')) {
+                    const liChildren = processChildNodes(li);
+                     if (liChildren.length === 0) continue;
+
+                    docChildren.push(new Paragraph({
+                         children: liChildren,
+                         alignment: AlignmentType.JUSTIFIED,
+                         bullet: node.nodeName === 'UL' ? { level: 0 } : undefined,
+                         numbering: node.nodeName === 'OL' ? { reference: "default-numbering", level: 0 } : undefined,
+                         indentation: { left: convertCmToTwip(parseFloat(style.marginLeft) / 96 * 2.54 || 3) } 
+                    }));
+                 }
             }
-            return null;
-        }).filter(p => p !== null);
-
-        if (paragraphs.length === 0) {
-             alert("Não foi encontrado conteúdo de texto válido para exportar.");
-             return;
         }
-
+        
         const doc = new Document({
-            sections: [{
-                children: paragraphs,
-            }],
+            numbering: {
+                config: [
+                    {
+                        reference: "default-numbering",
+                        levels: [ { level: 0, format: "decimal", text: "%1.", alignment: AlignmentType.START } ],
+                    },
+                ],
+            },
+            sections: [{ children: docChildren }],
         });
 
         const blob = await Packer.toBlob(doc);
@@ -107,7 +164,7 @@ async function saveAsDocx() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
     } catch (error) {
         console.error("Erro ao gerar o arquivo .docx:", error);
         alert("Ocorreu um erro ao tentar gerar o arquivo Word. Verifique o console do desenvolvedor (F12) para mais detalhes.");
@@ -117,9 +174,9 @@ async function saveAsDocx() {
     }
 }
 
+
 /**
  * Converte o conteúdo do editor para um PDF limpo, usando um contêiner de impressão.
- * VERSÃO FINAL: Usa contêiner temporário e inclui feedback de carregamento.
  */
 function saveAsPdf() {
     const editorContent = editor.innerHTML.trim();
