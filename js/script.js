@@ -36,8 +36,8 @@ const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
 const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
-const exportDocxBtn = document.getElementById('export-docx-btn'); // Referência adicionada
-const exportPdfBtn = document.getElementById('export-pdf-btn'); // Referência adicionada
+const exportDocxBtn = document.getElementById('export-docx-btn');
+const exportPdfBtn = document.getElementById('export-pdf-btn');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -66,95 +66,100 @@ async function saveAsDocx() {
         return;
     }
 
-    const svg = exportDocxBtn.querySelector('svg');
-    exportDocxBtn.disabled = true;
+    const exportBtn = document.getElementById('export-docx-btn');
+    const svg = exportBtn.querySelector('svg');
+    exportBtn.disabled = true;
     if (svg) svg.classList.add('spinner');
 
     try {
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
-        // --- Função auxiliar para converter CM para Twips ---
-        const convertCmToTwip = (cm) => Math.round(cm * 567);
+        /**
+         * [NOVO] Helper robusto para converter valores de CSS (cm, px) para Twips.
+         * Twips é a unidade de medida usada internamente pelo formato .docx.
+         */
+        const convertCssToTwip = (cssValue) => {
+            if (!cssValue || typeof cssValue !== 'string') return 0;
+            const match = cssValue.match(/^(-?\d*\.?\d+)(cm|px)?$/);
+            if (!match) return 0;
 
-        // --- Função recursiva para processar nós e sua formatação ---
-        const processChildNodes = (parentNode, options = {}) => {
-            let runs = [];
-            for (const child of parentNode.childNodes) {
-                // Herda a formatação do pai e adiciona a do nó atual
-                const currentOptions = {
-                    bold: options.bold || child.nodeName === 'B' || child.nodeName === 'STRONG',
-                    italics: options.italics || child.nodeName === 'I' || child.nodeName === 'EM',
-                    underline: options.underline || child.nodeName === 'U' ? {} : undefined,
-                };
-                
+            const value = parseFloat(match[1]);
+            const unit = match[2];
+
+            switch (unit) {
+                case 'cm':
+                    return Math.round(value * 567); // Fator de conversão de CM para Twips
+                case 'px':
+                    return Math.round(value * 15);  // Fator aproximado de PX para Twips
+                default:
+                    return 0;
+            }
+        };
+        
+        // Função para parsear nós de texto e aplicar estilos (negrito, itálico, etc.)
+        const parseNodeToRuns = (node) => {
+            const runs = [];
+            const isBold = window.getComputedStyle(node).fontWeight === '700' || node.closest('b, strong');
+            const isItalic = window.getComputedStyle(node).fontStyle === 'italic' || node.closest('i, em');
+            const isUnderline = node.closest('u');
+
+            for (const child of node.childNodes) {
                 if (child.nodeType === Node.TEXT_NODE) {
-                     if(child.textContent) { // Adiciona mesmo se for só espaço em branco, para manter a formatação
-                        runs.push(new TextRun({
-                            text: child.textContent,
-                            ...currentOptions
-                        }));
-                     }
+                    runs.push(new TextRun({
+                        text: child.textContent,
+                        bold: isBold,
+                        italics: isItalic,
+                        underline: isUnderline ? {} : undefined,
+                    }));
                 } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    runs = runs.concat(processChildNodes(child, currentOptions));
+                    runs.push(...parseNodeToRuns(child));
                 }
             }
             return runs;
         };
 
-        // --- Processamento dos nós principais do editor ---
         const docChildren = [];
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = editor.innerHTML;
-        
+
         for (const node of tempDiv.childNodes) {
             if (node.nodeType !== Node.ELEMENT_NODE || !node.textContent.trim()) continue;
 
-            const style = window.getComputedStyle(node);
+            const childrenRuns = parseNodeToRuns(node);
+            let paragraphConfig = {
+                children: childrenRuns,
+                alignment: AlignmentType.JUSTIFIED,
+                indentation: {}
+            };
+
+            // [LÓGICA DE RECUO APRIMORADA]
+            const firstLineIndent = node.style.textIndent;
+            const leftIndent = node.style.marginLeft || (node.nodeName === 'BLOCKQUOTE' ? '7cm' : '0cm'); // Fallback para blockquote
+
+            if (firstLineIndent) {
+                paragraphConfig.indentation.firstLine = convertCssToTwip(firstLineIndent);
+            }
+            if (leftIndent && node.nodeName === 'BLOCKQUOTE') {
+                paragraphConfig.indentation.left = convertCssToTwip(leftIndent);
+            }
             
-            // Trata parágrafos, citações e divs
-            if (['P', 'BLOCKQUOTE', 'DIV'].includes(node.nodeName)) {
-                const children = processChildNodes(node);
-                if (children.length === 0) continue;
-
-                const paragraph = new Paragraph({
-                    children: children,
-                    alignment: AlignmentType.JUSTIFIED,
-                    indentation: {
-                        firstLine: node.nodeName !== 'BLOCKQUOTE' ? convertCmToTwip(parseFloat(style.textIndent) / 96 * 2.54 || 0) : undefined,
-                        left: convertCmToTwip(parseFloat(style.marginLeft) / 96 * 2.54 || 0),
-                    },
-                });
-                docChildren.push(paragraph);
-            } 
-            // Trata listas
-            else if (['UL', 'OL'].includes(node.nodeName)) {
-                 for(const li of node.querySelectorAll('li')) {
-                    const liChildren = processChildNodes(li);
-                     if (liChildren.length === 0) continue;
-
+            // Trata listas (UL/OL)
+            if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+                for (const li of node.querySelectorAll('li')) {
+                    const liRuns = parseNodeToRuns(li);
                     docChildren.push(new Paragraph({
-                         children: liChildren,
-                         alignment: AlignmentType.JUSTIFIED,
-                         bullet: node.nodeName === 'UL' ? { level: 0 } : undefined,
-                         numbering: node.nodeName === 'OL' ? { reference: "default-numbering", level: 0 } : undefined,
-                         indentation: { left: convertCmToTwip(parseFloat(style.marginLeft) / 96 * 2.54 || 3) } 
+                        children: liRuns,
+                        alignment: AlignmentType.JUSTIFIED,
+                        bullet: { level: 0 },
+                        indentation: { left: convertCssToTwip('1.25cm'), hanging: convertCssToTwip('0.63cm') }
                     }));
-                 }
+                }
+            } else {
+                docChildren.push(new Paragraph(paragraphConfig));
             }
         }
-        
-        const doc = new Document({
-            numbering: {
-                config: [
-                    {
-                        reference: "default-numbering",
-                        levels: [ { level: 0, format: "decimal", text: "%1.", alignment: AlignmentType.START } ],
-                    },
-                ],
-            },
-            sections: [{ children: docChildren }],
-        });
 
+        const doc = new Document({ sections: [{ children: docChildren }] });
         const blob = await Packer.toBlob(doc);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -167,9 +172,9 @@ async function saveAsDocx() {
 
     } catch (error) {
         console.error("Erro ao gerar o arquivo .docx:", error);
-        alert("Ocorreu um erro ao tentar gerar o arquivo Word. Verifique o console do desenvolvedor (F12) para mais detalhes.");
+        alert("Ocorreu um erro ao tentar gerar o arquivo Word.");
     } finally {
-        exportDocxBtn.disabled = false;
+        exportBtn.disabled = false;
         if (svg) svg.classList.remove('spinner');
     }
 }
@@ -579,5 +584,5 @@ clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderMod
 exportBtn.addEventListener('click', exportModels);
 importBtn.addEventListener('click', () => importFileInput.click());
 importFileInput.addEventListener('change', handleImportFile);
-exportDocxBtn.addEventListener('click', saveAsDocx); // Listener adicionado
-exportPdfBtn.addEventListener('click', saveAsPdf);   // Listener adicionado
+exportDocxBtn.addEventListener('click', saveAsDocx);
+exportPdfBtn.addEventListener('click', saveAsPdf);
