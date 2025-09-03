@@ -19,7 +19,6 @@ const defaultModels = [
 ];
 
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
-// A referência ao editor antigo não é mais necessária no escopo global
 const modelList = document.getElementById('model-list');
 const searchBox = document.getElementById('search-box');
 const tabsContainer = document.getElementById('tabs-container');
@@ -261,17 +260,42 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO DO TINYMCE ---
     tinymce.init({
-        selector: '#editor', // Alvo é a nossa <textarea>
+        selector: '#editor',
         plugins: 'lists autoresize',
-        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customMicButton customAiButton customReplaceButton customOdtButton',
+        
+        // MODIFICAÇÃO 1: Adicionados 'customIndent' e 'blockquote' à barra de ferramentas
+        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent blockquote | customMicButton customAiButton customReplaceButton customOdtButton',
+        
         menubar: false,
         statusbar: false,
-        content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 40px; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }',
+        
+        // MODIFICAÇÃO 2: Adicionada a regra de estilo para 'blockquote' com recuo de 7cm
+        content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }',
+        
         height: 600,
         autoresize_bottom_margin: 30,
 
         setup: function(editor) {
-            // 1. Botão de Ditado por Voz (Microfone)
+            // MODIFICAÇÃO 3: Adicionado o novo botão para recuo de primeira linha
+            editor.ui.registry.addButton('customIndent', {
+                icon: 'indent', // Usa um ícone nativo do TinyMCE
+                tooltip: 'Recuo da Primeira Linha (3cm)',
+                onAction: function() {
+                    const node = editor.selection.getNode();
+                    const blockElement = editor.dom.getParents(node, (e) => e.nodeName === 'P' || /^H[1-6]$/.test(e.nodeName), editor.getBody());
+                    
+                    if (blockElement.length > 0) {
+                        const element = blockElement[0];
+                        if (element.style.textIndent) {
+                            element.style.textIndent = '';
+                        } else {
+                            element.style.textIndent = '3cm';
+                        }
+                    }
+                }
+            });
+
+            // Botão de Ditado por Voz (Microfone)
             editor.ui.registry.addButton('customMicButton', {
                 text: '🎤',
                 tooltip: 'Ditar texto',
@@ -284,7 +308,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // 2. Botão de Correção com IA
+            // Botão de Correção com IA
             editor.ui.registry.addButton('customAiButton', {
                 text: '✨',
                 tooltip: 'Corrigir Texto com IA',
@@ -306,7 +330,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // 3. Botão de Substituir Termos
+            // Botão de Substituir Termos
             editor.ui.registry.addButton('customReplaceButton', {
                 text: 'A→B',
                 tooltip: 'Gerenciar Substituições',
@@ -324,7 +348,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // 4. Botão de Download .ODT
+            // Botão de Download .ODT
             editor.ui.registry.addButton('customOdtButton', {
                 icon: 'download',
                 tooltip: 'Salvar como .odt (OpenOffice)',
@@ -367,7 +391,7 @@ window.addEventListener('DOMContentLoaded', () => {
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument); // Manter se a função for útil
+    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
     clearDocBtn.addEventListener('click', () => {
         if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
             tinymce.activeEditor.setContent('');
