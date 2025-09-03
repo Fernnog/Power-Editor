@@ -1,117 +1,122 @@
-/* ARQUIVO: js/script.js */
+'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- SEÇÃO 1: INICIALIZAÇÃO DO EDITOR E FUNÇÕES BÁSICAS ---
+    // --- Lógica Existente do Editor ---
+    const commands = document.querySelectorAll('[data-command]');
 
-    const editor = new Tiptap.Core.Editor({
-        element: document.querySelector('#editor-container'),
-        extensions: [
-            Tiptap.StarterKit.default,
-            Tiptap.Extensions.Underline,
-        ],
-        content: `
-            <h2>Sistema Restaurado</h2>
-            <p>Este é o editor com a interface e funcionalidades corrigidas. A <strong>sidebar</strong> e a <strong>área de edição</strong> estão agora visíveis e operacionais.</p>
-            <p>O problema de renderização foi resolvido. Todas as ferramentas, incluindo <strong>Microfone</strong>, <strong>Correção com IA</strong> e <strong>Exportação</strong>, estão conectadas e prontas para uso.</p>
-            <ol>
-                <li>Layout Flexbox corrigido.</li>
-                <li>Dependência de script (Underline) adicionada.</li>
-                <li>Estilo do corpo do documento restaurado.</li>
-            </ol>
-        `,
-    });
-
-    const basicButtons = {
-        bold: document.querySelector('#bold-button'),
-        italic: document.querySelector('#italic-button'),
-        underline: document.querySelector('#underline-button'),
-        strike: document.querySelector('#strike-button'),
-        orderedList: document.querySelector('#ordered-list-button'),
-        bulletList: document.querySelector('#bullet-list-button'),
-        h1: document.querySelector('#h1-button'),
-        h2: document.querySelector('#h2-button'),
-    };
-
-    basicButtons.bold.addEventListener('click', () => editor.chain().focus().toggleBold().run());
-    basicButtons.italic.addEventListener('click', () => editor.chain().focus().toggleItalic().run());
-    basicButtons.underline.addEventListener('click', () => editor.chain().focus().toggleUnderline().run());
-    basicButtons.strike.addEventListener('click', () => editor.chain().focus().toggleStrike().run());
-    basicButtons.orderedList.addEventListener('click', () => editor.chain().focus().toggleOrderedList().run());
-    basicButtons.bulletList.addEventListener('click', () => editor.chain().focus().toggleBulletList().run());
-    basicButtons.h1.addEventListener('click', () => editor.chain().focus().toggleHeading({ level: 1 }).run());
-    basicButtons.h2.addEventListener('click', () => editor.chain().focus().toggleHeading({ level: 2 }).run());
-
-    editor.on('transaction', () => {
-        basicButtons.bold.classList.toggle('is-active', editor.isActive('bold'));
-        basicButtons.italic.classList.toggle('is-active', editor.isActive('italic'));
-        basicButtons.underline.classList.toggle('is-active', editor.isActive('underline'));
-        basicButtons.strike.classList.toggle('is-active', editor.isActive('strike'));
-        basicButtons.orderedList.classList.toggle('is-active', editor.isActive('orderedList'));
-        basicButtons.bulletList.classList.toggle('is-active', editor.isActive('bulletList'));
-        basicButtons.h1.classList.toggle('is-active', editor.isActive('heading', { level: 1 }));
-        basicButtons.h2.classList.toggle('is-active', editor.isActive('heading', { level: 2 }));
-    });
-
-    // --- SEÇÃO 2: RECONEXÃO DAS FUNCIONALIDADES CUSTOMIZADAS ---
-    
-    const customButtons = {
-        mic: document.querySelector('#mic-button'),
-        gemini: document.querySelector('#gemini-button'),
-        savePdf: document.querySelector('#save-pdf-button'),
-        saveDoc: document.querySelector('#save-doc-button'),
-    };
-
-    customButtons.mic.addEventListener('click', () => {
-        alert("Conecte aqui sua API de reconhecimento de voz. Use 'editor.commands.insertContent(texto)' para adicionar o resultado.");
-    });
-
-    customButtons.gemini.addEventListener('click', async () => {
-        const geminiButton = customButtons.gemini;
-        geminiButton.disabled = true;
-        geminiButton.classList.add('is-loading');
-        try {
-            const currentContent = editor.getHTML();
-            console.log("Enviando para o Gemini:", currentContent);
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simula chamada de API
-            const correctedContent = currentContent.replace(/<p>/g, '<p>✨(Corrigido) ');
-            editor.chain().focus().setContent(correctedContent).run();
-        } catch (error) {
-            console.error("Erro na chamada da IA:", error);
-            alert("Ocorreu um erro ao corrigir o texto.");
-        } finally {
-            geminiButton.disabled = false;
-            geminiButton.classList.remove('is-loading');
-        }
-    });
-
-    customButtons.savePdf.addEventListener('click', () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const editorContent = editor.getHTML();
-        doc.html(editorContent, {
-            callback: (doc) => doc.save('documento.pdf'),
-            margin: [15, 15, 15, 15],
-            autoPaging: 'text',
-            width: 180,
-            windowWidth: 675,
+    commands.forEach(button => {
+        button.addEventListener('click', () => {
+            const command = button.getAttribute('data-command');
+            document.execCommand(command, false, null);
         });
     });
 
-    customButtons.saveDoc.addEventListener('click', () => {
-        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
-            "xmlns:w='urn:schemas-microsoft-com:office:word' " +
-            "xmlns='http://www.w3.org/TR/REC-html40'>" +
-            "<head><meta charset='utf-8'><title>Export HTML to Word Document</title></head><body>";
-        const footer = "</body></html>";
-        const sourceHTML = header + editor.getHTML() + footer;
-        const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+
+    // --- IMPLEMENTAÇÃO DA PRIORIDADE 1 ---
+
+    // 1. Seleciona os elementos principais da página
+    const editor = document.getElementById('rich-text-editor');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    /**
+     * Intercepta o evento 'paste' no editor para tratar a formatação.
+     */
+    editor.addEventListener('paste', function(event) {
+        // Impede a ação padrão de colar do navegador
+        event.preventDefault();
+
+        // Obtém o conteúdo da área de transferência como HTML
+        const clipboardData = event.clipboardData || window.clipboardData;
+        const pastedHtml = clipboardData.getData('text/html');
+
+        // Se não houver conteúdo HTML (ex: copiado do Bloco de Notas), cola como texto puro
+        if (!pastedHtml) {
+            const plainText = clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, plainText);
+            return;
+        }
         
-        const fileDownload = document.createElement("a");
-        document.body.appendChild(fileDownload);
-        fileDownload.href = source;
-        fileDownload.download = 'documento.doc';
-        fileDownload.click();
-        document.body.removeChild(fileDownload);
+        // Limpa o HTML colado, mantendo apenas os estilos de recuo
+        const sanitizedHtml = sanitizePastedHtml(pastedHtml);
+
+        // Insere o HTML limpo e formatado na posição atual do cursor
+        document.execCommand('insertHTML', false, sanitizedHtml);
+    });
+
+    /**
+     * Função que analisa o HTML colado e preserva apenas tags seguras e
+     * estilos de recuo (text-indent e margin-left), removendo o lixo do Word.
+     * @param {string} htmlString - O HTML bruto da área de transferência.
+     * @returns {string} - O HTML sanitizado.
+     */
+    function sanitizePastedHtml(htmlString) {
+        // Usa um elemento temporário para parsear o HTML sem adicioná-lo ao DOM principal
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlString;
+        
+        let finalHtml = '';
+        // Itera sobre todos os parágrafos <p> do conteúdo colado
+        tempDiv.querySelectorAll('p').forEach(p => {
+            const style = p.style;
+            const textIndent = style.textIndent;
+            const marginLeft = style.marginLeft;
+            
+            let inlineStyle = '';
+            if (textIndent) {
+                inlineStyle += `text-indent: ${textIndent}; `;
+            }
+            if (marginLeft) {
+                inlineStyle += `margin-left: ${marginLeft};`;
+            }
+            
+            // Recria o parágrafo apenas com os estilos permitidos e seu conteúdo interno
+            finalHtml += `<p style="${inlineStyle.trim()}">${p.innerHTML}</p>`;
+        });
+        
+        // Se a sanitização não encontrou parágrafos, retorna o texto puro com quebras de linha
+        return finalHtml || tempDiv.innerText.replace(/\n/g, '<br>');
+    }
+
+    /**
+     * Adiciona o evento de clique ao botão de download para exportar o conteúdo.
+     */
+    downloadBtn.addEventListener('click', function() {
+        const content = editor.innerHTML;
+        const documentTitle = "Documento Exportado";
+
+        // Cria um template HTML completo para que o arquivo seja independente e preserve os estilos
+        const fileContent = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <title>${documentTitle}</title>
+                <style>
+                    body { font-family: 'Times New Roman', serif; line-height: 1.6; font-size: 16px; margin: 40px; }
+                    p { margin: 0 0 1em 0; }
+                    ol, ul { margin-top: 0; }
+                </style>
+            </head>
+            <body>
+                ${content}
+            </body>
+            </html>
+        `;
+
+        // Cria um objeto Blob, que representa o arquivo
+        const blob = new Blob([fileContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+
+        // Cria um link temporário para iniciar o download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${documentTitle}.html`;
+        document.body.appendChild(a);
+        a.click();
+
+        // Limpa o link e o objeto URL da memória para evitar memory leaks
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
 });
