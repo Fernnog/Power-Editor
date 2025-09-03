@@ -19,13 +19,12 @@ const defaultModels = [
 ];
 
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
-const editor = document.getElementById('editor');
+// A referência ao editor antigo não é mais necessária no escopo global
 const modelList = document.getElementById('model-list');
 const searchBox = document.getElementById('search-box');
 const tabsContainer = document.getElementById('tabs-container');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
 const addNewModelBtn = document.getElementById('add-new-model-btn');
-const indentBtn = document.getElementById('indent-btn');
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
 const importFileInput = document.getElementById('import-file-input');
@@ -33,7 +32,6 @@ const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
-const blockquoteBtn = document.getElementById('blockquote-btn');
 const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 
@@ -48,11 +46,21 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
 function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } if (appState.lastBackupTimestamp) { updateBackupStatus(new Date(appState.lastBackupTimestamp)); } else { updateBackupStatus(null); } if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; } }
 
-// --- FUNÇÕES DO EDITOR ---
-function execCmd(command, value = null) { document.execCommand(command, false, value); }
-function insertModelContent(content, tabId) { if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); execCmd('justifyFull'); }
+// --- FUNÇÕES DO EDITOR (ATUALIZADA) ---
+function insertModelContent(content, tabId) {
+    if (searchBox.value && tabId && appState.activeTabId !== tabId) {
+        appState.activeTabId = tabId;
+        searchBox.value = '';
+        render();
+    }
+    // Usa a API do TinyMCE para inserir conteúdo
+    if (tinymce.activeEditor) {
+        tinymce.activeEditor.execCommand('mceInsertContent', false, content);
+        tinymce.activeEditor.focus();
+    }
+}
 
-// --- FUNÇÕES DE RENDERIZAÇÃO ---
+// --- FUNÇÕES DE RENDERIZAÇÃO (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
 function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
@@ -64,7 +72,6 @@ function renderTabActions() {
 
     const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
 
-    // Botão de Excluir
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'tab-action-btn';
     deleteBtn.innerHTML = ICON_TRASH;
@@ -75,7 +82,6 @@ function renderTabActions() {
     deleteBtn.onclick = () => deleteTab(appState.activeTabId);
     tabActionsContainer.appendChild(deleteBtn);
 
-    // Botão de Alterar Cor
     const colorBtn = document.createElement('button');
     colorBtn.className = 'tab-action-btn';
     colorBtn.innerHTML = ICON_PALETTE;
@@ -86,7 +92,6 @@ function renderTabActions() {
     };
     tabActionsContainer.appendChild(colorBtn);
 
-    // Botão de Renomear
     const renameBtn = document.createElement('button');
     renameBtn.className = 'tab-action-btn';
     renameBtn.innerHTML = ICON_PENCIL;
@@ -238,10 +243,10 @@ let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
 function filterModels() { const query = searchBox.value.toLowerCase().trim(); const activeContentArea = document.getElementById('active-content-area'); activeContentArea.style.borderColor = appState.tabs.find(t=>t.id === appState.activeTabId)?.color || '#ccc'; if (query) { activeContentArea.style.borderColor = '#aaa'; } if (!query) { if (appState.activeTabId === FAVORITES_TAB_ID) { return appState.models.filter(m => m.isFavorite); } else { return appState.models.filter(m => m.tabId === appState.activeTabId); } } const models = appState.models; if (query.includes(' ou ')) { const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.some(term => modelText.includes(term)); }); } else if (query.includes(' e ')) { const terms = query.split(' e ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.every(term => modelText.includes(term)); }); } else { return models.filter(model => model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query) ); } }
 
-// --- MANIPULAÇÃO DE DADOS ---
+// --- MANIPULAÇÃO DE DADOS (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 function deleteTab(tabId) { const tabToDelete = appState.tabs.find(t => t.id === tabId); if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return; const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID); const destinationOptions = regularTabs.filter(t => t.id !== tabId); const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) { alert("Seleção inválida. A exclusão foi cancelada."); return; } modifyStateAndBackup(() => { const destinationTabId = destinationOptions[choiceIndex].id; appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } }); appState.tabs = appState.tabs.filter(t => t.id !== tabId); appState.activeTabId = destinationTabId; render(); }); }
-function addNewModelFromEditor() { const content = editor.innerHTML.trim(); if (content === '' || content === '<p><br></p>') { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } ModalManager.show({ type: 'modelEditor', title: 'Salvar Novo Modelo', initialData: { name: '' }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; render(); }); } }); }
+function addNewModelFromEditor() { const content = tinymce.activeEditor.getContent(); if (!content) { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } ModalManager.show({ type: 'modelEditor', title: 'Salvar Novo Modelo', initialData: { name: '' }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; render(); }); } }); }
 function editModel(modelId) { const model = appState.models.find(m => m.id === modelId); ModalManager.show({ type: 'modelEditor', title: 'Editar Modelo', initialData: { name: model.name, content: model.content }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { model.name = data.name; model.content = data.content; render(); }); } }); }
 function deleteModel(modelId) { const model = appState.models.find(m => m.id === modelId); if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) { modifyStateAndBackup(() => { appState.models = appState.models.filter(m => m.id !== modelId); render(); }); } }
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
@@ -249,194 +254,128 @@ function moveModelToAnotherTab(modelId) { const model = appState.models.find(m =
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
 function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
 
-// --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
-let replacementDebounceTimer;
-function applyAutomaticReplacements() {
-    if (!appState.replacements || appState.replacements.length === 0) return;
-
-    // Função auxiliar para escapar caracteres especiais para uso em RegExp
-    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // 1. Obter o conteúdo do nó onde o cursor está
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-    const range = selection.getRangeAt(0);
-    const node = range.startContainer;
-    
-    // Processar apenas se estivermos dentro de um nó de texto
-    if (node.nodeType !== Node.TEXT_NODE) return;
-
-    const originalText = node.textContent;
-    let newText = originalText;
-    let replacementMade = false;
-
-    // Ordenar regras da mais longa para a mais curta para evitar substituições parciais
-    const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
-
-    for (const rule of sortedRules) {
-        if (rule.find && newText.includes(rule.find)) {
-            newText = newText.replace(new RegExp(escapeRegExp(rule.find), 'g'), rule.replace);
-            replacementMade = true;
-        }
-    }
-
-    if (replacementMade) {
-        const cursorPosition = range.startOffset;
-        node.textContent = newText;
-        // Restaurar a posição do cursor no nó modificado
-        range.setStart(node, Math.min(cursorPosition, newText.length));
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
-}
-function debouncedApplyReplacements() {
-    clearTimeout(replacementDebounceTimer);
-    replacementDebounceTimer = setTimeout(applyAutomaticReplacements, 500); // 500ms de delay
-}
-
-// --- INICIALIZAÇÃO ---
+// --- INICIALIZAÇÃO DA APLICAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
     loadStateFromStorage(); 
     render(); 
-    const dictateBtn = document.getElementById('dictate-btn'); 
-    const dictationModal = document.getElementById('dictation-modal'); 
-    const dictationCloseBtn = document.getElementById('dictation-close-btn'); 
-    
-    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) { 
-        SpeechDictation.init({ 
-            micIcon: document.getElementById('dictation-mic-icon'), 
-            langSelect: document.getElementById('dictation-lang-select'), 
-            statusDisplay: document.getElementById('dictation-status'), 
-            dictationModal: dictationModal,
-            toolbarMicButton: dictateBtn,
-            onResult: (transcript) => { 
-                insertModelContent(transcript); 
-            } 
-        }); 
-        dictateBtn.addEventListener('click', SpeechDictation.start); 
-        dictationCloseBtn.addEventListener('click', () => { 
-            SpeechDictation.stop(); 
-        }); 
-    } else { 
-        dictateBtn.style.display = 'none'; 
-    } 
-    
-    // Listener para substituições automáticas
-    editor.addEventListener('input', debouncedApplyReplacements);
 
-    editor.addEventListener('keydown', (event) => { 
-        if (event.ctrlKey) { 
-            switch (event.key.toLowerCase()) { 
-                case 'b': event.preventDefault(); execCmd('bold'); break; 
-                case 'i': event.preventDefault(); execCmd('italic'); break; 
-                case 'u': event.preventDefault(); execCmd('underline'); break; 
-            } 
-        } else if (event.key === 'Tab') { 
-            event.preventDefault(); 
-            EditorActions.indentFirstLine(); 
-        } 
-    }); 
-    
-    if (blockquoteBtn) { 
-        blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote); 
-    } 
-    
-    const replaceBtn = document.getElementById('replace-btn'); 
-    if (replaceBtn) { 
-        replaceBtn.addEventListener('click', () => {
-            ModalManager.show({
-                type: 'replacementManager',
-                title: 'Gerenciador de Substituições',
-                initialData: {
-                    replacements: appState.replacements || []
-                },
-                onSave: (data) => {
-                    modifyStateAndBackup(() => {
-                        appState.replacements = data.replacements;
+    // --- INICIALIZAÇÃO DO TINYMCE ---
+    tinymce.init({
+        selector: '#editor', // Alvo é a nossa <textarea>
+        plugins: 'lists autoresize',
+        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customMicButton customAiButton customReplaceButton customOdtButton',
+        menubar: false,
+        statusbar: false,
+        content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 40px; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }',
+        height: 600,
+        autoresize_bottom_margin: 30,
+
+        setup: function(editor) {
+            // 1. Botão de Ditado por Voz (Microfone)
+            editor.ui.registry.addButton('customMicButton', {
+                text: '🎤',
+                tooltip: 'Ditar texto',
+                onAction: function() {
+                    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                        SpeechDictation.start();
+                    } else {
+                        alert('O reconhecimento de voz não é suportado neste navegador.');
+                    }
+                }
+            });
+
+            // 2. Botão de Correção com IA
+            editor.ui.registry.addButton('customAiButton', {
+                text: '✨',
+                tooltip: 'Corrigir Texto com IA',
+                onAction: async function() {
+                    if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
+                        alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
+                        return;
+                    }
+                    const selectedText = editor.selection.getContent({ format: 'text' });
+                    if (!selectedText) {
+                        alert("Por favor, selecione o texto que deseja corrigir.");
+                        return;
+                    }
+                    const button = this;
+                    button.setEnabled(false);
+                    const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
+                    editor.selection.setContent(correctedText);
+                    button.setEnabled(true);
+                }
+            });
+
+            // 3. Botão de Substituir Termos
+            editor.ui.registry.addButton('customReplaceButton', {
+                text: 'A→B',
+                tooltip: 'Gerenciar Substituições',
+                onAction: function () {
+                    ModalManager.show({
+                        type: 'replacementManager',
+                        title: 'Gerenciador de Substituições',
+                        initialData: { replacements: appState.replacements || [] },
+                        onSave: (data) => {
+                            modifyStateAndBackup(() => {
+                                appState.replacements = data.replacements;
+                            });
+                        }
                     });
                 }
             });
-        });
-    }
 
-    // --- CÓDIGO DA FUNCIONALIDADE DE CORREÇÃO ---
-    const correctTextBtn = document.getElementById('correct-text-btn');
-
-    if (correctTextBtn) {
-        correctTextBtn.addEventListener('click', async () => {
-            if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
-                alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
-                return;
-            }
-
-            const apiKey = CONFIG.apiKey;
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
-
-            if (!selectedText) {
-                alert("Por favor, selecione o texto que deseja corrigir.");
-                return;
-            }
+            // 4. Botão de Download .ODT
+            editor.ui.registry.addButton('customOdtButton', {
+                icon: 'download',
+                tooltip: 'Salvar como .odt (OpenOffice)',
+                onAction: function() {
+                    const editorContent = editor.getContent();
+                    const fullHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Documento</title></head><body>${editorContent}</body></html>`;
+                    const blob = new Blob([fullHtml], { type: 'application/vnd.oasis.opendocument.text' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'documento.odt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            });
             
-            const originalButtonText = correctTextBtn.textContent;
-            correctTextBtn.textContent = 'Corrigindo...';
-            correctTextBtn.disabled = true;
+            // Inicialização do módulo de Ditado
+            if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                SpeechDictation.init({ 
+                    micIcon: document.getElementById('dictation-mic-icon'), 
+                    langSelect: document.getElementById('dictation-lang-select'), 
+                    statusDisplay: document.getElementById('dictation-status'), 
+                    dictationModal: document.getElementById('dictation-modal'),
+                    onResult: (transcript) => { 
+                        editor.execCommand('mceInsertContent', false, transcript + ' '); 
+                    } 
+                });
+                
+                document.getElementById('dictation-close-btn').addEventListener('click', () => { 
+                    SpeechDictation.stop(); 
+                }); 
+            }
+        }
+    });
 
-            const correctedText = await GeminiService.correctText(selectedText, apiKey);
-            
-            document.execCommand('insertText', false, correctedText);
-
-            correctTextBtn.textContent = originalButtonText;
-            correctTextBtn.disabled = false;
-        });
-    }
-
-    // --- CÓDIGO ADICIONADO PARA EXPORTAÇÃO EM .ODT ---
-    function exportAsODT() {
-        const editorContent = editor.innerHTML;
-        
-        // Estrutura HTML completa para garantir máxima compatibilidade com leitores .odt
-        const fullHtml = `
-            <!DOCTYPE html>
-            <html lang="pt-BR">
-            <head><meta charset="UTF-8"><title>Documento</title></head>
-            <body>${editorContent}</body>
-            </html>
-        `;
-    
-        // Cria um "Blob" (arquivo em memória) com o tipo MIME correto para OpenDocument Text
-        const blob = new Blob([fullHtml], { type: 'application/vnd.oasis.opendocument.text' });
-        const url = URL.createObjectURL(blob);
-    
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'documento.odt'; // Nome padrão do arquivo
-        document.body.appendChild(a);
-        a.click(); // Simula o clique para iniciar o download
-    
-        // Limpa os objetos temporários da memória
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-    
-    const exportOdtBtn = document.getElementById('export-odt-btn');
-    if (exportOdtBtn) {
-        exportOdtBtn.addEventListener('click', exportAsODT);
-    }
-    // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
+    // --- EVENT LISTENERS DA SIDEBAR (PERMANECEM IGUAIS) ---
+    searchBox.addEventListener('input', debouncedFilter);
+    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+    addNewTabBtn.addEventListener('click', addNewTab);
+    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    formatDocBtn.addEventListener('click', EditorActions.formatDocument); // Manter se a função for útil
+    clearDocBtn.addEventListener('click', () => {
+        if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
+            tinymce.activeEditor.setContent('');
+        }
+    });
+    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
+    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+    exportBtn.addEventListener('click', exportModels);
+    importBtn.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', handleImportFile);
 });
-
-// --- EVENT LISTENERS ---
-searchBox.addEventListener('input', debouncedFilter);
-searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
-addNewTabBtn.addEventListener('click', addNewTab);
-addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-clearDocBtn.addEventListener('click', EditorActions.clearDocument);
-searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
-exportBtn.addEventListener('click', exportModels);
-importBtn.addEventListener('click', () => importFileInput.click());
-importFileInput.addEventListener('change', handleImportFile);
