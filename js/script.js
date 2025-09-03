@@ -38,10 +38,7 @@ const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 const exportDocxBtn = document.getElementById('export-docx-btn');
 const exportPdfBtn = document.getElementById('export-pdf-btn');
-// --- [INÍCIO] NOVA REFERÊNCIA DE ELEMENTO ---
-const copyFormattedBtn = document.getElementById('copy-formatted-btn');
-// --- [FIM] NOVA REFERÊNCIA DE ELEMENTO ---
-
+const copyFormattedBtn = document.getElementById('copy-formatted-btn'); // <-- Nova referência adicionada
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -591,22 +588,59 @@ importFileInput.addEventListener('change', handleImportFile);
 exportDocxBtn.addEventListener('click', saveAsDocx);
 exportPdfBtn.addEventListener('click', saveAsPdf);
 
-// --- [INÍCIO] NOVA FUNCIONALIDADE: COPIAR COM FORMATAÇÃO ---
+// --- [INÍCIO] NOVA FUNCIONALIDADE: COPIAR COM FORMATAÇÃO (LÓGICA ATUALIZADA) ---
+
+/**
+ * Prepara o HTML para cópia, embutindo os estilos computados diretamente nos elementos.
+ * Isso garante que a formatação (recuos, margens, listas) seja preservada ao colar em outros aplicativos.
+ * @param {HTMLElement} sourceElement - O elemento cujo conteúdo será preparado.
+ * @returns {string} - Uma string HTML com estilos embutidos.
+ */
+function getHtmlWithInlinedStyles(sourceElement) {
+    // 1. Clona o conteúdo do editor para um contêiner temporário e invisível.
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = sourceElement.innerHTML;
+
+    // 2. Seleciona todos os elementos dentro do contêiner temporário.
+    const allElements = tempContainer.querySelectorAll('*');
+
+    allElements.forEach(el => {
+        // 3. Para cada elemento, obtém todos os estilos que foram efetivamente renderizados pelo navegador.
+        const computedStyle = window.getComputedStyle(el);
+        
+        // 4. Lista de propriedades CSS importantes para preservar a formatação do documento.
+        const propertiesToInline = [
+            'text-indent', 'margin-left', 'margin-right', 'margin-top', 'margin-bottom',
+            'padding-left', 'padding-right', 'line-height',
+            'font-weight', 'font-style', 'text-decoration-line',
+            'display', 'list-style-type', 'list-style-position'
+        ];
+
+        // 5. Aplica cada propriedade computada como um estilo inline no próprio elemento.
+        propertiesToInline.forEach(prop => {
+            const value = computedStyle.getPropertyValue(prop);
+            if (value && value !== '0px' && value !== 'normal' && value !== 'auto') {
+                el.style[prop] = value;
+            }
+        });
+
+        // Remove classes, pois os estilos delas já foram embutidos.
+        el.removeAttribute('class');
+    });
+
+    return tempContainer.innerHTML;
+}
+
 if (copyFormattedBtn) {
     copyFormattedBtn.addEventListener('click', () => {
         try {
-            // Pega o conteúdo HTML completo do editor, que inclui tags de formatação.
-            const htmlContent = editor.innerHTML;
+            // 1. Chama a nova função para obter o HTML com estilos embutidos.
+            const htmlContent = getHtmlWithInlinedStyles(editor);
 
-            // Cria um "Blob", que é um objeto de dados brutos, com o tipo 'text/html'.
-            // Isso informa à área de transferência que o conteúdo é formatado ("rich text").
+            // 2. O restante do processo é o mesmo, mas agora com o HTML aprimorado.
             const blob = new Blob([htmlContent], { type: 'text/html' });
-            
-            // Cria um item para a área de transferência com o Blob HTML.
             const clipboardItem = new ClipboardItem({ 'text/html': blob });
 
-            // Usa a API moderna do Clipboard para escrever o item formatado.
-            // Esta API funciona em contextos seguros (HTTPS ou localhost).
             navigator.clipboard.write([clipboardItem])
                 .then(() => {
                     alert('Texto formatado copiado com sucesso!');
@@ -618,7 +652,6 @@ if (copyFormattedBtn) {
 
         } catch (error) {
             console.error('Erro ao tentar copiar para a área de transferência:', error);
-            // Mecanismo de fallback: se a API moderna falhar, tenta copiar apenas o texto.
             try {
                 const textToCopy = editor.innerText;
                 navigator.clipboard.writeText(textToCopy);
@@ -630,4 +663,4 @@ if (copyFormattedBtn) {
         }
     });
 }
-// --- [FIM] NOVA FUNCIONALIDADE ---
+// --- [FIM] NOVA FUNCIONALIDADE: COPIAR COM FORMATAÇÃO ---
