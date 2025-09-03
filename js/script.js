@@ -38,6 +38,10 @@ const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 const exportDocxBtn = document.getElementById('export-docx-btn');
 const exportPdfBtn = document.getElementById('export-pdf-btn');
+// --- [INÍCIO] NOVA REFERÊNCIA DE ELEMENTO ---
+const copyFormattedBtn = document.getElementById('copy-formatted-btn');
+// --- [FIM] NOVA REFERÊNCIA DE ELEMENTO ---
+
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -586,3 +590,44 @@ importBtn.addEventListener('click', () => importFileInput.click());
 importFileInput.addEventListener('change', handleImportFile);
 exportDocxBtn.addEventListener('click', saveAsDocx);
 exportPdfBtn.addEventListener('click', saveAsPdf);
+
+// --- [INÍCIO] NOVA FUNCIONALIDADE: COPIAR COM FORMATAÇÃO ---
+if (copyFormattedBtn) {
+    copyFormattedBtn.addEventListener('click', () => {
+        try {
+            // Pega o conteúdo HTML completo do editor, que inclui tags de formatação.
+            const htmlContent = editor.innerHTML;
+
+            // Cria um "Blob", que é um objeto de dados brutos, com o tipo 'text/html'.
+            // Isso informa à área de transferência que o conteúdo é formatado ("rich text").
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            
+            // Cria um item para a área de transferência com o Blob HTML.
+            const clipboardItem = new ClipboardItem({ 'text/html': blob });
+
+            // Usa a API moderna do Clipboard para escrever o item formatado.
+            // Esta API funciona em contextos seguros (HTTPS ou localhost).
+            navigator.clipboard.write([clipboardItem])
+                .then(() => {
+                    alert('Texto formatado copiado com sucesso!');
+                })
+                .catch(err => {
+                    console.error('Falha ao copiar o texto formatado: ', err);
+                    alert('Erro ao copiar. Seu navegador pode não suportar esta função ou a página não está em um contexto seguro (HTTPS).');
+                });
+
+        } catch (error) {
+            console.error('Erro ao tentar copiar para a área de transferência:', error);
+            // Mecanismo de fallback: se a API moderna falhar, tenta copiar apenas o texto.
+            try {
+                const textToCopy = editor.innerText;
+                navigator.clipboard.writeText(textToCopy);
+                alert('Formatação não pôde ser copiada, apenas o texto. Tente novamente em um ambiente seguro (HTTPS).');
+            } catch (fallbackError) {
+                console.error('Falha total ao copiar o texto: ', fallbackError);
+                alert('Falha total ao copiar o texto.');
+            }
+        }
+    });
+}
+// --- [FIM] NOVA FUNCIONALIDADE ---
