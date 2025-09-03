@@ -1,92 +1,108 @@
 /* ARQUIVO: css/style.css */
 
-body {
-    font-family: sans-serif;
-    background-color: #f0f0f0;
-    margin: 0; /* Remove margem padrão para o layout ocupar a tela toda */
+/* Reset básico e configuração do box-sizing */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8f9fa;
+    box-sizing: border-box;
+}
+*, *:before, *:after {
+    box-sizing: inherit;
 }
 
-/* --- LAYOUT PRINCIPAL COM SIDEBAR --- */
+/* Layout principal com Flexbox */
 .main-container {
     display: flex;
-    height: 100vh; /* Ocupa a altura toda da tela */
+    height: 100vh; /* Ocupa a altura total da janela */
 }
 
+/* Estilos da Sidebar */
 .sidebar {
-    width: 200px; /* Largura fixa da sidebar */
+    width: 220px;
     flex-shrink: 0; /* Impede que a sidebar encolha */
     background-color: #e9ecef;
     padding: 20px;
-    border-right: 1px solid #ccc;
-    box-sizing: border-box;
+    border-right: 1px solid #dee2e6;
+}
+.sidebar h3 {
+    margin-top: 0;
 }
 
+/* Wrapper do editor, que ocupa o espaço restante */
 .editor-wrapper {
-    flex-grow: 1; /* Faz o editor ocupar o espaço restante */
+    flex-grow: 1; /* Permite que este container cresça */
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Organiza a toolbar e o editor verticalmente */
     padding: 20px;
-    box-sizing: border-box;
-    overflow-y: auto; /* Adiciona scroll se o conteúdo for maior que a tela */
+    overflow: hidden; /* Previne barras de rolagem indesejadas no wrapper */
 }
 
-/* --- ESTILOS DA BARRA DE FERRAMENTAS --- */
+/* Barra de ferramentas */
 .toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    background-color: #f5f5f5;
+    background-color: #f8f9fa;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid #ced4da;
     border-bottom: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border-radius: 4px 4px 0 0;
+    flex-shrink: 0; /* Impede que a toolbar encolha */
 }
-
 .toolbar-group {
     display: flex;
-    margin-right: 10px;
-    border-right: 1px solid #ddd;
-    padding-right: 10px;
+    margin-right: 12px;
+    border-right: 1px solid #dee2e6;
+    padding-right: 12px;
 }
 .toolbar-group:last-child { border-right: none; }
 .toolbar-button {
     background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
     padding: 5px 10px;
     margin: 0 2px;
     cursor: pointer;
     font-size: 14px;
+    transition: background-color 0.2s;
 }
-.toolbar-button:hover { background-color: #e9e9e9; }
+.toolbar-button:hover { background-color: #e9ecef; }
 .toolbar-group-right { margin-left: auto; border: none; padding: 0; }
-.backup-button { background-color: #e53e3e; color: white; border: none; border-radius: 5px; padding: 8px 12px; font-size: 12px; cursor: pointer; }
-.backup-button:hover { background-color: #c53030; }
+.backup-button { background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 8px 12px; font-size: 12px; cursor: pointer; }
+.backup-button:hover { background-color: #c82333; }
 
-/* --- ESTILOS DO EDITOR TIPTAP --- */
+/* Estilos do editor TipTap */
+#editor-container {
+    flex-grow: 1; /* Faz o contêiner do editor crescer */
+    display: flex; /* Necessário para o .ProseMirror preencher */
+    overflow-y: hidden;
+}
 .ProseMirror {
-  padding: 1.5rem;
-  flex-grow: 1; /* Faz a área de texto crescer para preencher o espaço */
-  background-color: #fff;
-  border: 1px solid #ccc;
-  outline: none;
-  font-family: 'Times New Roman', Times, serif;
-  font-size: 16px;
-  line-height: 1.6;
-  overflow-y: auto; /* Scroll interno se o texto for muito grande */
+    width: 100%; /* Ocupa toda a largura do contêiner pai */
+    padding: 1.5rem;
+    background-color: #fefbe9; /* Cor de fundo original restaurada */
+    border: 1px solid #ced4da;
+    border-radius: 0 0 4px 4px;
+    outline: none;
+    overflow-y: auto; /* Adiciona scroll APENAS na área de texto */
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+    line-height: 1.6;
 }
 .ProseMirror p { margin: 0 0 1rem 0; }
 .ProseMirror h1, .ProseMirror h2 { margin-top: 1.5em; margin-bottom: 0.5em; font-weight: bold; }
 .ProseMirror h1 { font-size: 2em; }
 .ProseMirror h2 { font-size: 1.5em; }
 .ProseMirror ul, .ProseMirror ol { padding-left: 2em; list-style-position: outside; }
-.toolbar-button.is-active { background-color: #dbeafe; border-color: #93c5fd; }
+.toolbar-button.is-active { background-color: #cfe2ff; border-color: #9ec5fe; }
 
-/* --- ESTILOS PARA FUNCIONALIDADES CUSTOMIZADAS --- */
-/* Estado de 'carregando' para o botão Gemini ou outras ações demoradas */
+/* Estilos para feedback de ações */
 .toolbar-button.is-loading {
     cursor: not-allowed;
-    background-color: #f0f0f0;
+    background-color: #e9ecef;
 }
 .toolbar-button.is-loading .fas {
     animation: fa-spin 1.5s linear infinite;
