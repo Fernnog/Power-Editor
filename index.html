@@ -1,69 +1,37 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Texto - Versão Corrigida</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <title>Editor de Texto Avançado</title>
+    <!-- Link para a folha de estilos -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Link para ícones (Font Awesome) - Opcional, mas recomendado para o botão -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <!-- Container principal que organiza a sidebar e o editor -->
-    <div class="main-container">
 
-        <!-- Sidebar restaurada -->
-        <aside id="sidebar" class="sidebar">
-            <h3>Ferramentas</h3>
-            <p>Sua sidebar está de volta.</p>
-        </aside>
-
-        <!-- Wrapper para o editor e sua barra de ferramentas -->
-        <div class="editor-wrapper">
-            <div class="toolbar">
-                <div class="toolbar-group">
-                    <button id="bold-button" class="toolbar-button" title="Negrito"><i class="fas fa-bold"></i></button>
-                    <button id="italic-button" class="toolbar-button" title="Itálico"><i class="fas fa-italic"></i></button>
-                    <button id="underline-button" class="toolbar-button" title="Sublinhado"><i class="fas fa-underline"></i></button>
-                    <button id="strike-button" class="toolbar-button" title="Tachado"><i class="fas fa-strikethrough"></i></button>
-                </div>
-                <div class="toolbar-group">
-                    <button id="ordered-list-button" class="toolbar-button" title="Lista Numerada"><i class="fas fa-list-ol"></i></button>
-                    <button id="bullet-list-button" class="toolbar-button" title="Lista com Marcadores"><i class="fas fa-list-ul"></i></button>
-                </div>
-                <div class="toolbar-group">
-                    <button id="h1-button" class="toolbar-button"><b>H1</b></button>
-                    <button id="h2-button" class="toolbar-button"><b>H2</b></button>
-                </div>
-                <div class="toolbar-group">
-                    <button id="mic-button" class="toolbar-button" title="Ditado por Voz"><i class="fas fa-microphone"></i></button>
-                    <button id="gemini-button" class="toolbar-button" title="Corrigir com IA"><i class="fas fa-wand-magic-sparkles"></i></button>
-                </div>
-                <div class="toolbar-group">
-                    <button id="save-pdf-button" class="toolbar-button" title="Salvar como PDF"><i class="fas fa-file-pdf"></i></button>
-                    <button id="save-doc-button" class="toolbar-button" title="Salvar como DOCX"><i class="fas fa-file-word"></i></button>
-                </div>
-                <div class="toolbar-group toolbar-group-right">
-                    <button class="backup-button">Último Backup: 03/09/2025 09:35</button>
-                </div>
-            </div>
-
-            <!-- Contêiner onde o editor TipTap será renderizado -->
-            <div id="editor-container"></div>
+    <div class="editor-container">
+        <h1>Editor de Documentos</h1>
+        
+        <div class="editor-toolbar">
+            <!-- Botões de formatação existentes (exemplo) -->
+            <button title="Negrito"><i class="fas fa-bold"></i></button>
+            <button title="Itálico"><i class="fas fa-italic"></i></button>
+            <button title="Sublinhado"><i class="fas fa-underline"></i></button>
+            
+            <!-- Novo botão de Download -->
+            <button id="downloadBtn" title="Baixar como HTML">
+                <i class="fas fa-download"></i> Baixar
+            </button>
         </div>
 
+        <div id="rich-text-editor" class="editor-area" contenteditable="true">
+            <p>Cole seu texto aqui...</p>
+        </div>
     </div>
 
-    <!-- SCRIPTS DE BIBLIOTECAS EXTERNAS -->
-    <script src="https://unpkg.com/@tiptap/core@2/dist/tiptap-core.umd.js"></script>
-    <script src="https://unpkg.com/@tiptap/starter-kit@2/dist/tiptap-starter-kit.umd.js"></script>
-    <script src="https://unpkg.com/@tiptap/extension-underline@2/dist/tiptap-extension-underline.umd.js"></script>
-    
-    <!-- Bibliotecas para exportação -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-    <!-- SEU SCRIPT LOCAL -->
-    <script src="js/script.js"></script>
+    <!-- Link para o script JavaScript -->
+    <script src="script.js"></script>
 </body>
 </html>
