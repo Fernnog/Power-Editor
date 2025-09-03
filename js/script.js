@@ -36,9 +36,6 @@ const clearDocBtn = document.getElementById('clear-doc-btn');
 const blockquoteBtn = document.getElementById('blockquote-btn');
 const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
-const exportDocxBtn = document.getElementById('export-docx-btn');
-const exportPdfBtn = document.getElementById('export-pdf-btn');
-const copyFormattedBtn = document.getElementById('copy-formatted-btn');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -55,156 +52,186 @@ function loadStateFromStorage() { const savedState = localStorage.getItem('edito
 function execCmd(command, value = null) { document.execCommand(command, false, value); }
 function insertModelContent(content, tabId) { if (searchBox.value && tabId && appState.activeTabId !== tabId) { appState.activeTabId = tabId; searchBox.value = ''; render(); } editor.focus(); execCmd('insertHTML', content); execCmd('justifyFull'); }
 
-// --- SEÇÃO DE EXPORTAÇÃO ---
-async function saveAsDocx() {
-    const editorContent = editor.innerText.trim();
-    if (!editorContent) {
-        alert("O editor está vazio. Adicione conteúdo antes de exportar para .docx");
-        return;
-    }
-    const exportBtn = document.getElementById('export-docx-btn');
-    const svg = exportBtn.querySelector('svg');
-    exportBtn.disabled = true;
-    if (svg) svg.classList.add('spinner');
-    try {
-        const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
-        const convertCssToTwip = (cssValue) => {
-            if (!cssValue || typeof cssValue !== 'string') return 0;
-            const match = cssValue.match(/^(-?\d*\.?\d+)(cm|px)?$/);
-            if (!match) return 0;
-            const value = parseFloat(match[1]);
-            const unit = match[2];
-            switch (unit) {
-                case 'cm': return Math.round(value * 567);
-                case 'px': return Math.round(value * 15);
-                default: return 0;
-            }
-        };
-        const parseNodeToRuns = (node) => {
-            const runs = [];
-            const isBold = window.getComputedStyle(node).fontWeight === '700' || node.closest('b, strong');
-            const isItalic = window.getComputedStyle(node).fontStyle === 'italic' || node.closest('i, em');
-            const isUnderline = node.closest('u');
-            for (const child of node.childNodes) {
-                if (child.nodeType === Node.TEXT_NODE) {
-                    runs.push(new TextRun({ text: child.textContent, bold: isBold, italics: isItalic, underline: isUnderline ? {} : undefined, }));
-                } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    runs.push(...parseNodeToRuns(child));
-                }
-            }
-            return runs;
-        };
-        const docChildren = [];
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = editor.innerHTML;
-        for (const node of tempDiv.childNodes) {
-            if (node.nodeType !== Node.ELEMENT_NODE || !node.textContent.trim()) continue;
-            const childrenRuns = parseNodeToRuns(node);
-            let paragraphConfig = { children: childrenRuns, alignment: AlignmentType.JUSTIFIED, indentation: {} };
-            const firstLineIndent = node.style.textIndent;
-            const leftIndent = node.style.marginLeft || (node.nodeName === 'BLOCKQUOTE' ? '7cm' : '0cm');
-            if (firstLineIndent) { paragraphConfig.indentation.firstLine = convertCssToTwip(firstLineIndent); }
-            if (leftIndent && node.nodeName === 'BLOCKQUOTE') { paragraphConfig.indentation.left = convertCssToTwip(leftIndent); }
-            if (node.nodeName === 'UL' || node.nodeName === 'OL') {
-                for (const li of node.querySelectorAll('li')) {
-                    const liRuns = parseNodeToRuns(li);
-                    docChildren.push(new Paragraph({ children: liRuns, alignment: AlignmentType.JUSTIFIED, bullet: { level: 0 }, indentation: { left: convertCssToTwip('1.25cm'), hanging: convertCssToTwip('0.63cm') } }));
-                }
-            } else { docChildren.push(new Paragraph(paragraphConfig)); }
-        }
-        const doc = new Document({ sections: [{ children: docChildren }] });
-        const blob = await Packer.toBlob(doc);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'documento.docx'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error("Erro ao gerar o arquivo .docx:", error);
-        alert("Ocorreu um erro ao tentar gerar o arquivo Word.");
-    } finally {
-        exportBtn.disabled = false;
-        if (svg) svg.classList.remove('spinner');
-    }
-}
-function saveAsPdf() {
-    const editorContent = editor.innerHTML.trim();
-    if (editorContent === '' || editorContent === '<p><br></p>') {
-        alert("O editor está vazio. Adicione conteúdo antes de exportar para PDF.");
-        return;
-    }
-    const svg = exportPdfBtn.querySelector('svg');
-    exportPdfBtn.disabled = true;
-    if (svg) svg.classList.add('spinner');
-    const printContainer = document.createElement('div');
-    printContainer.style.position = 'absolute'; printContainer.style.left = '-9999px'; printContainer.style.width = '210mm'; printContainer.style.padding = '20mm'; printContainer.style.backgroundColor = 'white'; printContainer.style.color = 'black'; printContainer.style.fontSize = '12pt'; printContainer.style.fontFamily = 'Arial, sans-serif'; printContainer.style.lineHeight = '1.5'; printContainer.style.textAlign = 'justify'; printContainer.innerHTML = editorContent; document.body.appendChild(printContainer);
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        window.html2canvas(printContainer, { scale: 2, useCORS: true }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            doc.save('documento.pdf');
-        }).catch(canvasError => {
-            console.error("Erro durante a fase do html2canvas:", canvasError);
-            alert("Ocorreu um erro ao capturar o conteúdo visual para o PDF.");
-        }).finally(() => {
-            document.body.removeChild(printContainer);
-            exportPdfBtn.disabled = false;
-            if (svg) svg.classList.remove('spinner');
-        });
-    } catch (error) {
-        console.error("Erro ao gerar o arquivo PDF:", error);
-        alert("Ocorreu um erro ao tentar gerar o arquivo PDF.");
-        document.body.removeChild(printContainer);
-        exportPdfBtn.disabled = false;
-        if (svg) svg.classList.remove('spinner');
-    }
-}
-
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
-    if (!activeTab || activeTab.id === FAVORITES_TAB_ID) { tabActionsContainer.classList.remove('visible'); return; }
+
+    if (!activeTab || activeTab.id === FAVORITES_TAB_ID) {
+        tabActionsContainer.classList.remove('visible');
+        return;
+    }
+
     const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
-    const deleteBtn = document.createElement('button'); deleteBtn.className = 'tab-action-btn'; deleteBtn.innerHTML = ICON_TRASH; deleteBtn.title = 'Excluir esta aba'; if (regularTabsCount <= 1) { deleteBtn.disabled = true; } deleteBtn.onclick = () => deleteTab(appState.activeTabId); tabActionsContainer.appendChild(deleteBtn);
-    const colorBtn = document.createElement('button'); colorBtn.className = 'tab-action-btn'; colorBtn.innerHTML = ICON_PALETTE; colorBtn.title = 'Alterar cor da aba'; colorBtn.onclick = (event) => { event.stopPropagation(); toggleColorPalette(tabActionsContainer, activeTab); }; tabActionsContainer.appendChild(colorBtn);
-    const renameBtn = document.createElement('button'); renameBtn.className = 'tab-action-btn'; renameBtn.innerHTML = ICON_PENCIL; renameBtn.title = 'Renomear esta aba'; renameBtn.onclick = () => { const newName = prompt('Digite o novo nome para a aba:', activeTab.name); if (newName && newName.trim()) { modifyStateAndBackup(() => { activeTab.name = newName.trim(); render(); }); } }; tabActionsContainer.appendChild(renameBtn);
+
+    // Botão de Excluir
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'tab-action-btn';
+    deleteBtn.innerHTML = ICON_TRASH;
+    deleteBtn.title = 'Excluir esta aba';
+    if (regularTabsCount <= 1) {
+        deleteBtn.disabled = true;
+    }
+    deleteBtn.onclick = () => deleteTab(appState.activeTabId);
+    tabActionsContainer.appendChild(deleteBtn);
+
+    // Botão de Alterar Cor
+    const colorBtn = document.createElement('button');
+    colorBtn.className = 'tab-action-btn';
+    colorBtn.innerHTML = ICON_PALETTE;
+    colorBtn.title = 'Alterar cor da aba';
+    colorBtn.onclick = (event) => {
+        event.stopPropagation();
+        toggleColorPalette(tabActionsContainer, activeTab);
+    };
+    tabActionsContainer.appendChild(colorBtn);
+
+    // Botão de Renomear
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'tab-action-btn';
+    renameBtn.innerHTML = ICON_PENCIL;
+    renameBtn.title = 'Renomear esta aba';
+    renameBtn.onclick = () => {
+        const newName = prompt('Digite o novo nome para a aba:', activeTab.name);
+        if (newName && newName.trim()) {
+            modifyStateAndBackup(() => {
+                activeTab.name = newName.trim();
+                render();
+            });
+        }
+    };
+    tabActionsContainer.appendChild(renameBtn);
+
     tabActionsContainer.classList.add('visible');
 }
+
 function toggleColorPalette(anchorElement, tab) {
-    const existingPalette = document.querySelector('.color-palette-popup'); if (existingPalette) { existingPalette.remove(); return; }
-    const palette = document.createElement('div'); palette.className = 'color-palette-popup';
-    TAB_COLORS.forEach(color => { const swatch = document.createElement('div'); swatch.className = 'color-swatch'; swatch.style.backgroundColor = color; swatch.onclick = () => { modifyStateAndBackup(() => { tab.color = color; render(); }); palette.remove(); }; palette.appendChild(swatch); });
+    const existingPalette = document.querySelector('.color-palette-popup');
+    if (existingPalette) {
+        existingPalette.remove();
+        return;
+    }
+
+    const palette = document.createElement('div');
+    palette.className = 'color-palette-popup';
+    
+    TAB_COLORS.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.onclick = () => {
+            modifyStateAndBackup(() => {
+                tab.color = color;
+                render();
+            });
+            palette.remove();
+        };
+        palette.appendChild(swatch);
+    });
+
     anchorElement.appendChild(palette);
-    setTimeout(() => { document.addEventListener('click', () => palette.remove(), { once: true }); }, 0);
+
+    setTimeout(() => {
+        document.addEventListener('click', () => palette.remove(), { once: true });
+    }, 0);
 }
-function render() { renderTabs(); renderModels(filterModels()); renderTabActions(); }
+
+function render() {
+    renderTabs();
+    renderModels(filterModels());
+    renderTabActions();
+}
+
 function renderTabs() {
     tabsContainer.innerHTML = '';
     const activeContentArea = document.getElementById('active-content-area');
     let activeTabColor = '#ccc';
+
     appState.tabs.forEach(tab => {
-        const tabEl = document.createElement('button'); tabEl.className = 'tab-item'; tabEl.dataset.tabId = tab.id;
-        const tabColor = tab.color || '#6c757d'; tabEl.style.setProperty('--tab-color', tabColor);
-        if (tab.id === appState.activeTabId) { tabEl.classList.add('active'); activeTabColor = tabColor; }
+        const tabEl = document.createElement('button');
+        tabEl.className = 'tab-item';
+        tabEl.dataset.tabId = tab.id;
+        
+        const tabColor = tab.color || '#6c757d';
+        tabEl.style.setProperty('--tab-color', tabColor);
+
+        if (tab.id === appState.activeTabId) {
+            tabEl.classList.add('active');
+            activeTabColor = tabColor;
+        }
+
         tabEl.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
-        tabEl.addEventListener('click', () => { appState.activeTabId = tab.id; searchBox.value = ''; render(); });
+        
+        tabEl.addEventListener('click', () => {
+            appState.activeTabId = tab.id;
+            searchBox.value = '';
+            render();
+        });
+        
         tabsContainer.appendChild(tabEl);
     });
+    
     activeContentArea.style.borderColor = activeTabColor;
 }
+
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
     modelsToRender.forEach(model => {
-        const li = document.createElement('li'); li.className = 'model-item'; const headerDiv = document.createElement('div'); headerDiv.className = 'model-header'; const nameSpan = document.createElement('span'); nameSpan.className = 'model-name'; const colorIndicator = document.createElement('span'); colorIndicator.className = 'model-color-indicator'; const parentTab = appState.tabs.find(t => t.id === model.tabId); colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc'; nameSpan.appendChild(colorIndicator); const textNode = document.createTextNode(" " + model.name); nameSpan.appendChild(textNode); headerDiv.appendChild(nameSpan); const actionsDiv = document.createElement('div'); actionsDiv.className = 'model-actions';
-        const addButton = document.createElement('button'); addButton.className = 'action-btn'; addButton.innerHTML = ICON_PLUS; addButton.title = 'Inserir modelo'; addButton.onclick = () => insertModelContent(model.content, model.tabId);
-        const editButton = document.createElement('button'); editButton.className = 'action-btn'; editButton.innerHTML = ICON_PENCIL; editButton.title = 'Editar modelo'; editButton.onclick = () => editModel(model.id);
-        const moveButton = document.createElement('button'); moveButton.className = 'action-btn'; moveButton.innerHTML = ICON_MOVE; moveButton.title = 'Mover para outra aba'; moveButton.onclick = () => moveModelToAnotherTab(model.id);
-        const deleteButton = document.createElement('button'); deleteButton.className = 'action-btn'; deleteButton.innerHTML = ICON_TRASH; deleteButton.title = 'Excluir modelo'; deleteButton.onclick = () => deleteModel(model.id);
-        const favoriteButton = document.createElement('button'); favoriteButton.className = 'action-btn'; favoriteButton.innerHTML = model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE; favoriteButton.title = model.isFavorite ? 'Desfavoritar' : 'Favoritar'; favoriteButton.onclick = () => toggleFavorite(model.id);
-        actionsDiv.appendChild(addButton); actionsDiv.appendChild(editButton); actionsDiv.appendChild(moveButton); actionsDiv.appendChild(deleteButton); actionsDiv.appendChild(favoriteButton); li.appendChild(headerDiv); li.appendChild(actionsDiv); modelList.appendChild(li);
+        const li = document.createElement('li');
+        li.className = 'model-item';
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'model-header';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'model-name';
+        const colorIndicator = document.createElement('span');
+        colorIndicator.className = 'model-color-indicator';
+        const parentTab = appState.tabs.find(t => t.id === model.tabId);
+        colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
+        nameSpan.appendChild(colorIndicator);
+        const textNode = document.createTextNode(" " + model.name);
+        nameSpan.appendChild(textNode);
+        headerDiv.appendChild(nameSpan);
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'model-actions';
+        
+        const addButton = document.createElement('button');
+        addButton.className = 'action-btn';
+        addButton.innerHTML = ICON_PLUS;
+        addButton.title = 'Inserir modelo';
+        addButton.onclick = () => insertModelContent(model.content, model.tabId);
+        
+        const editButton = document.createElement('button');
+        editButton.className = 'action-btn';
+        editButton.innerHTML = ICON_PENCIL;
+        editButton.title = 'Editar modelo';
+        editButton.onclick = () => editModel(model.id);
+        
+        const moveButton = document.createElement('button');
+        moveButton.className = 'action-btn';
+        moveButton.innerHTML = ICON_MOVE;
+        moveButton.title = 'Mover para outra aba';
+        moveButton.onclick = () => moveModelToAnotherTab(model.id);
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'action-btn';
+        deleteButton.innerHTML = ICON_TRASH;
+        deleteButton.title = 'Excluir modelo';
+        deleteButton.onclick = () => deleteModel(model.id);
+        
+        const favoriteButton = document.createElement('button');
+        favoriteButton.className = 'action-btn';
+        favoriteButton.innerHTML = model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE;
+        favoriteButton.title = model.isFavorite ? 'Desfavoritar' : 'Favoritar';
+        favoriteButton.onclick = () => toggleFavorite(model.id);
+
+        actionsDiv.appendChild(addButton);
+        actionsDiv.appendChild(editButton);
+        actionsDiv.appendChild(moveButton);
+        actionsDiv.appendChild(deleteButton);
+        actionsDiv.appendChild(favoriteButton);
+        li.appendChild(headerDiv);
+        li.appendChild(actionsDiv);
+        modelList.appendChild(li);
     });
 }
 let debounceTimer;
@@ -226,53 +253,178 @@ function handleImportFile(event) { const file = event.target.files[0]; if (!file
 let replacementDebounceTimer;
 function applyAutomaticReplacements() {
     if (!appState.replacements || appState.replacements.length === 0) return;
+
+    // Função auxiliar para escapar caracteres especiais para uso em RegExp
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const selection = window.getSelection(); if (!selection.rangeCount) return;
-    const range = selection.getRangeAt(0); const node = range.startContainer;
+
+    // 1. Obter o conteúdo do nó onde o cursor está
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    const node = range.startContainer;
+    
+    // Processar apenas se estivermos dentro de um nó de texto
     if (node.nodeType !== Node.TEXT_NODE) return;
-    const originalText = node.textContent; let newText = originalText; let replacementMade = false;
+
+    const originalText = node.textContent;
+    let newText = originalText;
+    let replacementMade = false;
+
+    // Ordenar regras da mais longa para a mais curta para evitar substituições parciais
     const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
-    for (const rule of sortedRules) { if (rule.find && newText.includes(rule.find)) { newText = newText.replace(new RegExp(escapeRegExp(rule.find), 'g'), rule.replace); replacementMade = true; } }
-    if (replacementMade) { const cursorPosition = range.startOffset; node.textContent = newText; range.setStart(node, Math.min(cursorPosition, newText.length)); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); }
+
+    for (const rule of sortedRules) {
+        if (rule.find && newText.includes(rule.find)) {
+            newText = newText.replace(new RegExp(escapeRegExp(rule.find), 'g'), rule.replace);
+            replacementMade = true;
+        }
+    }
+
+    if (replacementMade) {
+        const cursorPosition = range.startOffset;
+        node.textContent = newText;
+        // Restaurar a posição do cursor no nó modificado
+        range.setStart(node, Math.min(cursorPosition, newText.length));
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
 }
-function debouncedApplyReplacements() { clearTimeout(replacementDebounceTimer); replacementDebounceTimer = setTimeout(applyAutomaticReplacements, 500); }
+function debouncedApplyReplacements() {
+    clearTimeout(replacementDebounceTimer);
+    replacementDebounceTimer = setTimeout(applyAutomaticReplacements, 500); // 500ms de delay
+}
 
 // --- INICIALIZAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
-    loadStateFromStorage(); render();
-    const dictateBtn = document.getElementById('dictate-btn'); const dictationModal = document.getElementById('dictation-modal'); const dictationCloseBtn = document.getElementById('dictation-close-btn');
-    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
-        SpeechDictation.init({ micIcon: document.getElementById('dictation-mic-icon'), langSelect: document.getElementById('dictation-lang-select'), statusDisplay: document.getElementById('dictation-status'), dictationModal: dictationModal, toolbarMicButton: dictateBtn, onResult: (transcript) => { insertModelContent(transcript); } });
-        dictateBtn.addEventListener('click', SpeechDictation.start);
-        dictationCloseBtn.addEventListener('click', () => { SpeechDictation.stop(); });
-    } else { if (dictateBtn) dictateBtn.style.display = 'none'; }
+    loadStateFromStorage(); 
+    render(); 
+    const dictateBtn = document.getElementById('dictate-btn'); 
+    const dictationModal = document.getElementById('dictation-modal'); 
+    const dictationCloseBtn = document.getElementById('dictation-close-btn'); 
+    
+    if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) { 
+        SpeechDictation.init({ 
+            micIcon: document.getElementById('dictation-mic-icon'), 
+            langSelect: document.getElementById('dictation-lang-select'), 
+            statusDisplay: document.getElementById('dictation-status'), 
+            dictationModal: dictationModal,
+            toolbarMicButton: dictateBtn,
+            onResult: (transcript) => { 
+                insertModelContent(transcript); 
+            } 
+        }); 
+        dictateBtn.addEventListener('click', SpeechDictation.start); 
+        dictationCloseBtn.addEventListener('click', () => { 
+            SpeechDictation.stop(); 
+        }); 
+    } else { 
+        dictateBtn.style.display = 'none'; 
+    } 
+    
+    // Listener para substituições automáticas
     editor.addEventListener('input', debouncedApplyReplacements);
-    editor.addEventListener('keydown', (event) => {
-        if (event.ctrlKey) {
-            switch (event.key.toLowerCase()) {
-                case 'b': event.preventDefault(); execCmd('bold'); break;
-                case 'i': event.preventDefault(); execCmd('italic'); break;
-                case 'u': event.preventDefault(); execCmd('underline'); break;
-            }
-        } else if (event.key === 'Tab') { event.preventDefault(); if (typeof EditorActions !== 'undefined') EditorActions.indentFirstLine(); }
-    });
-    if (blockquoteBtn) { if (typeof EditorActions !== 'undefined') blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote); }
-    const replaceBtn = document.getElementById('replace-btn');
-    if (replaceBtn) { replaceBtn.addEventListener('click', () => { if (typeof ModalManager !== 'undefined') ModalManager.show({ type: 'replacementManager', title: 'Gerenciador de Substituições', initialData: { replacements: appState.replacements || [] }, onSave: (data) => { modifyStateAndBackup(() => { appState.replacements = data.replacements; }); } }); }); }
-    const correctTextBtn = document.getElementById('correct-text-btn');
-    if (correctTextBtn) {
-        correctTextBtn.addEventListener('click', async () => {
-            if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") { alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js"); return; }
-            const apiKey = CONFIG.apiKey; const selection = window.getSelection(); const selectedText = selection.toString().trim();
-            if (!selectedText) { alert("Por favor, selecione o texto que deseja corrigir."); return; }
-            const originalButtonText = correctTextBtn.textContent; correctTextBtn.textContent = 'Corrigindo...'; correctTextBtn.disabled = true;
-            if (typeof GeminiService !== 'undefined') {
-                const correctedText = await GeminiService.correctText(selectedText, apiKey);
-                document.execCommand('insertText', false, correctedText);
-            }
-            correctTextBtn.textContent = originalButtonText; correctTextBtn.disabled = false;
+
+    editor.addEventListener('keydown', (event) => { 
+        if (event.ctrlKey) { 
+            switch (event.key.toLowerCase()) { 
+                case 'b': event.preventDefault(); execCmd('bold'); break; 
+                case 'i': event.preventDefault(); execCmd('italic'); break; 
+                case 'u': event.preventDefault(); execCmd('underline'); break; 
+            } 
+        } else if (event.key === 'Tab') { 
+            event.preventDefault(); 
+            EditorActions.indentFirstLine(); 
+        } 
+    }); 
+    
+    if (blockquoteBtn) { 
+        blockquoteBtn.addEventListener('click', EditorActions.formatAsBlockquote); 
+    } 
+    
+    const replaceBtn = document.getElementById('replace-btn'); 
+    if (replaceBtn) { 
+        replaceBtn.addEventListener('click', () => {
+            ModalManager.show({
+                type: 'replacementManager',
+                title: 'Gerenciador de Substituições',
+                initialData: {
+                    replacements: appState.replacements || []
+                },
+                onSave: (data) => {
+                    modifyStateAndBackup(() => {
+                        appState.replacements = data.replacements;
+                    });
+                }
+            });
         });
     }
+
+    // --- CÓDIGO DA FUNCIONALIDADE DE CORREÇÃO ---
+    const correctTextBtn = document.getElementById('correct-text-btn');
+
+    if (correctTextBtn) {
+        correctTextBtn.addEventListener('click', async () => {
+            if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
+                alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
+                return;
+            }
+
+            const apiKey = CONFIG.apiKey;
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+
+            if (!selectedText) {
+                alert("Por favor, selecione o texto que deseja corrigir.");
+                return;
+            }
+            
+            const originalButtonText = correctTextBtn.textContent;
+            correctTextBtn.textContent = 'Corrigindo...';
+            correctTextBtn.disabled = true;
+
+            const correctedText = await GeminiService.correctText(selectedText, apiKey);
+            
+            document.execCommand('insertText', false, correctedText);
+
+            correctTextBtn.textContent = originalButtonText;
+            correctTextBtn.disabled = false;
+        });
+    }
+
+    // --- CÓDIGO ADICIONADO PARA EXPORTAÇÃO EM .ODT ---
+    function exportAsODT() {
+        const editorContent = editor.innerHTML;
+        
+        // Estrutura HTML completa para garantir máxima compatibilidade com leitores .odt
+        const fullHtml = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head><meta charset="UTF-8"><title>Documento</title></head>
+            <body>${editorContent}</body>
+            </html>
+        `;
+    
+        // Cria um "Blob" (arquivo em memória) com o tipo MIME correto para OpenDocument Text
+        const blob = new Blob([fullHtml], { type: 'application/vnd.oasis.opendocument.text' });
+        const url = URL.createObjectURL(blob);
+    
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'documento.odt'; // Nome padrão do arquivo
+        document.body.appendChild(a);
+        a.click(); // Simula o clique para iniciar o download
+    
+        // Limpa os objetos temporários da memória
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    const exportOdtBtn = document.getElementById('export-odt-btn');
+    if (exportOdtBtn) {
+        exportOdtBtn.addEventListener('click', exportAsODT);
+    }
+    // --- FIM DO CÓDIGO DA FUNCIONALIDADE ---
 });
 
 // --- EVENT LISTENERS ---
@@ -280,104 +432,11 @@ searchBox.addEventListener('input', debouncedFilter);
 searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
 addNewTabBtn.addEventListener('click', addNewTab);
 addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-if (indentBtn && typeof EditorActions !== 'undefined') indentBtn.addEventListener('click', EditorActions.indentFirstLine);
-if (formatDocBtn && typeof EditorActions !== 'undefined') formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-if (clearDocBtn && typeof EditorActions !== 'undefined') clearDocBtn.addEventListener('click', EditorActions.clearDocument);
+indentBtn.addEventListener('click', EditorActions.indentFirstLine);
+formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+clearDocBtn.addEventListener('click', EditorActions.clearDocument);
 searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
 clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
 exportBtn.addEventListener('click', exportModels);
 importBtn.addEventListener('click', () => importFileInput.click());
 importFileInput.addEventListener('change', handleImportFile);
-exportDocxBtn.addEventListener('click', saveAsDocx);
-exportPdfBtn.addEventListener('click', saveAsPdf);
-
-// --- [INÍCIO] LÓGICA DE CÓPIA COM FORMATAÇÃO (VERSÃO FINAL E CORRIGIDA) ---
-
-/**
- * Prepara o HTML para cópia, embutindo os estilos computados diretamente nos elementos.
- * Esta versão anexa o clone ao DOM de forma invisível para garantir o cálculo correto dos estilos.
- * @param {HTMLElement} sourceElement - O elemento cujo conteúdo será preparado.
- * @returns {string} - Uma string HTML com estilos embutidos.
- */
-function getHtmlWithInlinedStyles(sourceElement) {
-    const tempContainer = document.createElement('div');
-    
-    // **CORREÇÃO CRÍTICA**: Estiliza o contêiner para torná-lo invisível e o anexa ao DOM.
-    // Isso é necessário para que `getComputedStyle` funcione corretamente.
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.opacity = '0';
-    tempContainer.style.pointerEvents = 'none';
-    
-    // Adiciona o clone ao documento para que os estilos possam ser computados.
-    document.body.appendChild(tempContainer);
-
-    let styledHtml = '';
-
-    try {
-        tempContainer.innerHTML = sourceElement.innerHTML;
-        const allElements = tempContainer.querySelectorAll('*');
-
-        allElements.forEach(el => {
-            const computedStyle = window.getComputedStyle(el);
-            const propertiesToInline = [
-                'text-indent', 'margin-left', 'margin-right', 'margin-top', 'margin-bottom',
-                'padding-left', 'padding-right', 'line-height',
-                'font-weight', 'font-style', 'text-decoration-line', 'color',
-                'display', 'list-style-type', 'list-style-position'
-            ];
-
-            propertiesToInline.forEach(prop => {
-                const value = computedStyle.getPropertyValue(prop);
-                // Aplica o estilo apenas se ele for significativo
-                if (value && value !== '0px' && value !== 'normal' && value !== 'auto' && value !== 'rgba(0, 0, 0, 0)') {
-                   el.style[prop] = value;
-                }
-            });
-            
-            // Remove classes após embutir seus estilos para uma cópia mais limpa.
-            el.removeAttribute('class');
-        });
-        
-        styledHtml = tempContainer.innerHTML;
-    } finally {
-        // **CORREÇÃO CRÍTICA**: Garante que o contêiner temporário seja removido do DOM,
-        // mesmo que ocorra um erro durante o processo.
-        document.body.removeChild(tempContainer);
-    }
-
-    return styledHtml;
-}
-
-if (copyFormattedBtn) {
-    copyFormattedBtn.addEventListener('click', () => {
-        try {
-            // Chama a função corrigida que agora renderiza o clone de forma oculta.
-            const htmlContent = getHtmlWithInlinedStyles(editor);
-
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const clipboardItem = new ClipboardItem({ 'text/html': blob });
-
-            navigator.clipboard.write([clipboardItem])
-                .then(() => {
-                    alert('Texto formatado copiado com sucesso!');
-                })
-                .catch(err => {
-                    console.error('Falha ao copiar o texto formatado: ', err);
-                    alert('Erro ao copiar. Seu navegador pode não suportar esta função ou a página não está em um contexto seguro (HTTPS).');
-                });
-
-        } catch (error) {
-            console.error('Erro ao tentar copiar para a área de transferência:', error);
-            try {
-                const textToCopy = editor.innerText;
-                navigator.clipboard.writeText(textToCopy);
-                alert('Formatação não pôde ser copiada, apenas o texto. Tente novamente em um ambiente seguro (HTTPS).');
-            } catch (fallbackError) {
-                console.error('Falha total ao copiar o texto: ', fallbackError);
-                alert('Falha total ao copiar o texto.');
-            }
-        }
-    });
-}
-// --- [FIM] LÓGICA DE CÓPIA COM FORMATAÇÃO ---
