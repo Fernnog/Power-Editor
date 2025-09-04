@@ -1,46 +1,46 @@
 const EditorActions = (() => {
     /**
      * Aplica formatação padrão (recuo e espaçamento) ao documento no editor TinyMCE.
-     * Percorre os elementos de primeiro nível para aplicar as regras.
      */
     function formatDocument() {
         const editor = tinymce.activeEditor;
         if (!editor) {
-            alert("O editor não está pronto.");
+            alert('Editor não encontrado.');
             return;
         }
-        
-        // Agrupa todas as alterações em uma única transação para permitir um único "Desfazer"
-        editor.undoManager.transact(() => {
-            const elements = editor.getBody().children; // Pega os filhos diretos do corpo do editor
-            
-            for (let i = 0; i < elements.length; i++) {
-                const el = elements[i];
+
+        // Usa a API do TinyMCE para percorrer todos os nós de bloco (parágrafos, títulos, etc.)
+        editor.selection.select(editor.getBody(), true); // Seleciona todo o conteúdo
+        editor.execCommand('JustifyFull'); // Aplica justificação a tudo
+        editor.selection.collapse(true); // Limpa a seleção
+
+        const blocks = editor.dom.select('p,h1,h2,h3,h4,h5,h6,li');
+
+        editor.undoManager.transact(() => { // Agrupa todas as alterações em um único "desfazer"
+            blocks.forEach(block => {
+                const blockName = block.nodeName.toLowerCase();
                 
                 // Aplica espaçamento 1.5 a todos os blocos
-                editor.dom.setStyle(el, 'lineHeight', '1.5');
-        
-                // Aplica recuo a parágrafos e remove dos outros elementos
-                if (el.tagName === 'P') {
-                    editor.dom.setStyle(el, 'textIndent', '3cm');
-                } else if (el.tagName === 'UL' || el.tagName === 'OL') {
-                    // Para listas, usamos margin para indentar o bloco todo
-                    editor.dom.setStyle(el, 'marginLeft', '3cm');
-                    editor.dom.setStyle(el, 'textIndent', ''); // Garante que não haja recuo de primeira linha
+                editor.dom.setStyle(block, 'line-height', '1.5');
+
+                // Aplica recuo de 3cm a parágrafos, removendo de outros elementos
+                if (blockName === 'p') {
+                    editor.dom.setStyle(block, 'text-indent', '3cm');
                 } else {
-                    editor.dom.setStyle(el, 'textIndent', '');
+                    editor.dom.setStyle(block, 'text-indent', '');
                 }
-            }
-            
-            // Garante que todo o texto seja justificado.
-            editor.execCommand('justifyFull');
+            });
         });
 
         editor.focus();
         alert('Documento formatado com sucesso!');
     }
 
-    // Expõe publicamente apenas a função necessária.
+    // As funções indentFirstLine, formatAsBlockquote e clearDocument foram removidas
+    // pois sua lógica foi absorvida pela configuração do TinyMCE ou implementada
+    // diretamente nos event listeners em script.js, tornando este módulo mais limpo.
+
+    // Expõe a função pública
     return {
         formatDocument
     };
