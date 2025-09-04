@@ -346,25 +346,33 @@ ${rtfContent}
             paragraphs.forEach(p => {
                 const textIndent = p.style.textIndent || '';
                 
-                // Se tem text-indent de 3cm, força a aplicação usando múltiplas estratégias
+                // Se tem text-indent de 3cm, converte para uma abordagem que o Google Docs reconhece
                 if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    // Estratégia 1: Remove tudo e reaplica de forma limpa
-                    p.removeAttribute('style');
+                    // Remove o text-indent CSS
+                    p.style.textIndent = '';
+                    p.style.marginLeft = '';
+                    p.style.paddingLeft = '';
                     
-                    // Estratégia 2: Aplica usando a mesma lógica das citações que funcionam
-                    const currentContent = p.innerHTML;
+                    // Pega o conteúdo atual do parágrafo
+                    const originalContent = p.innerHTML.trim();
                     
-                    // Estratégia 3: Usa um span wrapper com padding para simular recuo de primeira linha
-                    p.innerHTML = `<span style="padding-left: 3cm; display: inline-block; text-indent: -3cm; margin-left: 3cm;">${currentContent}</span>`;
+                    // Adiciona espaços em branco equivalentes a 3cm no início da primeira linha
+                    // Usando uma combinação de espaços não-quebráveis e tabulações
+                    const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                     
-                    // Aplica estilo no parágrafo pai
-                    p.style.textIndent = '0';
+                    // Aplica o recuo apenas à primeira linha, preservando quebras de linha internas
+                    if (originalContent) {
+                        p.innerHTML = indentSpaces + originalContent;
+                    }
+                    
+                    // Aplicar estilo específico que o Google Docs interpreta melhor para primeira linha
+                    p.style.textIndent = '3cm';
                     p.style.marginLeft = '0';
                     p.style.paddingLeft = '0';
                 }
             });
             
-            // Garante que blockquotes mantenham formatação (funcionando corretamente)
+            // Garante que blockquotes mantenham formatação (já funciona, mas reforça)
             const blockquotes = tempDiv.querySelectorAll('blockquote');
             blockquotes.forEach(bq => {
                 bq.style.marginLeft = '7cm';
