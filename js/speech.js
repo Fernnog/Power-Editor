@@ -126,6 +126,8 @@ const SpeechDictation = (() => {
             recognition.lang = ui.langSelect ? ui.langSelect.value : 'pt-BR';
             recognition.start();
             isListening = true;
+            
+            // Aplicar classe de listening ao botão da toolbar
             if (ui.toolbarMicButton) {
                 ui.toolbarMicButton.classList.remove('processing');
                 ui.toolbarMicButton.classList.add('listening');
