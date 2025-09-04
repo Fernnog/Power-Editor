@@ -1,41 +1,3 @@
-// Definição dos ícones SVG modernos para a toolbar
-const TOOLBAR_ICONS = {
-    dictate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <circle cx="12" cy="19" r="2"/>
-        <path d="M8 21l8 0"/>
-    </svg>`,
-    
-    aiCorrect: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 18 18.5V21a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2.5a3.374 3.374 0 0 0-.988-2.407L4.564 15.64z"/>
-    </svg>`,
-    
-    replace: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
-        <circle cx="18" cy="6" r="2"/>
-        <path d="M17 5l1 1"/>
-    </svg>`,
-    
-    copyFormatted: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-        <path d="M12 11h4"/>
-        <path d="M12 16h4"/>
-        <path d="M8 11h.01"/>
-        <path d="M8 16h.01"/>
-    </svg>`,
-    
-    export: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14,2 14,8 20,8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10,9 9,9 8,9"/>
-    </svg>`
-};
-
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
@@ -52,6 +14,13 @@ const TINYMCE_CONFIG = {
     autoresize_bottom_margin: 30,
 
     setup: function(editor) {
+        // --- Registra os ícones SVG personalizados para uso na toolbar ---
+        editor.ui.registry.addIcon('mic', ICON_MIC);
+        editor.ui.registry.addIcon('ai-brain', ICON_AI_BRAIN);
+        editor.ui.registry.addIcon('replace', ICON_REPLACE);
+        editor.ui.registry.addIcon('copy-formatted', ICON_COPY_FORMATTED);
+        editor.ui.registry.addIcon('download-doc', ICON_DOWNLOAD_DOC);
+
         // Botão para recuo de primeira linha (lógica original mantida)
         editor.ui.registry.addButton('customIndent', {
             icon: 'indent',
@@ -108,9 +77,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Ditado por Voz (Microfone) - MODIFICADO PARA SVG
+        // Botão de Ditado por Voz (Microfone) - MODIFICADO
         editor.ui.registry.addButton('customMicButton', {
-            text: TOOLBAR_ICONS.dictate,
+            icon: 'mic',
             tooltip: 'Ditar texto',
             onAction: function() {
                 if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
@@ -121,9 +90,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Correção com IA - MODIFICADO PARA SVG
+        // Botão de Correção com IA - MODIFICADO
         editor.ui.registry.addButton('customAiButton', {
-            text: TOOLBAR_ICONS.aiCorrect,
+            icon: 'ai-brain',
             tooltip: 'Corrigir Texto com IA',
             onAction: async function() {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -137,39 +106,33 @@ const TINYMCE_CONFIG = {
                     return;
                 }
                 
-                // Obter referência ao botão e adicionar classe de processamento
                 const aiButton = editor.getContainer().querySelector('[title="Corrigir Texto com IA"]');
                 
                 try {
-                    // Adicionar classe de processamento
                     if (aiButton) aiButton.classList.add('processing');
                     
-                    // Adiciona uma classe CSS ao texto selecionado para feedback visual
                     const range = editor.selection.getRng();
                     const span = editor.dom.create('span', { class: 'ia-processing' });
                     range.surroundContents(span);
                     
                     const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
                     
-                    // Remove o feedback visual e substitui o texto
                     editor.dom.remove(span);
                     editor.selection.setContent(correctedText);
                     
                 } catch (error) {
                     console.error("Erro na correção de texto:", error);
-                    // Remove o feedback visual em caso de erro
                     const processingElements = editor.dom.select('.ia-processing');
                     processingElements.forEach(el => editor.dom.unwrap(el));
                 } finally {
-                    // Remover classe de processamento
                     if (aiButton) aiButton.classList.remove('processing');
                 }
             }
         });
 
-        // Botão de Substituir Termos - MODIFICADO PARA SVG
+        // Botão de Substituir Termos - MODIFICADO
         editor.ui.registry.addButton('customReplaceButton', {
-            text: TOOLBAR_ICONS.replace,
+            icon: 'replace',
             tooltip: 'Gerenciar Substituições',
             onAction: function () {
                 ModalManager.show({
@@ -185,22 +148,20 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado para Google Docs - MODIFICADO PARA SVG
+        // Botão de Copiar Formatado para Google Docs - MODIFICADO
         editor.ui.registry.addButton('customCopyFormatted', {
-            text: TOOLBAR_ICONS.copyFormatted,
+            icon: 'copy-formatted',
             tooltip: 'Copiar Formatado (compatível com Google Docs)',
             onAction: async function() {
                 try {
                     const originalContent = editor.getContent();
                     const optimizedContent = convertForGoogleDocs(originalContent);
                     
-                    // Tenta usar a API moderna de clipboard
                     if (navigator.clipboard && window.ClipboardItem) {
                         const blob = new Blob([optimizedContent], { type: 'text/html' });
                         const clipboardItem = new ClipboardItem({ 'text/html': blob });
                         await navigator.clipboard.write([clipboardItem]);
                     } else {
-                        // Fallback para navegadores mais antigos
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = optimizedContent;
                         tempDiv.style.position = 'absolute';
@@ -218,7 +179,6 @@ const TINYMCE_CONFIG = {
                         selection.removeAllRanges();
                     }
                     
-                    // Feedback visual de sucesso
                     showCopyNotification('Texto copiado e otimizado para Google Docs!');
                     
                 } catch (error) {
@@ -228,28 +188,24 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download ODT/RTF Corrigido - MODIFICADO PARA SVG
+        // Botão de Download ODT/RTF - MODIFICADO
         editor.ui.registry.addButton('customOdtButton', {
-            text: TOOLBAR_ICONS.export,
+            icon: 'download-doc',
             tooltip: 'Salvar como documento (.odt/.rtf)',
             onAction: function() {
                 const editorContent = editor.getContent();
                 
                 try {
-                    // Gera arquivo ODT válido usando estrutura XML apropriada
                     const odtXmlContent = generateValidODTContent(editorContent);
                     
-                    // Tenta criar um ODT real se possível, senão fallback para RTF
                     if (typeof JSZip !== 'undefined') {
                         createODTFile(odtXmlContent);
                     } else {
-                        // Fallback: gera RTF compatível com Word
                         createRTFFile(editorContent);
                     }
                     
                 } catch (error) {
                     console.error('Erro ao gerar arquivo:', error);
-                    // Em caso de erro, gera um arquivo RTF simples
                     createRTFFile(editorContent);
                 }
             }
@@ -257,7 +213,6 @@ const TINYMCE_CONFIG = {
         
         // Funções auxiliares para geração de arquivos ODT/RTF
         function generateValidODTContent(htmlContent) {
-            // Remove tags HTML e converte para texto estruturado
             const textContent = htmlContent
                 .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gs, (match, content) => {
                     return `[CITAÇÃO]${content.replace(/<[^>]*>/g, '')}[/CITAÇÃO]`;
@@ -272,7 +227,6 @@ const TINYMCE_CONFIG = {
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>');
 
-            // Estrutura ODT válida
             return `<?xml version="1.0" encoding="UTF-8"?>
 <office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
                         xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" 
@@ -299,7 +253,6 @@ const TINYMCE_CONFIG = {
         function createODTFile(xmlContent) {
             const zip = new JSZip();
             
-            // Manifest
             const manifest = `<?xml version="1.0" encoding="UTF-8"?>
 <manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
   <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
@@ -307,7 +260,6 @@ const TINYMCE_CONFIG = {
   <manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
 </manifest:manifest>`;
 
-            // Estilos
             const styles = `<?xml version="1.0" encoding="UTF-8"?>
 <office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
                        xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" 
@@ -341,7 +293,6 @@ const TINYMCE_CONFIG = {
         }
 
         function createRTFFile(htmlContent) {
-            // Converte HTML para RTF
             let rtfContent = htmlContent
                 .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gs, (match, content) => {
                     return `\\li4032 \\i ${content.replace(/<[^>]*>/g, '')} \\i0 \\li0\\par `;
@@ -373,44 +324,33 @@ ${rtfContent}
             URL.revokeObjectURL(url);
         }
 
-        // Função auxiliar para converter conteúdo para compatibilidade com Google Docs
         function convertForGoogleDocs(htmlContent) {
-            // Cria um container temporário para manipular o HTML
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
             
-            // Processa todos os parágrafos com text-indent
             const paragraphs = tempDiv.querySelectorAll('p');
             paragraphs.forEach(p => {
                 const textIndent = p.style.textIndent || '';
                 
-                // Se tem text-indent de 3cm, converte para uma abordagem que o Google Docs reconhece
                 if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    // Remove o text-indent CSS
                     p.style.textIndent = '';
                     p.style.marginLeft = '';
                     p.style.paddingLeft = '';
                     
-                    // Pega o conteúdo atual do parágrafo
                     const originalContent = p.innerHTML.trim();
                     
-                    // Adiciona espaços em branco equivalentes a 3cm no início da primeira linha
-                    // Usando uma combinação de espaços não-quebráveis e tabulações
                     const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                     
-                    // Aplica o recuo apenas à primeira linha, preservando quebras de linha internas
                     if (originalContent) {
                         p.innerHTML = indentSpaces + originalContent;
                     }
                     
-                    // Aplicar estilo específico que o Google Docs interpreta melhor para primeira linha
                     p.style.textIndent = '3cm';
                     p.style.marginLeft = '0';
                     p.style.paddingLeft = '0';
                 }
             });
             
-            // Garante que blockquotes mantenham formatação (já funciona, mas reforça)
             const blockquotes = tempDiv.querySelectorAll('blockquote');
             blockquotes.forEach(bq => {
                 bq.style.marginLeft = '7cm';
@@ -423,9 +363,7 @@ ${rtfContent}
             return tempDiv.innerHTML;
         }
 
-        // Função para mostrar notificação de feedback
         function showCopyNotification(message, type = 'success') {
-            // Remove notificação existente se houver
             const existingNotification = document.querySelector('.copy-notification');
             if (existingNotification) {
                 existingNotification.remove();
@@ -442,7 +380,6 @@ ${rtfContent}
             
             document.body.appendChild(notification);
             
-            // Remove automaticamente após 4 segundos
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.remove();
@@ -452,7 +389,6 @@ ${rtfContent}
         
         // Inicialização após editor estar pronto
         editor.on('init', () => {
-            // Inicialização do módulo de Ditado
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
                     micIcon: document.getElementById('dictation-mic-icon'), 
