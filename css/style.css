@@ -3,7 +3,6 @@
     --primary-color: #ce2a66;
     --primary-color-dark: #a12050;
 }
-
 body, html {
     margin: 0;
     padding: 0;
@@ -11,13 +10,11 @@ body, html {
     background-color: #f4f5f7;
     height: 100vh;
 }
-
 /* Container Principal */
 .app-container {
     display: flex;
     height: 100%;
 }
-
 /* Área do Editor */
 .editor-area {
     flex: 3;
@@ -26,7 +23,6 @@ body, html {
     padding: 20px;
     box-sizing: border-box;
 }
-
 .toolbar {
     background-color: #e9ecef;
     padding: 10px;
@@ -36,7 +32,6 @@ body, html {
     display: flex;
     align-items: center;
 }
-
 .toolbar button, .toolbar select {
     padding: 5px 10px;
     margin-right: 5px;
@@ -53,14 +48,12 @@ body, html {
     min-width: 38px;
     min-height: 38px;
 }
-
 .toolbar button svg {
     width: 20px;
     height: 20px;
     stroke-width: 1.5;
     color: #333;
 }
-
 .text-editor {
     flex-grow: 1;
     border: 1px solid #ccc;
@@ -74,7 +67,6 @@ body, html {
 .text-editor p {
     margin-bottom: 1em;
 }
-
 /* Área da Sidebar */
 .sidebar-area {
     flex: 1;
@@ -86,34 +78,30 @@ body, html {
     flex-direction: column;
     height: 100vh;
 }
-
 .sidebar-area h3 {
     margin-top: 0;
     text-align: center;
     color: #333;
 }
-
 .sidebar-controls {
     margin-bottom: 15px;
 }
+search-box {
+width: 100%;
+padding: 8px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 4px;
 
-#search-box {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
 }
-
-/* --- ESTILOS MODERNOS PARA ABAS (3D STACK) --- */
+/* --- ESTILOS MODERNOS PARA ABAS (3D STACK) --- /
 .tabs-container {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding-bottom: 10px; /* Espaço para as sombras */
+    padding-bottom: 10px; / Espaço para as sombras */
     border-bottom: none;
 }
-
 .tab-item {
     padding: 8px 15px;
     cursor: pointer;
@@ -126,7 +114,6 @@ body, html {
     /* Variavel para cor dinâmica */
     --tab-color: #6c757d; 
 }
-
 /* Aba ativa: no topo, destacada, com sombra e borda grossa */
 .tab-item.active {
     z-index: 10;
@@ -138,7 +125,6 @@ body, html {
     transform: scale(1.03);
     background-color: #fff;
 }
-
 /* Abas inativas: atrás, mais claras, simulando pilha */
 .tab-item:not(.active) {
     z-index: 1;
@@ -148,33 +134,31 @@ body, html {
     border-radius: 8px;
     opacity: 0.7;
 }
-
 .tab-item:hover:not(.active) {
     opacity: 0.9;
     transform: translateY(-2px);
 }
-
 /* --- ÁREA DE CONTEÚDO ATIVA --- */
-#active-content-area {
-    position: relative; /* Adicionado para ancorar os botões de ação */
-    flex-grow: 1;
-    overflow: hidden;
-    display: flex; /* Para o UL crescer */
-    flex-direction: column;
-    border: 3px solid #ccc; /* Borda grossa padrão */
-    border-radius: 5px;
-    background-color: #fff;
-    transition: border-color 0.3s;
-}
+active-content-area {
+position: relative; /* Adicionado para ancorar os botões de ação */
+flex-grow: 1;
+overflow: hidden;
+display: flex; /* Para o UL crescer */
+flex-direction: column;
+border: 3px solid #ccc; /* Borda grossa padrão */
+border-radius: 5px;
+background-color: #fff;
+transition: border-color 0.3s;
 
-#model-list {
-    list-style-type: none;
-    padding: 10px;
-    margin: 0;
-    overflow-y: auto;
-    flex-grow: 1;
 }
+model-list {
+list-style-type: none;
+padding: 10px;
+margin: 0;
+overflow-y: auto;
+flex-grow: 1;
 
+}
 .model-item { background-color: #ffd580; border: 1px solid #daa520; border-radius: 5px; padding: 8px 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; transition: background-color 0.2s; }
 .model-item:hover { background-color: #ffc75f; }
 .model-item .model-name { font-weight: bold; font-size: 15px; cursor: default; word-break: break-word; padding-right: 10px; display: flex; align-items: center; gap: 8px; flex-grow: 1; }
@@ -183,10 +167,9 @@ body, html {
 .sidebar-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #ccc; display: flex; gap: 10px; }
 .sidebar-footer button { flex: 1; padding: 10px; cursor: pointer; border: 1px solid #aaa; background-color: #f8f9fa; border-radius: 4px; font-size: 13px; font-weight: bold; }
 .sidebar-footer button:hover { background-color: #e9ecef; }
-#add-new-tab-btn { background-color: #6c757d; color: white; border-color: #5a6268; }
-#add-new-tab-btn:hover { background-color: #5a6268; }
-
-/* --- ESTILOS DO MODAL UNIFICADO --- */
+add-new-tab-btn { background-color: #6c757d; color: white; border-color: #5a6268; }
+add-new-tab-btn:hover { background-color: #5a6268; }
+/* --- ESTILOS DO MODAL UNIFICADO --- /
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
 .modal-overlay.visible { display: flex; }
 .modal-content { background-color: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
@@ -199,8 +182,8 @@ body, html {
 .text-editor-modal {
     width: 100%;
     min-height: 150px;
-    max-height: 50vh; /* Define uma altura máxima de 50% da altura da tela */
-    overflow-y: auto; /* Adiciona a barra de rolagem vertical quando necessário */
+    max-height: 50vh; / Define uma altura máxima de 50% da altura da tela /
+    overflow-y: auto; / Adiciona a barra de rolagem vertical quando necessário */
     padding: 10px;
     box-sizing: border-box;
     border: 1px solid #ccc;
@@ -211,11 +194,10 @@ body, html {
 }
 .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .modal-buttons button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
-#modal-btn-save { background-color: #28a745; color: white; }
-#modal-btn-save:hover { background-color: #218838; }
-#modal-btn-cancel { background-color: #dc3545; color: white; }
-#modal-btn-cancel:hover { background-color: #c82333; }
-
+modal-btn-save { background-color: #28a745; color: white; }
+modal-btn-save:hover { background-color: #218838; }
+modal-btn-cancel { background-color: #dc3545; color: white; }
+modal-btn-cancel:hover { background-color: #c82333; }
 /* --- ESTILOS DO NOVO GERENCIADOR DE SUBSTITUIÇÕES (DENTRO DO MODAL DINÂMICO) --- */
 .modal-description {
     font-size: 14px;
@@ -225,27 +207,26 @@ body, html {
     padding-bottom: 10px;
     border-bottom: 1px solid #eee;
 }
+replacement-search-input {
+width: 100%;
+padding: 10px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 4px;
+margin-bottom: 15px;
+font-size: 16px;
 
-#replacement-search-input {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    font-size: 16px;
 }
+replacement-list-container {
+list-style: none;
+padding: 0;
+margin: 0 0 15px 0;
+max-height: 300px; /* Altura máxima para permitir rolagem */
+overflow-y: auto;  /* Habilita a rolagem vertical */
+border: 1px solid #dee2e6;
+border-radius: 4px;
 
-#replacement-list-container {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 15px 0;
-    max-height: 300px; /* Altura máxima para permitir rolagem */
-    overflow-y: auto;  /* Habilita a rolagem vertical */
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
 }
-
 .replacement-row {
     display: flex;
     align-items: center;
@@ -258,7 +239,6 @@ body, html {
 .replacement-row:hover {
     background-color: #f8f9fa;
 }
-
 .replacement-row input {
     flex: 1;
     padding: 8px;
@@ -293,27 +273,26 @@ body, html {
     background-color: #fbe0e3;
     color: #dc3545;
 }
-
 /* Estilos para o Modal de Ditado */
 .dictation-content { background-color: #fff; padding: 20px 30px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; position: relative; }
-#dictation-lang-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; background-color: #f8f9fa; }
-#dictation-status { font-size: 16px; color: #555; min-width: 250px; text-align: center; }
+dictation-lang-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; background-color: #f8f9fa; }
+dictation-status { font-size: 16px; color: #555; min-width: 250px; text-align: center; }
 .mic-icon { font-size: 40px; cursor: pointer; padding: 10px; border-radius: 50%; transition: background-color 0.2s; }
 .mic-icon:hover { background-color: #f0f0f0; }
 .mic-icon.listening { animation: pulse-red 1.5s infinite; }
 .mic-icon.processing { animation: pulse-blue 1.5s infinite; }
-#dictation-close-btn { position: absolute; top: -10px; right: -5px; background: #e0e0e0; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 18px; line-height: 25px; text-align: center; cursor: pointer; font-weight: bold; }
+dictation-close-btn { position: absolute; top: -10px; right: -5px; background: #e0e0e0; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 18px; line-height: 25px; text-align: center; cursor: pointer; font-weight: bold; }
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
 @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 123, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); } }
-
 /* Adicionado para feedback visual direto no botão da toolbar */
-#dictate-btn.listening {
-    animation: pulse-red 1.5s infinite;
-}
-#dictate-btn.processing {
-    animation: pulse-blue 1.5s infinite;
-}
+dictate-btn.listening {
+animation: pulse-red 1.5s infinite;
 
+}
+dictate-btn.processing {
+animation: pulse-blue 1.5s infinite;
+
+}
 .model-header { display: flex; align-items: center; margin-bottom: 8px; }
 .control-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .control-btn { padding: 10px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 13px; transition: filter 0.2s; }
@@ -333,28 +312,49 @@ body, html {
     border-radius: 4px; 
     align-self: center; 
 }
-
 .text-editor ol { list-style: none; counter-reset: list-counter; margin-left: 3cm; padding-left: 0; }
 .text-editor ol > li { counter-increment: list-counter; position: relative; padding-left: 1.5em; margin-bottom: 0.5em; text-indent: 0; }
 .text-editor ol > li::before { content: counter(list-counter) "."; position: absolute; left: -1.5em; top: 0; width: 1.2em; text-align: right; font-weight: bold; }
-.text-editor blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }
-
-/* --- ESTILOS UNIFICADOS PARA BOTÕES DE ÍCONE E AÇÕES DE ABAS --- */
-#tab-actions-container {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-    transition: opacity 0.3s, transform 0.3s;
-    transform: translateY(10px);
-    opacity: 0;
-    pointer-events: none;
+/* ESTILOS APRIMORADOS PARA BLOCKQUOTE - CITAÇÕES COM 7CM E ITÁLICO */
+.text-editor blockquote,
+.tox-editor-container blockquote,
+blockquote {
+    margin-left: 7cm !important;
+    margin-right: 0 !important;
+    padding-left: 15px;
+    border-left: 3px solid #ccc;
+    color: #333;
+    font-style: italic !important;
+    text-indent: 0 !important;
+    line-height: 1.5;
+    margin-top: 1em;
+    margin-bottom: 1em;
 }
-#tab-actions-container.visible {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
+/* Garante que parágrafos dentro de blockquote não tenham recuo de primeira linha */
+.text-editor blockquote p,
+.tox-editor-container blockquote p,
+blockquote p {
+    text-indent: 0 !important;
+    margin-bottom: 0.5em;
+}
+/* --- ESTILOS UNIFICADOS PARA BOTÕES DE ÍCONE E AÇÕES DE ABAS --- */
+tab-actions-container {
+position: absolute;
+bottom: 10px;
+right: 10px;
+display: flex;
+gap: 8px;
+transition: opacity 0.3s, transform 0.3s;
+transform: translateY(10px);
+opacity: 0;
+pointer-events: none;
+
+}
+tab-actions-container.visible {
+transform: translateY(0);
+opacity: 1;
+pointer-events: auto;
+
 }
 .action-btn,
 .tab-action-btn {
@@ -400,7 +400,6 @@ body, html {
     width: 18px;
     height: 18px;
 }
-
 /* Pop-up da paleta de cores */
 .color-palette-popup {
     position: absolute;
@@ -428,31 +427,27 @@ body, html {
     transform: scale(1.15);
     box-shadow: 0 0 0 2px #adb5bd;
 }
+toolbar-logo {
+max-height: 30px;
+width: auto;
+margin-right: 15px;
+vertical-align: middle;
 
-#toolbar-logo {
-    max-height: 30px;
-    width: auto;
-    margin-right: 15px;
-    vertical-align: middle;
 }
-
 /* Animação para o spinner de carregamento */
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
-
 .spinner {
     animation: spin 1s linear infinite;
 }
-
 /* Animação para o texto sendo processado - APRIMORADA */
 @keyframes pulse-yellow {
     0% { background-color: rgba(255, 229, 100, 0.7); }
     50% { background-color: rgba(255, 229, 100, 0.4); }
     100% { background-color: rgba(255, 229, 100, 0.7); }
 }
-
 .ia-processing {
     animation: pulse-yellow 1.5s infinite;
     border-radius: 3px;
@@ -461,80 +456,71 @@ body, html {
     cursor: wait; /* Adiciona cursor de espera */
     position: relative;
 }
-
 /* Adiciona um indicador visual extra para o processamento da IA */
 .tox-editor-container .ia-processing {
     cursor: wait;
 }
-
 .ia-processing::after {
     content: " ⏳";
     font-size: 0.8em;
     opacity: 0.7;
 }
-
 /* --- NOVOS ESTILOS PARA A RÉGUA NUMERADA --- */
-
-/* 1. Wrapper que contém o editor e as réguas (ajuste fino) */
+/* 1. Wrapper que contém o editor e as réguas (ajuste fino) /
 .editor-wrapper {
     position: relative;
     flex-grow: 1;
-    padding-top: 30px;  /* Aumenta o espaço para a régua numerada */
+    padding-top: 30px;  / Aumenta o espaço para a régua numerada /
     padding-left: 30px;
-    background-color: #f0f0f0; /* Cor de fundo neutra */
+    background-color: #f0f0f0; / Cor de fundo neutra */
 }
-
-/* 2. Container base para as réguas */
+/* 2. Container base para as réguas /
 .ruler-container {
     position: absolute;
     background-color: #ffffff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     overflow: hidden;
-    user-select: none; /* Impede que o texto da régua seja selecionado */
+    user-select: none; / Impede que o texto da régua seja selecionado */
 }
+ruler-h-container {
+top: 0;
+left: 30px;
+width: calc(100% - 30px);
+height: 30px;
 
-#ruler-h-container {
-    top: 0;
-    left: 30px;
-    width: calc(100% - 30px);
-    height: 30px;
 }
+ruler-v-container {
+top: 30px;
+left: 0;
+width: 30px;
+height: calc(100% - 30px);
 
-#ruler-v-container {
-    top: 30px;
-    left: 0;
-    width: 30px;
-    height: calc(100% - 30px);
 }
-
 /* 3. Estilo para as marcações (ticks) */
 .ruler-tick {
     position: absolute;
     background-color: #adb5bd;
 }
-
-/* Ticks Horizontais */
+/* Ticks Horizontais /
 .ruler-h-tick {
     bottom: 0;
     width: 1px;
-    height: 5px; /* Altura do tick de milímetro */
+    height: 5px; / Altura do tick de milímetro /
 }
 .ruler-h-tick.major {
-    height: 10px; /* Altura do tick de centímetro */
+    height: 10px; / Altura do tick de centímetro */
     background-color: #343a40;
 }
-
-/* Ticks Verticais */
+/* Ticks Verticais /
 .ruler-v-tick {
     right: 0;
-    width: 5px; /* Largura do tick de milímetro */
+    width: 5px; / Largura do tick de milímetro /
     height: 1px;
 }
 .ruler-v-tick.major {
-    width: 10px; /* Largura do tick de centímetro */
+    width: 10px; / Largura do tick de centímetro */
     background-color: #343a40;
 }
-
 /* 4. Estilo para os números na régua */
 .ruler-label {
     position: absolute;
@@ -542,21 +528,17 @@ body, html {
     font-size: 10px;
     color: #495057;
 }
-
 .ruler-h-label {
     bottom: 11px;
 }
-
 .ruler-v-label {
     right: 12px;
     writing-mode: vertical-rl; /* Gira os números na vertical */
 }
-
 /* 5. Garante que o editor TinyMCE não tenha bordas que interfiram no layout */
 .tox-tinymce {
     border: none !important;
 }
-
 /* Efeito de arco pulsante delicado para botões em processamento */
 @keyframes gentle-arc-pulse {
     0% { 
@@ -575,30 +557,27 @@ body, html {
         transform: scale(1);
     }
 }
-
 /* Aplicar o efeito aos botões específicos quando em processamento */
-.tox-toolbar__group button[title="Ditar texto"].processing,
-.tox-toolbar__group button[title="Corrigir Texto com IA"].processing {
+.tox-toolbargroup button[title="Ditar texto"].processing,
+.tox-toolbargroup button[title="Corrigir Texto com IA"].processing {
     animation: gentle-arc-pulse 2s ease-in-out infinite;
     border-radius: 6px;
     position: relative;
     overflow: visible;
 }
-
 /* Efeito adicional para o estado de "ouvindo" (microfone) */
 .tox-toolbar__group button[title="Ditar texto"].listening {
     animation: gentle-arc-pulse 1.5s ease-in-out infinite;
     border-radius: 6px;
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
 }
-
 /* Remover completamente as linhas do cursor (régua) */
 .ruler-marker {
     display: none !important;
 }
-
 /* Ocultar os containers das réguas também */
-#ruler-horizontal,
-#ruler-vertical {
-    display: none !important;
+ruler-horizontal,
+ruler-vertical {
+display: none !important;
+
 }
