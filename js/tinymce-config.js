@@ -1,16 +1,13 @@
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    // Plugins adicionados: 'pagebreak' e 'hr' (simuladores de régua) e 'visualblocks' (melhoria de UX)
     plugins: 'lists autoresize pagebreak hr visualblocks',
     
-    // Botões adicionados à barra de ferramentas para os novos plugins
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent blockquote | hr pagebreak visualblocks | customMicButton customAiButton customReplaceButton customOdtButton',
     
     menubar: false,
     statusbar: false,
     
-    // Regra de estilo corrigida: garante que o recuo da citação (7cm) não acumule com o recuo de primeira linha
     content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
     
     height: 600,
@@ -108,6 +105,67 @@ const TINYMCE_CONFIG = {
             }
         });
         
+        // --- INÍCIO DO NOVO CÓDIGO DA RÉGUA ---
+
+        let horizontalMarker, verticalMarker;
+
+        editor.on('init', () => {
+            const rulerH = document.getElementById('ruler-horizontal');
+            const rulerV = document.getElementById('ruler-vertical');
+
+            // Cria os marcadores visuais
+            horizontalMarker = document.createElement('div');
+            horizontalMarker.className = 'ruler-marker';
+            rulerH.appendChild(horizontalMarker);
+
+            verticalMarker = document.createElement('div');
+            verticalMarker.className = 'ruler-marker';
+            rulerV.appendChild(verticalMarker);
+            
+            // Estilo para os marcadores (adicionado via JS para simplicidade)
+            const markerStyle = document.createElement('style');
+            markerStyle.innerHTML = `
+                .ruler-marker {
+                    position: absolute;
+                    background-color: rgba(206, 42, 102, 0.6); /* Cor primária com transparência */
+                    z-index: 6;
+                    display: none; /* Começa escondido */
+                }
+                #ruler-horizontal .ruler-marker {
+                    top: 0;
+                    width: 1px;
+                    height: 100%;
+                }
+                #ruler-vertical .ruler-marker {
+                    left: 0;
+                    width: 100%;
+                    height: 1px;
+                }
+            `;
+            document.head.appendChild(markerStyle);
+        });
+
+        // Evento que dispara sempre que o cursor muda de posição
+        editor.on('NodeChange', (e) => {
+            if (!horizontalMarker) return;
+
+            // Pega as coordenadas do editor e do cursor
+            const editorRect = editor.getContainer().getBoundingClientRect();
+            const cursorRect = editor.selection.getRng().getBoundingClientRect();
+
+            // Calcula a posição relativa do cursor dentro do editor
+            const cursorX = cursorRect.left - editorRect.left;
+            const cursorY = cursorRect.top - editorRect.top;
+
+            // Mostra e posiciona os marcadores
+            horizontalMarker.style.display = 'block';
+            verticalMarker.style.display = 'block';
+            horizontalMarker.style.transform = `translateX(${cursorX}px)`;
+            verticalMarker.style.transform = `translateY(${cursorY}px)`;
+        });
+
+        // --- FIM DO NOVO CÓDIGO DA RÉGUA ---
+
         // Inicialização do módulo de Ditado
         if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
             SpeechDictation.init({ 
