@@ -625,3 +625,76 @@ blockquote p {
 #ruler-vertical {
     display: none !important;
 }
+
+/* --- ESTILOS ESPECÍFICOS PARA ÍCONES SVG NA TOOLBAR DO TINYMCE (PRIORIDADE 1) --- */
+
+/* Estilos gerais para ícones SVG nos botões customizados do TinyMCE */
+.tox .tox-tbtn svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: all 0.2s ease;
+}
+
+/* Botões customizados específicos com ícones SVG */
+.tox .tox-tbtn[title="Ditar texto"] svg,
+.tox .tox-tbtn[title="Corrigir Texto com IA"] svg,
+.tox .tox-tbtn[title="Gerenciar Substituições"] svg,
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"] svg,
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"] svg {
+    width: 16px;
+    height: 16px;
+    stroke: #333;
+    transition: all 0.2s ease;
+}
+
+/* Estados de hover para botões com ícones SVG */
+.tox .tox-tbtn[title="Ditar texto"]:hover svg {
+    stroke: #007acc;
+    transform: scale(1.1);
+}
+
+.tox .tox-tbtn[title="Corrigir Texto com IA"]:hover svg {
+    stroke: #ff6b35;
+    transform: scale(1.1);
+}
+
+.tox .tox-tbtn[title="Gerenciar Substituições"]:hover svg {
+    stroke: #28a745;
+    transform: scale(1.1);
+}
+
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:hover svg {
+    stroke: #6f42c1;
+    transform: scale(1.1);
+}
+
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:hover svg {
+    stroke: #dc3545;
+    transform: scale(1.1);
+}
+
+/* Estados ativos para botões com ícones SVG */
+.tox .tox-tbtn[title="Ditar texto"]:active svg,
+.tox .tox-tbtn[title="Corrigir Texto com IA"]:active svg,
+.tox .tox-tbtn[title="Gerenciar Substituições"]:active svg,
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:active svg,
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:active svg {
+    transform: scale(0.95);
+}
+
+/* Estados de foco para acessibilidade dos botões SVG */
+.tox .tox-tbtn[title="Ditar texto"]:focus-visible,
+.tox .tox-tbtn[title="Corrigir Texto com IA"]:focus-visible,
+.tox .tox-tbtn[title="Gerenciar Substituições"]:focus-visible,
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:focus-visible,
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:focus-visible {
+    outline: 2px solid #007acc;
+    outline-offset: 2px;
+}
+
+/* Classe para botões em estado de processamento
