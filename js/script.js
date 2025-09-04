@@ -261,22 +261,22 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO DO TINYMCE ---
     tinymce.init({
         selector: '#editor',
-        plugins: 'lists autoresize',
+        // ATUALIZADO: Adicionados os plugins 'pagebreak' e 'hr'.
+        plugins: 'lists autoresize pagebreak hr',
         
-        // MODIFICAÇÃO 1: Adicionados 'customIndent' e 'blockquote' à barra de ferramentas
-        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent blockquote | customMicButton customAiButton customReplaceButton customOdtButton',
+        // ATUALIZADO: Adicionados 'hr' e 'pagebreak' à barra de ferramentas.
+        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent blockquote | hr pagebreak | customMicButton customAiButton customReplaceButton customOdtButton',
         
         menubar: false,
         statusbar: false,
         
-        // MODIFICAÇÃO 2: Adicionada a regra de estilo para 'blockquote' com recuo de 7cm
         content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; }',
         
         height: 600,
         autoresize_bottom_margin: 30,
 
         setup: function(editor) {
-            // MODIFICAÇÃO 3: Adicionado o novo botão para recuo de primeira linha
+            // Botão customizado para recuo de primeira linha (3cm)
             editor.ui.registry.addButton('customIndent', {
                 icon: 'indent', // Usa um ícone nativo do TinyMCE
                 tooltip: 'Recuo da Primeira Linha (3cm)',
