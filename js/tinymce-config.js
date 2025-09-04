@@ -1,9 +1,9 @@
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    plugins: 'lists autoresize pagebreak hr visualblocks',
+    plugins: 'lists autoresize pagebreak visualblocks',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent blockquote | hr pagebreak visualblocks | customMicButton customAiButton customReplaceButton customOdtButton',
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent blockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customOdtButton',
     
     menubar: false,
     statusbar: false,
@@ -48,7 +48,7 @@ const TINYMCE_CONFIG = {
 
         // Botão de Correção com IA
         editor.ui.registry.addButton('customAiButton', {
-            text: '✨',
+            text: '✓',
             tooltip: 'Corrigir Texto com IA',
             onAction: async function() {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -70,7 +70,7 @@ const TINYMCE_CONFIG = {
 
         // Botão de Substituir Termos
         editor.ui.registry.addButton('customReplaceButton', {
-            text: 'A→B',
+            text: 'A↔B',
             tooltip: 'Gerenciar Substituições',
             onAction: function () {
                 ModalManager.show({
@@ -143,6 +143,27 @@ const TINYMCE_CONFIG = {
                 }
             `;
             document.head.appendChild(markerStyle);
+
+            // Inicialização do módulo de Ditado (movido para dentro do evento 'init')
+            if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                SpeechDictation.init({ 
+                    micIcon: document.getElementById('dictation-mic-icon'), 
+                    langSelect: document.getElementById('dictation-lang-select'), 
+                    statusDisplay: document.getElementById('dictation-status'), 
+                    dictationModal: document.getElementById('dictation-modal'),
+                    toolbarMicButton: editor.getContainer().querySelector('[title="Ditar texto"]'),
+                    onResult: (transcript) => { 
+                        editor.execCommand('mceInsertContent', false, transcript); 
+                    } 
+                });
+                
+                const closeBtn = document.getElementById('dictation-close-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => { 
+                        SpeechDictation.stop(); 
+                    }); 
+                }
+            }
         });
 
         // Evento que dispara sempre que o cursor muda de posição
@@ -165,22 +186,5 @@ const TINYMCE_CONFIG = {
         });
 
         // --- FIM DO NOVO CÓDIGO DA RÉGUA ---
-
-        // Inicialização do módulo de Ditado
-        if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
-            SpeechDictation.init({ 
-                micIcon: document.getElementById('dictation-mic-icon'), 
-                langSelect: document.getElementById('dictation-lang-select'), 
-                statusDisplay: document.getElementById('dictation-status'), 
-                dictationModal: document.getElementById('dictation-modal'),
-                onResult: (transcript) => { 
-                    editor.execCommand('mceInsertContent', false, transcript + ' '); 
-                } 
-            });
-            
-            document.getElementById('dictation-close-btn').addEventListener('click', () => { 
-                SpeechDictation.stop(); 
-            }); 
-        }
     }
 };
