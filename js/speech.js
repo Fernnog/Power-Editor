@@ -73,8 +73,8 @@ const SpeechDictation = (() => {
 
     const setupListeners = () => {
         recognition.onresult = (event) => {
-            ui.toolbarMicButton.classList.remove('processing');
-            ui.micIcon.classList.remove('processing');
+            if (ui.toolbarMicButton) ui.toolbarMicButton.classList.remove('processing');
+            if (ui.micIcon) ui.micIcon.classList.remove('processing');
             let transcript = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
@@ -95,17 +95,27 @@ const SpeechDictation = (() => {
 
         recognition.onend = () => {
             isListening = false;
-            ui.toolbarMicButton.classList.remove('listening', 'processing');
-            ui.micIcon.classList.remove('listening', 'processing');
+            if (ui.toolbarMicButton) {
+                ui.toolbarMicButton.classList.remove('listening', 'processing');
+            }
+            if (ui.micIcon) {
+                ui.micIcon.classList.remove('listening', 'processing');
+            }
             updateStatus('Clique no microfone para recomeçar');
-            ui.dictationModal.classList.remove('visible'); // Esconde o modal ao final da sessão.
+            if (ui.dictationModal) {
+                ui.dictationModal.classList.remove('visible');
+            }
         };
 
         recognition.onspeechend = () => {
-            ui.toolbarMicButton.classList.remove('listening');
-            ui.toolbarMicButton.classList.add('processing');
-            ui.micIcon.classList.remove('listening');
-            ui.micIcon.classList.add('processing');
+            if (ui.toolbarMicButton) {
+                ui.toolbarMicButton.classList.remove('listening');
+                ui.toolbarMicButton.classList.add('processing');
+            }
+            if (ui.micIcon) {
+                ui.micIcon.classList.remove('listening');
+                ui.micIcon.classList.add('processing');
+            }
             updateStatus('Processando...');
         };
     };
@@ -113,15 +123,21 @@ const SpeechDictation = (() => {
     const start = () => {
         if (isListening || !recognition) return;
         try {
-            recognition.lang = ui.langSelect.value;
+            recognition.lang = ui.langSelect ? ui.langSelect.value : 'pt-BR';
             recognition.start();
             isListening = true;
-            ui.toolbarMicButton.classList.remove('processing');
-            ui.toolbarMicButton.classList.add('listening');
-            ui.micIcon.classList.remove('processing');
-            ui.micIcon.classList.add('listening');
+            if (ui.toolbarMicButton) {
+                ui.toolbarMicButton.classList.remove('processing');
+                ui.toolbarMicButton.classList.add('listening');
+            }
+            if (ui.micIcon) {
+                ui.micIcon.classList.remove('processing');
+                ui.micIcon.classList.add('listening');
+            }
             updateStatus('Ouvindo... Fale agora.');
-            ui.dictationModal.classList.add('visible'); // Exibe o modal ao iniciar.
+            if (ui.dictationModal) {
+                ui.dictationModal.classList.add('visible');
+            }
         } catch (error) {
             console.error("Erro ao iniciar a gravação:", error);
             updateStatus('Não foi possível iniciar.');
