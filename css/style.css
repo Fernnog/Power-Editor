@@ -27,6 +27,7 @@ body, html {
     flex: 3;
     display: flex;
     flex-direction: column;
+    padding: 20px;
     padding: 0; /* AJUSTADO: Padding movido para o wrapper */
     box-sizing: border-box;
 }
@@ -489,12 +490,27 @@ blockquote p {
     position: relative;
 }
 
+/* Adiciona um indicador visual extra para o processamento da IA */
+.tox-editor-container .ia-processing {
+    cursor: wait;
+}
+
+.ia-processing::after {
+    content: " ⏳";
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* --- NOVOS ESTILOS PARA A RÉGUA NUMERADA --- */
 /* --- NOVOS ESTILOS PARA O EDITOR CENTRALIZADO --- */
 
 /* 1. Wrapper que contém o editor e as réguas (ajuste fino) */
 .editor-wrapper {
     position: relative;
     flex-grow: 1;
+    padding-top: 30px;  /* Aumenta o espaço para a régua numerada */
+    padding-left: 30px;
+    background-color: #f0f0f0; /* Cor de fundo neutra */
     background-color: #f0f0f0; /* Fundo cinza */
     padding: 20px; /* Espaçamento ao redor da 'página' */
     box-sizing: border-box;
@@ -503,6 +519,7 @@ blockquote p {
     overflow-y: auto; /* Garante a rolagem aqui dentro */
 }
 
+/* 2. Container base para as réguas */
 /* 2. Container base para as réguas (mantido, mas oculto) */
 .ruler-container {
     position: absolute;
@@ -526,6 +543,7 @@ blockquote p {
     height: calc(100% - 30px);
 }
 
+/* 3. Estilo para as marcações (ticks) */
 /* 3. Estilo para as marcações (ticks) (mantido, mas oculto) */
 .ruler-tick {
     position: absolute;
@@ -554,6 +572,7 @@ blockquote p {
     background-color: #343a40;
 }
 
+/* 4. Estilo para os números na régua */
 /* 4. Estilo para os números na régua (mantido, mas oculto) */
 .ruler-label {
     position: absolute;
@@ -571,8 +590,10 @@ blockquote p {
     writing-mode: vertical-rl; /* Gira os números na vertical */
 }
 
+/* 5. Garante que o editor TinyMCE não tenha bordas que interfiram no layout */
 /* 5. Garante que o editor TinyMCE se comporte como uma página A4 */
 .tox-tinymce {
+    border: none !important;
     max-width: var(--page-width);      /* Simula a largura de uma folha A4 */
     min-height: var(--page-height);   /* Simula a altura de uma folha A4 */
     margin: 0 auto;       /* O truque MÁGICO para centralizar horizontalmente */
