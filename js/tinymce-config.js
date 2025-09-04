@@ -344,19 +344,30 @@ ${rtfContent}
             // Processa todos os parágrafos com text-indent
             const paragraphs = tempDiv.querySelectorAll('p');
             paragraphs.forEach(p => {
-                const styles = window.getComputedStyle ? window.getComputedStyle(p) : p.currentStyle;
-                const textIndent = p.style.textIndent || (styles ? styles.textIndent : '');
+                const textIndent = p.style.textIndent || '';
                 
-                // Se tem text-indent de 3cm, converte para estrutura compatível
+                // Se tem text-indent de 3cm, converte para uma abordagem que o Google Docs reconhece
                 if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    // Remove o text-indent e usa margin-left + estrutura aninhada
+                    // Remove o text-indent CSS
                     p.style.textIndent = '';
-                    p.style.marginLeft = '3cm';
+                    p.style.marginLeft = '';
+                    p.style.paddingLeft = '';
                     
-                    // Alternativa mais robusta: envolve o conteúdo em span com padding
-                    const content = p.innerHTML;
-                    p.innerHTML = `<span style="display: inline-block; padding-left: 0; text-indent: 0;">${content}</span>`;
+                    // Pega o conteúdo atual do parágrafo
+                    const originalContent = p.innerHTML.trim();
+                    
+                    // Adiciona espaços em branco equivalentes a 3cm no início da primeira linha
+                    // Usando uma combinação de espaços não-quebráveis e tabulações
+                    const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                    
+                    // Aplica o recuo apenas à primeira linha, preservando quebras de linha internas
+                    if (originalContent) {
+                        p.innerHTML = indentSpaces + originalContent;
+                    }
+                    
+                    // Aplicar estilo específico que o Google Docs interpreta melhor para primeira linha
                     p.style.textIndent = '3cm';
+                    p.style.marginLeft = '0';
                     p.style.paddingLeft = '0';
                 }
             });
@@ -367,6 +378,8 @@ ${rtfContent}
                 bq.style.marginLeft = '7cm';
                 bq.style.textIndent = '0';
                 bq.style.fontStyle = 'italic';
+                bq.style.paddingLeft = '15px';
+                bq.style.borderLeft = '3px solid #ccc';
             });
             
             return tempDiv.innerHTML;
