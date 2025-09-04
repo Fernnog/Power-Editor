@@ -1,3 +1,41 @@
+// Definição dos ícones SVG modernos para a toolbar
+const TOOLBAR_ICONS = {
+    dictate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <circle cx="12" cy="19" r="2"/>
+        <path d="M8 21l8 0"/>
+    </svg>`,
+    
+    aiCorrect: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 18 18.5V21a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2.5a3.374 3.374 0 0 0-.988-2.407L4.564 15.64z"/>
+    </svg>`,
+    
+    replace: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
+        <circle cx="18" cy="6" r="2"/>
+        <path d="M17 5l1 1"/>
+    </svg>`,
+    
+    copyFormatted: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <path d="M12 11h4"/>
+        <path d="M12 16h4"/>
+        <path d="M8 11h.01"/>
+        <path d="M8 16h.01"/>
+    </svg>`,
+    
+    export: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10,9 9,9 8,9"/>
+    </svg>`
+};
+
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
@@ -70,9 +108,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Ditado por Voz (Microfone)
+        // Botão de Ditado por Voz (Microfone) - MODIFICADO PARA SVG
         editor.ui.registry.addButton('customMicButton', {
-            text: '🎤',
+            text: TOOLBAR_ICONS.dictate,
             tooltip: 'Ditar texto',
             onAction: function() {
                 if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
@@ -83,9 +121,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Correção com IA
+        // Botão de Correção com IA - MODIFICADO PARA SVG
         editor.ui.registry.addButton('customAiButton', {
-            text: 'A🧠',
+            text: TOOLBAR_ICONS.aiCorrect,
             tooltip: 'Corrigir Texto com IA',
             onAction: async function() {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -129,9 +167,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Substituir Termos
+        // Botão de Substituir Termos - MODIFICADO PARA SVG
         editor.ui.registry.addButton('customReplaceButton', {
-            text: 'A→B',
+            text: TOOLBAR_ICONS.replace,
             tooltip: 'Gerenciar Substituições',
             onAction: function () {
                 ModalManager.show({
@@ -147,9 +185,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado para Google Docs
+        // Botão de Copiar Formatado para Google Docs - MODIFICADO PARA SVG
         editor.ui.registry.addButton('customCopyFormatted', {
-            text: '📋✨',
+            text: TOOLBAR_ICONS.copyFormatted,
             tooltip: 'Copiar Formatado (compatível com Google Docs)',
             onAction: async function() {
                 try {
@@ -190,9 +228,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download ODT/RTF Corrigido
+        // Botão de Download ODT/RTF Corrigido - MODIFICADO PARA SVG
         editor.ui.registry.addButton('customOdtButton', {
-            text: '📄',
+            text: TOOLBAR_ICONS.export,
             tooltip: 'Salvar como documento (.odt/.rtf)',
             onAction: function() {
                 const editorContent = editor.getContent();
