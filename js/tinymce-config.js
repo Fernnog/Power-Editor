@@ -3,7 +3,7 @@ const TINYMCE_CONFIG = {
     
     plugins: 'lists autoresize pagebreak visualblocks',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customOdtButton',
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton',
     
     menubar: false,
     statusbar: false,
@@ -85,7 +85,7 @@ const TINYMCE_CONFIG = {
 
         // Botão de Correção com IA
         editor.ui.registry.addButton('customAiButton', {
-            text: 'A✓',
+            text: 'A🧠',
             tooltip: 'Corrigir Texto com IA',
             onAction: async function() {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -131,7 +131,7 @@ const TINYMCE_CONFIG = {
 
         // Botão de Substituir Termos
         editor.ui.registry.addButton('customReplaceButton', {
-            text: 'A↔B',
+            text: 'A→B',
             tooltip: 'Gerenciar Substituições',
             onAction: function () {
                 ModalManager.show({
@@ -144,6 +144,49 @@ const TINYMCE_CONFIG = {
                         });
                     }
                 });
+            }
+        });
+
+        // Botão de Copiar Formatado para Google Docs
+        editor.ui.registry.addButton('customCopyFormatted', {
+            text: '📋✨',
+            tooltip: 'Copiar Formatado (compatível com Google Docs)',
+            onAction: async function() {
+                try {
+                    const originalContent = editor.getContent();
+                    const optimizedContent = convertForGoogleDocs(originalContent);
+                    
+                    // Tenta usar a API moderna de clipboard
+                    if (navigator.clipboard && window.ClipboardItem) {
+                        const blob = new Blob([optimizedContent], { type: 'text/html' });
+                        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+                        await navigator.clipboard.write([clipboardItem]);
+                    } else {
+                        // Fallback para navegadores mais antigos
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = optimizedContent;
+                        tempDiv.style.position = 'absolute';
+                        tempDiv.style.left = '-9999px';
+                        document.body.appendChild(tempDiv);
+                        
+                        const range = document.createRange();
+                        range.selectNode(tempDiv);
+                        const selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        
+                        document.execCommand('copy');
+                        document.body.removeChild(tempDiv);
+                        selection.removeAllRanges();
+                    }
+                    
+                    // Feedback visual de sucesso
+                    showCopyNotification('Texto copiado e otimizado para Google Docs!');
+                    
+                } catch (error) {
+                    console.error('Erro ao copiar conteúdo formatado:', error);
+                    showCopyNotification('Erro ao copiar. Tente usar Ctrl+C manual.', 'error');
+                }
             }
         });
 
@@ -290,6 +333,70 @@ ${rtfContent}
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // Função auxiliar para converter conteúdo para compatibilidade com Google Docs
+        function convertForGoogleDocs(htmlContent) {
+            // Cria um container temporário para manipular o HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            // Processa todos os parágrafos com text-indent
+            const paragraphs = tempDiv.querySelectorAll('p');
+            paragraphs.forEach(p => {
+                const styles = window.getComputedStyle ? window.getComputedStyle(p) : p.currentStyle;
+                const textIndent = p.style.textIndent || (styles ? styles.textIndent : '');
+                
+                // Se tem text-indent de 3cm, converte para estrutura compatível
+                if (textIndent === '3cm' || textIndent.includes('3cm')) {
+                    // Remove o text-indent e usa margin-left + estrutura aninhada
+                    p.style.textIndent = '';
+                    p.style.marginLeft = '3cm';
+                    
+                    // Alternativa mais robusta: envolve o conteúdo em span com padding
+                    const content = p.innerHTML;
+                    p.innerHTML = `<span style="display: inline-block; padding-left: 0; text-indent: 0;">${content}</span>`;
+                    p.style.textIndent = '3cm';
+                    p.style.paddingLeft = '0';
+                }
+            });
+            
+            // Garante que blockquotes mantenham formatação (já funciona, mas reforça)
+            const blockquotes = tempDiv.querySelectorAll('blockquote');
+            blockquotes.forEach(bq => {
+                bq.style.marginLeft = '7cm';
+                bq.style.textIndent = '0';
+                bq.style.fontStyle = 'italic';
+            });
+            
+            return tempDiv.innerHTML;
+        }
+
+        // Função para mostrar notificação de feedback
+        function showCopyNotification(message, type = 'success') {
+            // Remove notificação existente se houver
+            const existingNotification = document.querySelector('.copy-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            const notification = document.createElement('div');
+            notification.className = 'copy-notification';
+            notification.innerHTML = `
+                <div class="copy-notification-content ${type}">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()">&times;</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove automaticamente após 4 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
         }
         
         // Inicialização após editor estar pronto
