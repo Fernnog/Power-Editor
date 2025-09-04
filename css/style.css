@@ -446,7 +446,7 @@ body, html {
     animation: spin 1s linear infinite;
 }
 
-/* Animação para o texto sendo processado */
+/* Animação para o texto sendo processado - APRIMORADA */
 @keyframes pulse-yellow {
     0% { background-color: rgba(255, 229, 100, 0.7); }
     50% { background-color: rgba(255, 229, 100, 0.4); }
@@ -456,6 +456,21 @@ body, html {
 .ia-processing {
     animation: pulse-yellow 1.5s infinite;
     border-radius: 3px;
+    background-color: rgba(255, 229, 100, 0.7);
+    transition: background-color 0.3s;
+    cursor: wait; /* Adiciona cursor de espera */
+    position: relative;
+}
+
+/* Adiciona um indicador visual extra para o processamento da IA */
+.tox-editor-container .ia-processing {
+    cursor: wait;
+}
+
+.ia-processing::after {
+    content: " ⏳";
+    font-size: 0.8em;
+    opacity: 0.7;
 }
 
 /* --- NOVOS ESTILOS PARA A RÉGUA NUMERADA --- */
