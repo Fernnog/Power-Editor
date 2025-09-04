@@ -61,6 +61,174 @@ body, html {
     color: #333;
 }
 
+/* ESTILOS APRIMORADOS PARA ÍCONES SVG DOS BOTÕES CUSTOMIZADOS */
+/* Estilos específicos para os novos botões SVG da toolbar TinyMCE */
+.tox .tox-tbtn svg {
+    width: 18px !important;
+    height: 18px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    color: #333 !important;
+    transition: all 0.2s ease !important;
+    display: block !important;
+}
+
+/* Botões customizados específicos com identificação por título */
+.tox .tox-tbtn[title="Ditar texto"] svg {
+    stroke: #007bff !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.tox .tox-tbtn[title="Corrigir Texto com IA"] svg {
+    stroke: #ff6b35 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.tox .tox-tbtn[title="Gerenciar Substituições"] svg {
+    stroke: #28a745 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"] svg {
+    stroke: #6f42c1 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"] svg {
+    stroke: #dc3545 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* Estados de hover para os botões customizados */
+.tox .tox-tbtn[title="Ditar texto"]:hover {
+    background-color: #e3f2fd !important;
+}
+
+.tox .tox-tbtn[title="Ditar texto"]:hover svg {
+    stroke: #0056b3 !important;
+    transform: scale(1.1) !important;
+}
+
+.tox .tox-tbtn[title="Corrigir Texto com IA"]:hover {
+    background-color: #fff3e0 !important;
+}
+
+.tox .tox-tbtn[title="Corrigir Texto com IA"]:hover svg {
+    stroke: #e65100 !important;
+    transform: scale(1.1) !important;
+}
+
+.tox .tox-tbtn[title="Gerenciar Substituições"]:hover {
+    background-color: #e8f5e8 !important;
+}
+
+.tox .tox-tbtn[title="Gerenciar Substituições"]:hover svg {
+    stroke: #1e7e34 !important;
+    transform: scale(1.1) !important;
+}
+
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:hover {
+    background-color: #f3e5f5 !important;
+}
+
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:hover svg {
+    stroke: #5e2a84 !important;
+    transform: scale(1.1) !important;
+}
+
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:hover {
+    background-color: #f8d7da !important;
+}
+
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:hover svg {
+    stroke: #bd2130 !important;
+    transform: scale(1.1) !important;
+}
+
+/* Estados ativos para os botões customizados */
+.tox .tox-tbtn[title="Ditar texto"]:active svg,
+.tox .tox-tbtn[title="Corrigir Texto com IA"]:active svg,
+.tox .tox-tbtn[title="Gerenciar Substituições"]:active svg,
+.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:active svg,
+.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:active svg {
+    transform: scale(0.9) !important;
+}
+
+/* Melhorar nitidez e contraste geral dos botões */
+.tox .tox-tbtn {
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+}
+
+.tox .tox-tbtn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Garantir que os ícones SVG não fiquem borrados */
+.tox .tox-tbtn svg {
+    image-rendering: -webkit-optimize-contrast !important;
+    image-rendering: crisp-edges !important;
+    shape-rendering: geometricPrecision !important;
+}
+
+/* Estilo específico para feedback de processamento mantendo os existentes */
+.tox .tox-tbtn.processing {
+    opacity: 0.7 !important;
+    pointer-events: none !important;
+    position: relative !important;
+}
+
+.tox .tox-tbtn.processing::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 14px !important;
+    height: 14px !important;
+    border: 2px solid var(--primary-color) !important;
+    border-top: 2px solid transparent !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 1 !important;
+}
+
+/* Melhorar visibilidade no modo escuro se aplicável */
+@media (prefers-color-scheme: dark) {
+    .tox .tox-tbtn svg {
+        stroke: #f8f9fa !important;
+    }
+    
+    .tox .tox-tbtn[title="Ditar texto"] svg {
+        stroke: #66b3ff !important;
+    }
+    
+    .tox .tox-tbtn[title="Corrigir Texto com IA"] svg {
+        stroke: #ff8a65 !important;
+    }
+    
+    .tox .tox-tbtn[title="Gerenciar Substituições"] svg {
+        stroke: #81c784 !important;
+    }
+    
+    .tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"] svg {
+        stroke: #ba68c8 !important;
+    }
+    
+    .tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"] svg {
+        stroke: #f48fb1 !important;
+    }
+}
+
 .text-editor {
     flex-grow: 1;
     border: 1px solid #ccc;
@@ -512,189 +680,3 @@ blockquote p {
     position: absolute;
     background-color: #ffffff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    overflow: hidden;
-    user-select: none; /* Impede que o texto da régua seja selecionado */
-}
-
-#ruler-h-container {
-    top: 0;
-    left: 30px;
-    width: calc(100% - 30px);
-    height: 30px;
-}
-
-#ruler-v-container {
-    top: 30px;
-    left: 0;
-    width: 30px;
-    height: calc(100% - 30px);
-}
-
-/* 3. Estilo para as marcações (ticks) */
-.ruler-tick {
-    position: absolute;
-    background-color: #adb5bd;
-}
-
-/* Ticks Horizontais */
-.ruler-h-tick {
-    bottom: 0;
-    width: 1px;
-    height: 5px; /* Altura do tick de milímetro */
-}
-.ruler-h-tick.major {
-    height: 10px; /* Altura do tick de centímetro */
-    background-color: #343a40;
-}
-
-/* Ticks Verticais */
-.ruler-v-tick {
-    right: 0;
-    width: 5px; /* Largura do tick de milímetro */
-    height: 1px;
-}
-.ruler-v-tick.major {
-    width: 10px; /* Largura do tick de centímetro */
-    background-color: #343a40;
-}
-
-/* 4. Estilo para os números na régua */
-.ruler-label {
-    position: absolute;
-    font-family: Arial, sans-serif;
-    font-size: 10px;
-    color: #495057;
-}
-
-.ruler-h-label {
-    bottom: 11px;
-}
-
-.ruler-v-label {
-    right: 12px;
-    writing-mode: vertical-rl; /* Gira os números na vertical */
-}
-
-/* 5. Garante que o editor TinyMCE não tenha bordas que interfiram no layout */
-.tox-tinymce {
-    border: none !important;
-}
-
-/* Efeito de arco pulsante delicado para botões em processamento */
-@keyframes gentle-arc-pulse {
-    0% { 
-        box-shadow: 0 0 0 0 rgba(206, 42, 102, 0.4),
-                    0 0 0 0 rgba(206, 42, 102, 0.2) inset;
-        transform: scale(1);
-    }
-    50% { 
-        box-shadow: 0 0 0 8px rgba(206, 42, 102, 0.1),
-                    0 0 0 4px rgba(206, 42, 102, 0.15) inset;
-        transform: scale(1.02);
-    }
-    100% { 
-        box-shadow: 0 0 0 12px rgba(206, 42, 102, 0),
-                    0 0 0 0 rgba(206, 42, 102, 0) inset;
-        transform: scale(1);
-    }
-}
-
-/* Aplicar o efeito aos botões específicos quando em processamento */
-.tox-toolbar__group button[title="Ditar texto"].processing,
-.tox-toolbar__group button[title="Corrigir Texto com IA"].processing {
-    animation: gentle-arc-pulse 2s ease-in-out infinite;
-    border-radius: 6px;
-    position: relative;
-    overflow: visible;
-}
-
-/* Efeito adicional para o estado de "ouvindo" (microfone) */
-.tox-toolbar__group button[title="Ditar texto"].listening {
-    animation: gentle-arc-pulse 1.5s ease-in-out infinite;
-    border-radius: 6px;
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
-}
-
-/* Remover completamente as linhas do cursor (régua) */
-.ruler-marker {
-    display: none !important;
-}
-
-/* Ocultar os containers das réguas também */
-#ruler-horizontal,
-#ruler-vertical {
-    display: none !important;
-}
-
-/* --- ESTILOS ESPECÍFICOS PARA ÍCONES SVG NA TOOLBAR DO TINYMCE (PRIORIDADE 1) --- */
-
-/* Estilos gerais para ícones SVG nos botões customizados do TinyMCE */
-.tox .tox-tbtn svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transition: all 0.2s ease;
-}
-
-/* Botões customizados específicos com ícones SVG */
-.tox .tox-tbtn[title="Ditar texto"] svg,
-.tox .tox-tbtn[title="Corrigir Texto com IA"] svg,
-.tox .tox-tbtn[title="Gerenciar Substituições"] svg,
-.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"] svg,
-.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"] svg {
-    width: 16px;
-    height: 16px;
-    stroke: #333;
-    transition: all 0.2s ease;
-}
-
-/* Estados de hover para botões com ícones SVG */
-.tox .tox-tbtn[title="Ditar texto"]:hover svg {
-    stroke: #007acc;
-    transform: scale(1.1);
-}
-
-.tox .tox-tbtn[title="Corrigir Texto com IA"]:hover svg {
-    stroke: #ff6b35;
-    transform: scale(1.1);
-}
-
-.tox .tox-tbtn[title="Gerenciar Substituições"]:hover svg {
-    stroke: #28a745;
-    transform: scale(1.1);
-}
-
-.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:hover svg {
-    stroke: #6f42c1;
-    transform: scale(1.1);
-}
-
-.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:hover svg {
-    stroke: #dc3545;
-    transform: scale(1.1);
-}
-
-/* Estados ativos para botões com ícones SVG */
-.tox .tox-tbtn[title="Ditar texto"]:active svg,
-.tox .tox-tbtn[title="Corrigir Texto com IA"]:active svg,
-.tox .tox-tbtn[title="Gerenciar Substituições"]:active svg,
-.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:active svg,
-.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:active svg {
-    transform: scale(0.95);
-}
-
-/* Estados de foco para acessibilidade dos botões SVG */
-.tox .tox-tbtn[title="Ditar texto"]:focus-visible,
-.tox .tox-tbtn[title="Corrigir Texto com IA"]:focus-visible,
-.tox .tox-tbtn[title="Gerenciar Substituições"]:focus-visible,
-.tox .tox-tbtn[title="Copiar Formatado (compatível com Google Docs)"]:focus-visible,
-.tox .tox-tbtn[title="Salvar como documento (.odt/.rtf)"]:focus-visible {
-    outline: 2px solid #007acc;
-    outline-offset: 2px;
-}
-
-/* Classe para botões em estado de processamento
