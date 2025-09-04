@@ -346,19 +346,21 @@ ${rtfContent}
             paragraphs.forEach(p => {
                 const textIndent = p.style.textIndent || '';
                 
-                // Se tem text-indent de 3cm, aplica uma estratégia similar às citações que funcionam
+                // Se tem text-indent de 3cm, força a aplicação usando múltiplas estratégias
                 if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    // Limpa estilos conflitantes
-                    p.style.textIndent = '';
-                    p.style.marginLeft = '';
-                    p.style.paddingLeft = '';
+                    // Estratégia 1: Remove tudo e reaplica de forma limpa
+                    p.removeAttribute('style');
                     
-                    // Aplica o estilo de forma mais explícita e similar às citações
-                    p.style.textIndent = '3cm';
-                    p.style.marginLeft = '0cm';
+                    // Estratégia 2: Aplica usando a mesma lógica das citações que funcionam
+                    const currentContent = p.innerHTML;
                     
-                    // Adiciona atributos HTML que o Google Docs pode reconhecer melhor
-                    p.setAttribute('style', 'text-indent: 3cm; margin-left: 0cm; padding-left: 0cm;');
+                    // Estratégia 3: Usa um span wrapper com padding para simular recuo de primeira linha
+                    p.innerHTML = `<span style="padding-left: 3cm; display: inline-block; text-indent: -3cm; margin-left: 3cm;">${currentContent}</span>`;
+                    
+                    // Aplica estilo no parágrafo pai
+                    p.style.textIndent = '0';
+                    p.style.marginLeft = '0';
+                    p.style.paddingLeft = '0';
                 }
             });
             
@@ -370,9 +372,6 @@ ${rtfContent}
                 bq.style.fontStyle = 'italic';
                 bq.style.paddingLeft = '15px';
                 bq.style.borderLeft = '3px solid #ccc';
-                
-                // Força atributos HTML explícitos
-                bq.setAttribute('style', 'margin-left: 7cm; text-indent: 0; font-style: italic; padding-left: 15px; border-left: 3px solid #ccc;');
             });
             
             return tempDiv.innerHTML;
