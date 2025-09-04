@@ -457,3 +457,57 @@ body, html {
     animation: pulse-yellow 1.5s infinite;
     border-radius: 3px;
 }
+
+/* --- NOVOS ESTILOS PARA A RÉGUA VISUAL --- */
+
+/* 1. Wrapper que contém o editor e as réguas */
+.editor-wrapper {
+    position: relative; /* Essencial para o posicionamento absoluto das réguas */
+    flex-grow: 1;
+    padding-top: 25px;  /* Espaço para a régua horizontal */
+    padding-left: 25px; /* Espaço para a régua vertical */
+    background-color: #ccc; /* Cor de fundo para a junção das réguas */
+}
+
+/* 2. Estilo base para ambas as réguas */
+.ruler {
+    position: absolute;
+    background-color: #f8f9fa;
+    overflow: hidden;
+    z-index: 5;
+}
+
+/* 3. Estilização da régua HORIZONTAL */
+#ruler-horizontal {
+    top: 0;
+    left: 25px;
+    width: calc(100% - 25px);
+    height: 25px;
+    border-bottom: 1px solid #aaa;
+    /* Cria as marcações usando gradientes repetidos (1cm ≈ 37.8px) */
+    background-image:
+        linear-gradient(to right, #aaa 1px, transparent 1px),
+        linear-gradient(to right, #333 1.5px, transparent 1.5px);
+    background-size: 3.78px 100%, 37.8px 100%; /* Marcas de mm e cm */
+    background-repeat: repeat-x;
+}
+
+/* 4. Estilização da régua VERTICAL */
+#ruler-vertical {
+    top: 25px;
+    left: 0;
+    width: 25px;
+    height: calc(100% - 25px);
+    border-right: 1px solid #aaa;
+    /* Mesma técnica, mas na vertical */
+    background-image:
+        linear-gradient(to bottom, #aaa 1px, transparent 1px),
+        linear-gradient(to bottom, #333 1.5px, transparent 1.5px);
+    background-size: 100% 3.78px, 100% 37.8px; /* Marcas de mm e cm */
+    background-repeat: repeat-y;
+}
+
+/* 5. Remove a borda padrão do editor TinyMCE, que agora é redundante */
+.tox-tinymce {
+    border: none !important;
+}
