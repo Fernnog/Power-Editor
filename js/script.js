@@ -259,11 +259,12 @@ window.addEventListener('DOMContentLoaded', () => {
     render(); 
 
     // --- INICIALIZAÇÃO DO TINYMCE (REFATORADO) ---
-    // A configuração foi movida para js/tinymce-config.js para melhor organização.
+    // A configuração agora é carregada a partir da variável TINYMCE_CONFIG
+    // definida no arquivo js/tinymce-config.js.
     if (typeof TINYMCE_CONFIG !== 'undefined') {
         tinymce.init(TINYMCE_CONFIG);
     } else {
-        console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada. Verifique se o arquivo js/tinymce-config.js está sendo carregado corretamente antes de script.js.');
+        console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada. Verifique se o arquivo js/tinymce-config.js está sendo carregado corretamente ANTES de script.js.');
     }
 
     // --- EVENT LISTENERS DA SIDEBAR (PERMANECEM IGUAIS) ---
