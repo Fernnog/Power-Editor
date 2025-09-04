@@ -346,33 +346,23 @@ ${rtfContent}
             paragraphs.forEach(p => {
                 const textIndent = p.style.textIndent || '';
                 
-                // Se tem text-indent de 3cm, converte para uma abordagem que o Google Docs reconhece
+                // Se tem text-indent de 3cm, aplica uma estratégia similar às citações que funcionam
                 if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    // Remove o text-indent CSS
+                    // Limpa estilos conflitantes
                     p.style.textIndent = '';
                     p.style.marginLeft = '';
                     p.style.paddingLeft = '';
                     
-                    // Pega o conteúdo atual do parágrafo
-                    const originalContent = p.innerHTML.trim();
-                    
-                    // Adiciona espaços em branco equivalentes a 3cm no início da primeira linha
-                    // Usando uma combinação de espaços não-quebráveis e tabulações
-                    const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                    
-                    // Aplica o recuo apenas à primeira linha, preservando quebras de linha internas
-                    if (originalContent) {
-                        p.innerHTML = indentSpaces + originalContent;
-                    }
-                    
-                    // Aplicar estilo específico que o Google Docs interpreta melhor para primeira linha
+                    // Aplica o estilo de forma mais explícita e similar às citações
                     p.style.textIndent = '3cm';
-                    p.style.marginLeft = '0';
-                    p.style.paddingLeft = '0';
+                    p.style.marginLeft = '0cm';
+                    
+                    // Adiciona atributos HTML que o Google Docs pode reconhecer melhor
+                    p.setAttribute('style', 'text-indent: 3cm; margin-left: 0cm; padding-left: 0cm;');
                 }
             });
             
-            // Garante que blockquotes mantenham formatação (já funciona, mas reforça)
+            // Garante que blockquotes mantenham formatação (funcionando corretamente)
             const blockquotes = tempDiv.querySelectorAll('blockquote');
             blockquotes.forEach(bq => {
                 bq.style.marginLeft = '7cm';
@@ -380,6 +370,9 @@ ${rtfContent}
                 bq.style.fontStyle = 'italic';
                 bq.style.paddingLeft = '15px';
                 bq.style.borderLeft = '3px solid #ccc';
+                
+                // Força atributos HTML explícitos
+                bq.setAttribute('style', 'margin-left: 7cm; text-indent: 0; font-style: italic; padding-left: 15px; border-left: 3px solid #ccc;');
             });
             
             return tempDiv.innerHTML;
