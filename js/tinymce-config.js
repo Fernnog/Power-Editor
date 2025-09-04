@@ -55,13 +55,20 @@ const TINYMCE_CONFIG = {
                     alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
                     return;
                 }
+                
                 const selectedText = editor.selection.getContent({ format: 'text' });
                 if (!selectedText) {
                     alert("Por favor, selecione o texto que deseja corrigir.");
                     return;
                 }
                 
+                // Obter referência ao botão e adicionar classe de processamento
+                const aiButton = editor.getContainer().querySelector('[title="Corrigir Texto com IA"]');
+                
                 try {
+                    // Adicionar classe de processamento
+                    if (aiButton) aiButton.classList.add('processing');
+                    
                     // Adiciona uma classe CSS ao texto selecionado para feedback visual
                     const range = editor.selection.getRng();
                     const span = editor.dom.create('span', { class: 'ia-processing' });
@@ -78,6 +85,9 @@ const TINYMCE_CONFIG = {
                     // Remove o feedback visual em caso de erro
                     const processingElements = editor.dom.select('.ia-processing');
                     processingElements.forEach(el => editor.dom.unwrap(el));
+                } finally {
+                    // Remover classe de processamento
+                    if (aiButton) aiButton.classList.remove('processing');
                 }
             }
         });
@@ -102,7 +112,7 @@ const TINYMCE_CONFIG = {
 
         // Botão de Download .ODT
         editor.ui.registry.addButton('customOdtButton', {
-            icon: 'download',
+            text: '📄',
             tooltip: 'Salvar como .odt (OpenOffice)',
             onAction: function() {
                 const editorContent = editor.getContent();
