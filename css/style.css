@@ -2,6 +2,10 @@
 :root {
     --primary-color: #ce2a66;
     --primary-color-dark: #a12050;
+    /* Melhoria de Arquitetura: Variáveis para o layout da página */
+    --page-width: 21cm;
+    --page-height: 29.7cm;
+    --page-margin: 2cm;
 }
 
 body, html {
@@ -23,7 +27,7 @@ body, html {
     flex: 3;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 0; /* AJUSTADO: Padding movido para o wrapper */
     box-sizing: border-box;
 }
 
@@ -485,29 +489,21 @@ blockquote p {
     position: relative;
 }
 
-/* Adiciona um indicador visual extra para o processamento da IA */
-.tox-editor-container .ia-processing {
-    cursor: wait;
-}
-
-.ia-processing::after {
-    content: " ⏳";
-    font-size: 0.8em;
-    opacity: 0.7;
-}
-
-/* --- NOVOS ESTILOS PARA A RÉGUA NUMERADA --- */
+/* --- NOVOS ESTILOS PARA O EDITOR CENTRALIZADO --- */
 
 /* 1. Wrapper que contém o editor e as réguas (ajuste fino) */
 .editor-wrapper {
     position: relative;
     flex-grow: 1;
-    padding-top: 30px;  /* Aumenta o espaço para a régua numerada */
-    padding-left: 30px;
-    background-color: #f0f0f0; /* Cor de fundo neutra */
+    background-color: #f0f0f0; /* Fundo cinza */
+    padding: 20px; /* Espaçamento ao redor da 'página' */
+    box-sizing: border-box;
+    display: flex; /* Habilita flexbox para centralização */
+    flex-direction: column;
+    overflow-y: auto; /* Garante a rolagem aqui dentro */
 }
 
-/* 2. Container base para as réguas */
+/* 2. Container base para as réguas (mantido, mas oculto) */
 .ruler-container {
     position: absolute;
     background-color: #ffffff;
@@ -530,7 +526,7 @@ blockquote p {
     height: calc(100% - 30px);
 }
 
-/* 3. Estilo para as marcações (ticks) */
+/* 3. Estilo para as marcações (ticks) (mantido, mas oculto) */
 .ruler-tick {
     position: absolute;
     background-color: #adb5bd;
@@ -558,7 +554,7 @@ blockquote p {
     background-color: #343a40;
 }
 
-/* 4. Estilo para os números na régua */
+/* 4. Estilo para os números na régua (mantido, mas oculto) */
 .ruler-label {
     position: absolute;
     font-family: Arial, sans-serif;
@@ -575,10 +571,19 @@ blockquote p {
     writing-mode: vertical-rl; /* Gira os números na vertical */
 }
 
-/* 5. Garante que o editor TinyMCE não tenha bordas que interfiram no layout */
+/* 5. Garante que o editor TinyMCE se comporte como uma página A4 */
 .tox-tinymce {
-    border: none !important;
+    max-width: var(--page-width);      /* Simula a largura de uma folha A4 */
+    min-height: var(--page-height);   /* Simula a altura de uma folha A4 */
+    margin: 0 auto;       /* O truque MÁGICO para centralizar horizontalmente */
+    padding: var(--page-margin);         /* Margens internas do documento */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Sombra sutil para efeito de profundidade */
+    box-sizing: border-box; /* Garante que o padding não aumente o tamanho total */
+    flex-shrink: 0;       /* Impede que a página encolha */
+    border: none !important; /* Remove qualquer borda que o tema do editor adicione */
 }
+
+/* Efeito de arco pulsante delicado para botões em processamento (REMOVIDO) */
 
 /* Remover completamente as linhas do cursor (régua) */
 .ruler-marker {
