@@ -46,9 +46,9 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Correção com IA
+        // Botão de Correção com IA (VERSÃO CORRIGIDA)
         editor.ui.registry.addButton('customAiButton', {
-            text: '✓',
+            text: 'A✓',
             tooltip: 'Corrigir Texto com IA',
             onAction: async function() {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
@@ -60,11 +60,25 @@ const TINYMCE_CONFIG = {
                     alert("Por favor, selecione o texto que deseja corrigir.");
                     return;
                 }
-                const button = this;
-                button.setEnabled(false);
-                const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
-                editor.selection.setContent(correctedText);
-                button.setEnabled(true);
+                
+                try {
+                    // Adiciona uma classe CSS ao texto selecionado para feedback visual
+                    const range = editor.selection.getRng();
+                    const span = editor.dom.create('span', { class: 'ia-processing' });
+                    range.surroundContents(span);
+                    
+                    const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
+                    
+                    // Remove o feedback visual e substitui o texto
+                    editor.dom.remove(span);
+                    editor.selection.setContent(correctedText);
+                    
+                } catch (error) {
+                    console.error("Erro na correção de texto:", error);
+                    // Remove o feedback visual em caso de erro
+                    const processingElements = editor.dom.select('.ia-processing');
+                    processingElements.forEach(el => editor.dom.unwrap(el));
+                }
             }
         });
 
