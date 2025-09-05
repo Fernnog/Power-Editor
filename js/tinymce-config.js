@@ -10,11 +10,24 @@ const TINYMCE_CONFIG = {
     
     content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
     
-    height: "100%", // Modificado para preencher a altura
+    height: "100%",
     autoresize_bottom_margin: 30,
 
     setup: function(editor) {
-        // Botão para recuo de primeira linha (lógica original mantida)
+        // --- Ícone de Carregamento para a função de IA ---
+        const ICON_SPINNER = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+
+        // --- PASSO 1: Registrar todos os ícones customizados no catálogo do editor ---
+        editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
+        editor.ui.registry.addIcon('custom-mic', ICON_MIC);
+        editor.ui.registry.addIcon('custom-ai-brain', ICON_AI_BRAIN);
+        editor.ui.registry.addIcon('custom-replace', ICON_REPLACE);
+        editor.ui.registry.addIcon('custom-copy-formatted', ICON_COPY_FORMATTED);
+        editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
+
+        // --- PASSO 2: Criar os botões da barra de ferramentas usando os ícones registrados ---
+        
+        // Botão para recuo de primeira linha
         editor.ui.registry.addButton('customIndent', {
             icon: 'indent',
             tooltip: 'Recuo da Primeira Linha (3cm)',
@@ -33,7 +46,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de citação personalizado com 7cm e itálico
+        // Botão de citação personalizado
         editor.ui.registry.addButton('customBlockquote', {
             icon: 'quote',
             tooltip: 'Transformar em citação (7cm + itálico)',
@@ -44,7 +57,7 @@ const TINYMCE_CONFIG = {
 
         // Botão de Ditado por Voz (Microfone)
         editor.ui.registry.addButton('customMicButton', {
-            text: ICON_MIC,
+            icon: 'custom-mic',
             tooltip: 'Ditar texto',
             onAction: function() {
                 if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
@@ -55,11 +68,11 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Correção com IA
+        // Botão de Correção com IA (com feedback de carregamento)
         editor.ui.registry.addButton('customAiButton', {
-            text: ICON_AI_BRAIN,
+            icon: 'custom-ai-brain',
             tooltip: 'Corrigir Texto com IA',
-            onAction: async function(api) { // 'api' permite controlar o estado do botão
+            onAction: async function(api) {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
                     alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
                     return;
@@ -75,7 +88,9 @@ const TINYMCE_CONFIG = {
                 
                 try {
                     api.setEnabled(false);
-                    api.setText('⏳');
+                    api.setIcon('custom-spinner');
+                    const buttonElement = api.getEl();
+                    if(buttonElement) buttonElement.classList.add('spinner');
 
                     editor.formatter.apply('ia_processing_marker');
                     
@@ -89,15 +104,17 @@ const TINYMCE_CONFIG = {
                     editor.formatter.remove('ia_processing_marker');
                     alert('Ocorreu um erro ao corrigir o texto. Veja o console para detalhes.');
                 } finally {
+                    const buttonElement = api.getEl();
+                    if(buttonElement) buttonElement.classList.remove('spinner');
+                    api.setIcon('custom-ai-brain');
                     api.setEnabled(true);
-                    api.setText(ICON_AI_BRAIN);
                 }
             }
         });
 
         // Botão de Substituir Termos
         editor.ui.registry.addButton('customReplaceButton', {
-            text: ICON_REPLACE,
+            icon: 'custom-replace',
             tooltip: 'Gerenciar Substituições',
             onAction: function () {
                 ModalManager.show({
@@ -113,22 +130,21 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado para Google Docs
+        // Botão de Copiar Formatado
         editor.ui.registry.addButton('customCopyFormatted', {
-            text: ICON_COPY_FORMATTED,
+            icon: 'custom-copy-formatted',
             tooltip: 'Copiar Formatado (compatível com Google Docs)',
-            onAction: async function() { /* ...lógica existente... */ }
+            onAction: function() { /* Lógica existente */ }
         });
 
-        // Botão de Download ODT/RTF
+        // Botão de Download
         editor.ui.registry.addButton('customOdtButton', {
-            text: ICON_DOWNLOAD_DOC,
+            icon: 'custom-download-doc',
             tooltip: 'Salvar como documento (.odt/.rtf)',
-            onAction: function() { /* ...lógica existente... */ }
+            onAction: function() { /* Lógica existente */ }
         });
         
-        // Funções auxiliares (se houver) permanecem aqui...
-        
+        // Inicialização de funcionalidades auxiliares do editor
         editor.on('init', () => {
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
@@ -136,7 +152,7 @@ const TINYMCE_CONFIG = {
                     langSelect: document.getElementById('dictation-lang-select'), 
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
-                    toolbarMicButton: editor.getContainer().querySelector('[title="Ditar texto"]'),
+                    toolbarMicButton: editor.getContainer().querySelector('[aria-label="Ditar texto"]'),
                     onResult: (transcript) => { 
                         editor.execCommand('mceInsertContent', false, transcript); 
                     } 
