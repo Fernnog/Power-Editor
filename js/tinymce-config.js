@@ -1,61 +1,67 @@
+// Este arquivo (js/tinymce-config.js) agora importa as constantes de ícones de um novo módulo.
+// Certifique-se de que 'js/ui-icons.js' existe e exporta esses ícones.
+import {
+    ICON_MIC,
+    ICON_AI_BRAIN,
+    ICON_REPLACE,
+    ICON_COPY_FORMATTED,
+    ICON_DOWNLOAD_DOC,
+    ICON_SPINNER // Novo ícone para feedback de processamento da IA
+} from './ui-icons.js'; // O caminho pode precisar de ajuste dependendo da estrutura final
+
 const TINYMCE_CONFIG = {
     selector: '#editor',
-    
+
     plugins: 'lists autoresize pagebreak visualblocks',
-    
+
+    // A toolbar foi atualizada para usar os novos ícones definidos em 'js/ui-icons.js'
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton',
-    
+
     menubar: false,
     statusbar: false,
-    
+
     content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
-    
+
     height: 600,
     autoresize_bottom_margin: 30,
 
     setup: function(editor) {
-        // --- MELHORIA DE ARQUITETURA: Centralizando constantes da UI ---
-        // Este objeto centraliza os textos e tooltips dos botões, 
-        // facilitando a manutenção e a consistência da interface.
-        const UI_CONSTANTS = {
-            mic: { text: '🎤', tooltip: 'Ditar texto' },
-            aiBrain: { text: 'A🧠', tooltip: 'Corrigir Texto com IA' },
-            replace: { text: 'A→B', tooltip: 'Gerenciar Substituições' },
-            copyFormatted: { text: '📋✨', tooltip: 'Copiar Formatado (compatível com Google Docs)' },
-            downloadDoc: { text: '📄', tooltip: 'Salvar como documento (.odt/.rtf)' },
-            processing: { text: '⏳', tooltip: 'Processando...' }
-        };
+        // O objeto UI_CONSTANTS foi removido daqui, pois os ícones agora são importados de 'js/ui-icons.js'.
 
-        // Botão para recuo de primeira linha (lógica original mantida)
+        // Botão para recuo de primeira linha (lógica original mantida com pequeno ajuste para toggle)
         editor.ui.registry.addButton('customIndent', {
             icon: 'indent',
             tooltip: 'Recuo da Primeira Linha (3cm)',
             onAction: function() {
                 const node = editor.selection.getNode();
-                const blockElement = editor.dom.getParents(node, (e) => e.nodeName === 'P' || /^H[1-6]$/.test(e.nodeName), editor.getBody());
-                
-                if (blockElement.length > 0) {
-                    const element = blockElement[0];
-                    if (element.style.textIndent) {
+                const blockElements = editor.dom.getParents(node, (e) => e.nodeName === 'P' || /^H[1-6]$/.test(e.nodeName), editor.getBody());
+
+                if (blockElements.length > 0) {
+                    const element = blockElements[0];
+                    // Alterna o recuo: se já tem 3cm, remove; senão, aplica.
+                    if (element.style.textIndent === '3cm') {
                         element.style.textIndent = '';
                     } else {
                         element.style.textIndent = '3cm';
                     }
+                    editor.fire('change'); // Dispara evento para atualizar o estado do botão
                 }
             }
         });
 
-        // Botão de citação personalizado com 7cm e itálico
+        // Botão de citação personalizado com 7cm e itálico (lógica original mantida com ajuste para toggle)
         editor.ui.registry.addButton('customBlockquote', {
             icon: 'quote',
             tooltip: 'Transformar em citação (7cm + itálico)',
             onAction: function() {
                 const selectedNode = editor.selection.getNode();
-                
+
+                // Alterna citação: se já está em blockquote, remove. Senão, adiciona e estiliza.
                 if (selectedNode.closest('blockquote')) {
-                    editor.execCommand('mceBlockQuote');
+                    editor.execCommand('mceBlockQuote'); // Remove a citação
                 } else {
                     editor.execCommand('mceBlockQuote');
+                    // Pequeno atraso para garantir que o elemento blockquote foi criado
                     setTimeout(() => {
                         const blockquote = editor.selection.getNode().closest('blockquote');
                         if (blockquote) {
@@ -65,21 +71,22 @@ const TINYMCE_CONFIG = {
                             editor.dom.setStyle(blockquote, 'padding-left', '15px');
                             editor.dom.setStyle(blockquote, 'border-left', '3px solid #ccc');
                             editor.dom.setStyle(blockquote, 'color', '#333');
-                            
+
                             const paragraphs = editor.dom.select('p', blockquote);
                             paragraphs.forEach(p => {
                                 editor.dom.setStyle(p, 'text-indent', '0');
                             });
                         }
+                        editor.fire('change'); // Dispara evento para atualizar o estado do botão
                     }, 10);
                 }
             }
         });
 
-        // Botão de Ditado por Voz (Microfone)
+        // Botão de Ditado por Voz (Microfone) - Usando ICON_MIC importado
         editor.ui.registry.addButton('customMicButton', {
-            text: UI_CONSTANTS.mic.text,
-            tooltip: UI_CONSTANTS.mic.tooltip,
+            text: ICON_MIC, // Atualizado para usar a constante importada
+            tooltip: 'Ditar texto',
             onAction: function() {
                 if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                     SpeechDictation.start();
@@ -89,75 +96,81 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Correção com IA
+        // Botão de Correção com IA - Usando ICON_AI_BRAIN importado e ICON_SPINNER para feedback
         editor.ui.registry.addButton('customAiButton', {
-            text: UI_CONSTANTS.aiBrain.text,
-            tooltip: UI_CONSTANTS.aiBrain.tooltip,
+            text: ICON_AI_BRAIN, // Atualizado para usar a constante importada
+            tooltip: 'Corrigir Texto com IA',
             onAction: async function(api) { // 'api' permite controlar o estado do botão
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
                     alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
                     return;
                 }
-                
+
                 const selectedText = editor.selection.getContent({ format: 'text' });
                 if (!selectedText) {
                     alert("Por favor, selecione o texto que deseja corrigir.");
                     return;
                 }
-                
-                editor.formatter.register('ia_processing_marker', { inline: 'span', classes: 'ia-processing' });
-                
-                try {
-                    // --- MELHORIA DE UX: Feedback visual durante o processamento ---
-                    api.setEnabled(false);
-                    api.setText(UI_CONSTANTS.processing.text);
 
+                editor.formatter.register('ia_processing_marker', { inline: 'span', classes: 'ia-processing' });
+
+                try {
+                    // Feedback visual durante o processamento (Prioridade 2)
+                    api.setEnabled(false);
+                    api.setText(ICON_SPINNER); // Usa o novo ícone de spinner
+                    api.setTooltip('Processando...'); // Atualiza o tooltip
                     editor.formatter.apply('ia_processing_marker');
-                    
+
                     const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
-                    
+
                     editor.formatter.remove('ia_processing_marker');
                     editor.selection.setContent(correctedText);
-                    
+
                 } catch (error) {
                     console.error("Erro na correção de texto:", error);
                     editor.formatter.remove('ia_processing_marker');
                     alert('Ocorreu um erro ao corrigir o texto. Veja o console para detalhes.');
                 } finally {
-                    // --- MELHORIA DE UX: Restaura o botão ao estado original ---
+                    // Restaura o botão ao estado original
                     api.setEnabled(true);
-                    api.setText(UI_CONSTANTS.aiBrain.text);
+                    api.setText(ICON_AI_BRAIN); // Restaura o ícone original
+                    api.setTooltip('Corrigir Texto com IA'); // Restaura o tooltip original
                 }
             }
         });
 
-        // Botão de Substituir Termos
+        // Botão de Substituir Termos - Usando ICON_REPLACE importado
         editor.ui.registry.addButton('customReplaceButton', {
-            text: UI_CONSTANTS.replace.text,
-            tooltip: UI_CONSTANTS.replace.tooltip,
+            text: ICON_REPLACE, // Atualizado para usar a constante importada
+            tooltip: 'Gerenciar Substituições',
             onAction: function () {
-                ModalManager.show({
-                    type: 'replacementManager',
-                    title: 'Gerenciador de Substituições',
-                    initialData: { replacements: appState.replacements || [] },
-                    onSave: (data) => {
-                        modifyStateAndBackup(() => {
-                            appState.replacements = data.replacements;
-                        });
-                    }
-                });
+                // 'ModalManager' e 'appState' são presumidos como globais ou importados de outros scripts.
+                if (typeof ModalManager !== 'undefined' && typeof appState !== 'undefined' && typeof modifyStateAndBackup !== 'undefined') {
+                    ModalManager.show({
+                        type: 'replacementManager',
+                        title: 'Gerenciador de Substituições',
+                        initialData: { replacements: appState.replacements || [] },
+                        onSave: (data) => {
+                            modifyStateAndBackup(() => {
+                                appState.replacements = data.replacements;
+                            });
+                        }
+                    });
+                } else {
+                    console.error('Dependências (ModalManager, appState, modifyStateAndBackup) não disponíveis para o gerenciador de substituições.');
+                }
             }
         });
 
-        // Botão de Copiar Formatado para Google Docs
+        // Botão de Copiar Formatado para Google Docs - Usando ICON_COPY_FORMATTED importado
         editor.ui.registry.addButton('customCopyFormatted', {
-            text: UI_CONSTANTS.copyFormatted.text,
-            tooltip: UI_CONSTANTS.copyFormatted.tooltip,
+            text: ICON_COPY_FORMATTED, // Atualizado para usar a constante importada
+            tooltip: 'Copiar Formatado (compatível com Google Docs)',
             onAction: async function() {
                 try {
                     const originalContent = editor.getContent();
                     const optimizedContent = convertForGoogleDocs(originalContent);
-                    
+
                     if (navigator.clipboard && window.ClipboardItem) {
                         const blob = new Blob([optimizedContent], { type: 'text/html' });
                         const clipboardItem = new ClipboardItem({ 'text/html': blob });
@@ -168,20 +181,20 @@ const TINYMCE_CONFIG = {
                         tempDiv.style.position = 'absolute';
                         tempDiv.style.left = '-9999px';
                         document.body.appendChild(tempDiv);
-                        
+
                         const range = document.createRange();
                         range.selectNode(tempDiv);
                         const selection = window.getSelection();
                         selection.removeAllRanges();
                         selection.addRange(range);
-                        
+
                         document.execCommand('copy');
                         document.body.removeChild(tempDiv);
                         selection.removeAllRanges();
                     }
-                    
+
                     showCopyNotification('Texto copiado e otimizado para Google Docs!');
-                    
+
                 } catch (error) {
                     console.error('Erro ao copiar conteúdo formatado:', error);
                     showCopyNotification('Erro ao copiar. Tente usar Ctrl+C manual.', 'error');
@@ -189,30 +202,31 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download ODT/RTF Corrigido
+        // Botão de Download ODT/RTF - Usando ICON_DOWNLOAD_DOC importado
         editor.ui.registry.addButton('customOdtButton', {
-            text: UI_CONSTANTS.downloadDoc.text,
-            tooltip: UI_CONSTANTS.downloadDoc.tooltip,
+            text: ICON_DOWNLOAD_DOC, // Atualizado para usar a constante importada
+            tooltip: 'Salvar como documento (.odt/.rtf)',
             onAction: function() {
                 const editorContent = editor.getContent();
-                
+
                 try {
                     const odtXmlContent = generateValidODTContent(editorContent);
-                    
+
+                    // 'JSZip' é presumido como global.
                     if (typeof JSZip !== 'undefined') {
                         createODTFile(odtXmlContent);
                     } else {
                         createRTFFile(editorContent);
                     }
-                    
+
                 } catch (error) {
                     console.error('Erro ao gerar arquivo:', error);
                     createRTFFile(editorContent);
                 }
             }
         });
-        
-        // Funções auxiliares para geração de arquivos ODT/RTF
+
+        // Funções auxiliares para geração de arquivos ODT/RTF (mantidas sem alterações)
         function generateValidODTContent(htmlContent) {
             const textContent = htmlContent
                 .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gs, (match, content) => {
@@ -229,9 +243,9 @@ const TINYMCE_CONFIG = {
                 .replace(/&gt;/g, '>');
 
             return `<?xml version="1.0" encoding="UTF-8"?>
-<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
-                        xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" 
-                        xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" 
+<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+                        xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+                        xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
                         xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0">
   <office:body>
     <office:text>
@@ -253,7 +267,7 @@ const TINYMCE_CONFIG = {
 
         function createODTFile(xmlContent) {
             const zip = new JSZip();
-            
+
             const manifest = `<?xml version="1.0" encoding="UTF-8"?>
 <manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
   <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
@@ -262,8 +276,8 @@ const TINYMCE_CONFIG = {
 </manifest:manifest>`;
 
             const styles = `<?xml version="1.0" encoding="UTF-8"?>
-<office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
-                       xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" 
+<office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+                       xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
                        xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0">
   <office:styles>
     <style:style style:name="Standard" style:family="paragraph">
@@ -280,7 +294,7 @@ const TINYMCE_CONFIG = {
             zip.file("META-INF/manifest.xml", manifest);
             zip.file("content.xml", xmlContent);
             zip.file("styles.xml", styles);
-            
+
             zip.generateAsync({type:"blob"}).then(function(content) {
                 const url = URL.createObjectURL(content);
                 const a = document.createElement('a');
@@ -308,9 +322,9 @@ const TINYMCE_CONFIG = {
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>');
 
-            const rtfDocument = `{\\rtf1\\ansi\\deff0 
+            const rtfDocument = `{\\rtf1\\ansi\\deff0
 {\\fonttbl {\\f0 Arial;}}
-\\f0\\fs32\\qj 
+\\f0\\fs32\\qj
 ${rtfContent}
 }`;
 
@@ -328,30 +342,30 @@ ${rtfContent}
         function convertForGoogleDocs(htmlContent) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
-            
+
             const paragraphs = tempDiv.querySelectorAll('p');
             paragraphs.forEach(p => {
                 const textIndent = p.style.textIndent || '';
-                
+
                 if (textIndent === '3cm' || textIndent.includes('3cm')) {
                     p.style.textIndent = '';
                     p.style.marginLeft = '';
                     p.style.paddingLeft = '';
-                    
+
                     const originalContent = p.innerHTML.trim();
-                    
+
                     const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                    
+
                     if (originalContent) {
                         p.innerHTML = indentSpaces + originalContent;
                     }
-                    
+
                     p.style.textIndent = '3cm';
                     p.style.marginLeft = '0';
                     p.style.paddingLeft = '0';
                 }
             });
-            
+
             const blockquotes = tempDiv.querySelectorAll('blockquote');
             blockquotes.forEach(bq => {
                 bq.style.marginLeft = '7cm';
@@ -360,7 +374,7 @@ ${rtfContent}
                 bq.style.paddingLeft = '15px';
                 bq.style.borderLeft = '3px solid #ccc';
             });
-            
+
             return tempDiv.innerHTML;
         }
 
@@ -369,7 +383,7 @@ ${rtfContent}
             if (existingNotification) {
                 existingNotification.remove();
             }
-            
+
             const notification = document.createElement('div');
             notification.className = 'copy-notification';
             notification.innerHTML = `
@@ -378,34 +392,53 @@ ${rtfContent}
                     <button onclick="this.parentElement.parentElement.remove()">&times;</button>
                 </div>
             `;
-            
+
             document.body.appendChild(notification);
-            
+
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.remove();
                 }
             }, 4000);
         }
-        
+
+        // --- INÍCIO DA LÓGICA PARA ATUALIZAR ESTADO DOS BOTÕES (Prioridade 2) ---
+        editor.on('NodeChange', function(e) {
+            const node = e.element; // O elemento DOM atualmente selecionado ou o pai mais próximo
+
+            // Lógica para 'customIndent'
+            const customIndentButton = editor.ui.registry.getButton('customIndent');
+            if (customIndentButton) {
+                const blockElementForIndent = editor.dom.getParents(node, (el) => el.nodeName === 'P' || /^H[1-6]$/.test(el.nodeName), editor.getBody())[0];
+                editor.ui.ui.get('customIndent').setActive(blockElementForIndent && blockElementForIndent.style.textIndent === '3cm');
+            }
+
+            // Lógica para 'customBlockquote'
+            const customBlockquoteButton = editor.ui.registry.getButton('customBlockquote');
+            if (customBlockquoteButton) {
+                 editor.ui.ui.get('customBlockquote').setActive(!!node.closest('blockquote'));
+            }
+        });
+        // --- FIM DA LÓGICA PARA ATUALIZAR ESTADO DOS BOTÕES ---
+
         editor.on('init', () => {
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
-                SpeechDictation.init({ 
-                    micIcon: document.getElementById('dictation-mic-icon'), 
-                    langSelect: document.getElementById('dictation-lang-select'), 
-                    statusDisplay: document.getElementById('dictation-status'), 
+                SpeechDictation.init({
+                    micIcon: document.getElementById('dictation-mic-icon'),
+                    langSelect: document.getElementById('dictation-lang-select'),
+                    statusDisplay: document.getElementById('dictation-status'),
                     dictationModal: document.getElementById('dictation-modal'),
                     toolbarMicButton: editor.getContainer().querySelector('[title="Ditar texto"]'),
-                    onResult: (transcript) => { 
-                        editor.execCommand('mceInsertContent', false, transcript); 
-                    } 
+                    onResult: (transcript) => {
+                        editor.execCommand('mceInsertContent', false, transcript);
+                    }
                 });
-                
+
                 const closeBtn = document.getElementById('dictation-close-btn');
                 if (closeBtn) {
-                    closeBtn.addEventListener('click', () => { 
-                        SpeechDictation.stop(); 
-                    }); 
+                    closeBtn.addEventListener('click', () => {
+                        SpeechDictation.stop();
+                    });
                 }
             }
         });
