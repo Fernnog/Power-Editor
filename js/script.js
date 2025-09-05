@@ -306,15 +306,21 @@ window.addEventListener('DOMContentLoaded', () => {
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
 
-    // --- EVENT LISTENERS PARA AS NOVAS AÇÕES RÁPIDAS ---
-    const quickActionAiBtn = document.querySelector('#quick-action-ai button');
-    const quickActionDictateBtn = document.querySelector('#quick-action-dictate button');
-    const quickActionReplaceBtn = document.querySelector('#quick-action-replace button');
+    // --- INICIALIZAÇÃO E LISTENERS DOS BOTÕES DE AÇÃO DA SIDEBAR ---
+    const sidebarBtnAi = document.getElementById('sidebar-btn-ai');
+    const sidebarBtnDictate = document.getElementById('sidebar-btn-dictate');
+    const sidebarBtnReplace = document.getElementById('sidebar-btn-replace');
 
-    if (quickActionAiBtn) {
-        quickActionAiBtn.addEventListener('click', async () => {
-            if (!ckEditorInstance) return;
+    if (sidebarBtnAi && sidebarBtnDictate && sidebarBtnReplace) {
+        // 1. Injeta os ícones SVG nos botões
+        sidebarBtnAi.innerHTML = ICON_AI_BRAIN;
+        sidebarBtnDictate.innerHTML = ICON_MIC;
+        sidebarBtnReplace.innerHTML = ICON_REPLACE;
 
+        // 2. Adiciona os eventos de clique
+        sidebarBtnAi.addEventListener('click', async () => {
+            if (!ckEditorInstance) return alert('Editor não carregado.');
+            
             const model = ckEditorInstance.model;
             const selection = model.document.selection;
             const text = ckEditorInstance.data.stringify(model.getSelectedContent(selection));
@@ -324,6 +330,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Aplica o estado de carregamento
+            sidebarBtnAi.innerHTML = ICON_SPINNER;
+            sidebarBtnAi.disabled = true;
+
             try {
                 const correctedText = await GeminiService.correctText(text, CONFIG.apiKey);
                 model.change(writer => {
@@ -332,22 +342,22 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Erro na correção:", error);
                 alert('Erro ao corrigir o texto.');
+            } finally {
+                // Restaura o botão ao estado original
+                sidebarBtnAi.innerHTML = ICON_AI_BRAIN;
+                sidebarBtnAi.disabled = false;
             }
         });
-    }
 
-    if (quickActionDictateBtn) {
-        quickActionDictateBtn.addEventListener('click', () => {
+        sidebarBtnDictate.addEventListener('click', () => {
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.start();
             } else {
                 alert('O reconhecimento de voz não é suportado.');
             }
         });
-    }
 
-    if (quickActionReplaceBtn) {
-        quickActionReplaceBtn.addEventListener('click', () => {
+        sidebarBtnReplace.addEventListener('click', () => {
             ModalManager.show({
                 type: 'replacementManager',
                 title: 'Gerenciador de Substituições',
