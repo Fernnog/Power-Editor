@@ -549,3 +549,15 @@ blockquote p {
 .tox-tbtn--active svg {
     stroke: #2563eb !important; /* Cor do ícone mais escura para contraste */
 }
+
+/* Aprimoramento Visual da Toolbar do TinyMCE */
+.tox .tox-editor-header {
+    background-color: #ffffff; /* Muda o fundo cinza para branco */
+    border-bottom: 1px solid #e0e0e0; /* Adiciona uma linha sutil de separação */
+    padding: 4px 2px; /* Pequeno ajuste no espaçamento interno */
+}
+
+/* Remove a borda do contêiner principal para um look mais integrado */
+.tox.tox-tinymce {
+    border: none !important;
+}
