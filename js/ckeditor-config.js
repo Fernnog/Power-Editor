@@ -1,20 +1,18 @@
 // js/ckeditor-config.js
 
 /**
- * Explicação da Correção:
- * O erro "ClassicEditor.ButtonView is not a constructor" ocorre porque a referência correta
- * na build de CDN é através do namespace `ui`. A forma correta é `ClassicEditor.ui.ButtonView`.
- *
- * Adicionalmente, os erros "toolbarview-item-unavailable" para 'underline' e 'alignment'
- * indicam que a build padrão "Classic" não inclui esses plugins. Eles foram removidos
- * da configuração da barra de ferramentas para permitir que o editor seja inicializado.
+ * Explicação da Correção Final:
+ * O erro "Cannot read properties of undefined (reading 'ButtonView')" em 'ClassicEditor.ui'
+ * confirma que as ferramentas de UI não estão no objeto global 'ClassicEditor'.
+ * Elas estão na propriedade 'ui' da instância do editor que é passada para cada função de plugin.
+ * A correção é trocar 'ClassicEditor.ui.ButtonView' por 'editor.ui.ButtonView'.
  */
 
 // --- Plugin de Ditado por Voz (com o caminho do construtor corrigido) ---
 function MicPlugin(editor) {
     editor.ui.componentFactory.add('customMicButton', locale => {
-        // CORREÇÃO: Usar ClassicEditor.ui.ButtonView
-        const button = new ClassicEditor.ui.ButtonView(locale);
+        // CORREÇÃO: Usar a instância 'editor', não a classe global 'ClassicEditor'
+        const button = new editor.ui.ButtonView(locale);
         button.set({
             label: 'Ditar texto',
             icon: ICON_MIC,
@@ -34,8 +32,8 @@ function MicPlugin(editor) {
 // --- Plugin de Correção com IA (com o caminho do construtor corrigido) ---
 function AiCorrectionPlugin(editor) {
     editor.ui.componentFactory.add('customAiButton', locale => {
-        // CORREÇÃO: Usar ClassicEditor.ui.ButtonView
-        const button = new ClassicEditor.ui.ButtonView(locale);
+        // CORREÇÃO: Usar a instância 'editor', não a classe global 'ClassicEditor'
+        const button = new editor.ui.ButtonView(locale);
         button.set({
             label: 'Corrigir Texto com IA',
             icon: ICON_AI_BRAIN,
@@ -74,8 +72,8 @@ function AiCorrectionPlugin(editor) {
 // --- Plugin de Gerenciador de Substituições (com o caminho do construtor corrigido) ---
 function ReplacePlugin(editor) {
     editor.ui.componentFactory.add('customReplaceButton', locale => {
-        // CORREÇÃO: Usar ClassicEditor.ui.ButtonView
-        const button = new ClassicEditor.ui.ButtonView(locale);
+        // CORREÇÃO: Usar a instância 'editor', não a classe global 'ClassicEditor'
+        const button = new editor.ui.ButtonView(locale);
         button.set({
             label: 'Gerenciar Substituições',
             icon: ICON_REPLACE,
@@ -103,10 +101,9 @@ const CKEDITOR_CONFIG = {
     toolbar: {
         items: [
             'undo', 'redo', '|',
-            'heading', '|', // 'heading' é uma boa alternativa que está na build
-            'bold', 'italic', /* 'underline' removido */ '|',
+            'heading', '|',
+            'bold', 'italic', '|',
             'bulletedList', 'numberedList', 'blockQuote', '|',
-            // 'alignment' removido
             'customMicButton', 'customAiButton', 'customReplaceButton'
         ]
     },
