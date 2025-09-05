@@ -1,6 +1,8 @@
+// js/script.js
+
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
-let ckEditorInstance = null; // Variável global para armazenar a instância do CKEditor
+let ckEditorInstance = null; // Variável para armazenar a instância do CKEditor
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
 
@@ -253,57 +255,47 @@ window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage(); 
     render(); 
 
-    // --- INICIALIZAÇÃO DO CKEDITOR ---
-    if (typeof ClassicEditor !== 'undefined' && typeof CKEDITOR_CONFIG !== 'undefined') {
-        ClassicEditor
-            .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
-            .then(editor => {
-                window.ckEditorInstance = editor; // Armazena a instância para uso global
-                console.log('CKEditor inicializado com sucesso.');
+    // --- INICIALIZAÇÃO DO CKEDITOR (COM TRATAMENTO DE ERRO MELHORADO) ---
+    ClassicEditor
+        .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
+        .then(editor => {
+            console.log('CKEditor inicializado com sucesso.');
+            window.ckEditorInstance = editor; // Guarda a instância globalmente
 
-                // Inicializa o módulo de ditado, conectando-o ao novo editor
-                if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
-                    SpeechDictation.init({ 
-                        micIcon: document.getElementById('dictation-mic-icon'), 
-                        langSelect: document.getElementById('dictation-lang-select'), 
-                        statusDisplay: document.getElementById('dictation-status'), 
-                        dictationModal: document.getElementById('dictation-modal'),
-                        onResult: (transcript) => { 
-                            editor.data.insertContent(transcript); 
-                        } 
-                    });
-                    
-                    const closeBtn = document.getElementById('dictation-close-btn');
-                    if (closeBtn) {
-                        closeBtn.addEventListener('click', () => { 
-                            SpeechDictation.stop(); 
-                        }); 
-                    }
+            // Re-conecta o botão de ditado do modal ao novo editor
+            if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                SpeechDictation.init({ 
+                    micIcon: document.getElementById('dictation-mic-icon'), 
+                    langSelect: document.getElementById('dictation-lang-select'), 
+                    statusDisplay: document.getElementById('dictation-status'), 
+                    dictationModal: document.getElementById('dictation-modal'),
+                    onResult: (transcript) => { 
+                        editor.data.insertContent(transcript); 
+                    } 
+                });
+                
+                const closeBtn = document.getElementById('dictation-close-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => { 
+                        SpeechDictation.stop(); 
+                    }); 
                 }
-            })
-            .catch(error => {
-                console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
-            });
-    } else {
-        console.error('CKEditor ou sua configuração (CKEDITOR_CONFIG) não foram encontrados.');
-    }
+            }
+        })
+        .catch(error => {
+            // Esta linha irá exibir o erro de forma clara no console do navegador
+            console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
+        });
 
-    // --- EVENT LISTENERS DA SIDEBAR ---
+    // --- EVENT LISTENERS DA SIDEBAR (PERMANECEM IGUAIS) ---
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    formatDocBtn.addEventListener('click', () => {
-        if (ckEditorInstance) {
-            // A função original era complexa. A principal ação era justificar.
-            // Adaptamos para usar o comando nativo do CKEditor.
-            ckEditorInstance.execute('justify');
-            alert('Documento formatado com alinhamento justificado.');
-        }
-    });
+    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
     clearDocBtn.addEventListener('click', () => {
         if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
-            if (ckEditorInstance) {
+            if(ckEditorInstance) {
                 ckEditorInstance.setData('');
             }
         }
