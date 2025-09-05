@@ -27,7 +27,7 @@ body, html {
     flex: 3;
     display: flex;
     flex-direction: column;
-    padding: 0; 
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -469,7 +469,8 @@ blockquote p {
     to { transform: rotate(360deg); }
 }
 
-.spinner {
+/* Aplica a animação ao ícone do spinner quando o botão de IA estiver desabilitado */
+.tox-tbtn[aria-label="Corrigir Texto com IA"][aria-disabled="true"] svg {
     animation: spin 1s linear infinite;
 }
 
@@ -500,64 +501,46 @@ blockquote p {
     opacity: 0.7;
 }
 
-/* --- [MODIFICADO] LAYOUT DO EDITOR DE TELA CHEIA --- */
-
-/* 1. Wrapper que contém o editor */
+/* --- Wrapper para o editor, agora sem padding para o layout de página inteira --- */
 .editor-wrapper {
     position: relative;
     flex-grow: 1;
-    background-color: #f0f0f0; /* Fundo cinza */
-    box-sizing: border-box;
+    background-color: #f0f0f0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
 }
 
-/* 2. Réguas e marcadores foram ocultados */
+/* --- Réguas ocultas --- */
 .ruler-container,
-.ruler-tick,
-.ruler-label,
-.ruler-marker,
 #ruler-horizontal,
-#ruler-vertical {
+#ruler-vertical,
+.ruler-marker {
     display: none !important;
 }
 
-/* 3. [MODIFICADO] Garante que o editor TinyMCE preencha o wrapper */
+/* --- Editor TinyMCE configurado para ocupar todo o espaço --- */
 .tox-tinymce {
-    border: none !important;
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    border: none !important; /* Garante a remoção de bordas */
 }
 
-/* --- [NOVO] MELHORIAS DE UX NA TOOLBAR DO EDITOR --- */
-
-/* 1. Garante que os ícones da toolbar sejam renderizados como contornos */
-.tox-tbtn svg {
-    fill: none !important; /* Força a remoção do preenchimento */
-    stroke: #333; /* Define a cor do contorno para um cinza escuro */
-    stroke-width: 1.5px; /* Garante uma espessura de linha consistente */
-}
-
-/* 2. Estilo para botões da toolbar em estado ATIVO (ex: Negrito) */
-.tox-tbtn--active {
-    background-color: #dbeafe !important; /* Fundo azul claro, similar ao Google Docs */
-    border-color: #93c5fd !important;
-}
-
-.tox-tbtn--active svg {
-    stroke: #2563eb !important; /* Cor do ícone mais escura para contraste */
-}
-
-/* Aprimoramento Visual da Toolbar do TinyMCE */
+/* --- Aprimoramento Visual da Toolbar do TinyMCE --- */
 .tox .tox-editor-header {
-    background-color: #ffffff; /* Muda o fundo cinza para branco */
-    border-bottom: 1px solid #e0e0e0; /* Adiciona uma linha sutil de separação */
-    padding: 4px 2px; /* Pequeno ajuste no espaçamento interno */
+    background-color: #ffffff; /* Fundo branco para um visual limpo */
+    border-bottom: 1px solid #e0e0e0; /* Linha de separação sutil */
+    padding: 4px 2px;
 }
 
-/* Remove a borda do contêiner principal para um look mais integrado */
-.tox.tox-tinymce {
-    border: none !important;
+/* --- Correção de Estilo dos Ícones --- */
+/* Garante que APENAS os nossos ícones customizados sejam renderizados como contornos */
+.tox-tbtn[aria-label="Ditar texto"] svg,
+.tox-tbtn[aria-label="Corrigir Texto com IA"] svg,
+.tox-tbtn[aria-label="Gerenciar Substituições"] svg,
+.tox-tbtn[aria-label="Copiar Formatado (compatível com Google Docs)"] svg,
+.tox-tbtn[aria-label="Salvar como documento (.odt/.rtf)"] svg {
+    fill: none !important;
+    stroke: currentColor; /* Usa a cor do tema para consistência */
 }
