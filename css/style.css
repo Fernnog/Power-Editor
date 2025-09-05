@@ -329,13 +329,13 @@ body, html {
 }
 .control-btn.btn-secondary { background-color: #f0f0f0; color: #333; border-color: #ccc; }
 .backup-status { 
-    margin-left: auto; 
+    margin-left: auto; /* Empurra para a direita */
     padding: 5px 10px; 
     font-size: 12px; 
     color: #ffffff; 
     background-color: var(--primary-color); 
     border-radius: 4px; 
-    align-self: center; 
+    white-space: nowrap; /* Evita que o texto quebre */
 }
 
 .text-editor ol { list-style: none; counter-reset: list-counter; margin-left: 3cm; padding-left: 0; }
@@ -459,8 +459,7 @@ blockquote p {
 #toolbar-logo {
     max-height: 30px;
     width: auto;
-    margin-right: 15px;
-    vertical-align: middle;
+    margin-right: 15px; /* Espaçamento entre o logo e os botões */
 }
 
 /* Animação para o spinner de carregamento */
@@ -532,6 +531,19 @@ blockquote p {
     background-color: #ffffff; /* Fundo branco para um visual limpo */
     border-bottom: 1px solid #e0e0e0; /* Linha de separação sutil */
     padding: 4px 2px;
+}
+
+/* --- Transforma a barra de ferramentas em um container flexível --- */
+.tox .tox-toolbar__primary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px; /* Adiciona um respiro nas laterais */
+}
+
+/* --- Garante que o grupo de botões não ocupe todo o espaço --- */
+.tox .tox-toolbar__group {
+    flex-shrink: 0;
 }
 
 /* --- Correção de Estilo dos Ícones --- */
