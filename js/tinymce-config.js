@@ -363,6 +363,24 @@ ${rtfContent}
         }
         
         editor.on('init', () => {
+            // Insere o logotipo e o status de backup na toolbar
+            const toolbar = editor.getContainer().querySelector('.tox-toolbar__primary');
+            if (toolbar) {
+                // Cria e adiciona o logotipo
+                const logo = document.createElement('img');
+                logo.id = 'toolbar-logo';
+                logo.src = 'assets/logo.png'; //!! IMPORTANTE: Crie a pasta 'assets' e adicione seu logo
+                logo.alt = 'Logotipo';
+                toolbar.prepend(logo);
+
+                // Cria e adiciona o container do status de backup
+                const backupStatus = document.createElement('div');
+                backupStatus.id = 'backup-status';
+                backupStatus.className = 'backup-status';
+                backupStatus.textContent = 'Verificando backup...';
+                toolbar.appendChild(backupStatus);
+            }
+            
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
                     micIcon: document.getElementById('dictation-mic-icon'), 
