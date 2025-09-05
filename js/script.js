@@ -1,5 +1,6 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
+let ckEditorInstance = null; // Variável global para armazenar a instância do CKEditor
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
 
@@ -29,44 +30,8 @@ const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function updateBackupStatus(dateObject) {
-    const backupStatusEl = document.getElementById('backup-status');
-    if (!backupStatusEl) return;
-    if (dateObject) {
-        const day = String(dateObject.getDate()).padStart(2, '0');
-        const month = String(dateObject.getMonth() + 1).padStart(2, '0');
-        const year = dateObject.getFullYear();
-        const hours = String(dateObject.getHours()).padStart(2, '0');
-        const minutes = String(dateObject.getMinutes()).padStart(2, '0');
-        backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`;
-    } else {
-        backupStatusEl.textContent = 'Nenhum backup recente.';
-    }
-}
-function triggerAutoBackup() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const timestamp = `${year}${month}${day}_${hours}${minutes}`;
-    const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
-    appState.lastBackupTimestamp = now.toISOString();
-    const dataStr = JSON.stringify(appState, null, 2);
-    const dataBlob = new Blob([dataStr], {
-        type: 'application/json'
-    });
-    const url = URL.createObjectURL(dataBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    updateBackupStatus(now);
-}
+function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
+function triggerAutoBackup() { const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); const timestamp = `${year}${month}${day}_${hours}${minutes}`; const filename = `${timestamp}_ModelosDosMeusDocumentos.json`; appState.lastBackupTimestamp = now.toISOString(); const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); updateBackupStatus(now); }
 function debouncedTriggerAutoBackup() { clearTimeout(backupDebounceTimer); backupDebounceTimer = setTimeout(() => { triggerAutoBackup(); }, 2500); }
 function modifyStateAndBackup(modificationFn) { modificationFn(); saveStateToStorage(); debouncedTriggerAutoBackup(); }
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
@@ -82,10 +47,10 @@ function insertModelContent(content, tabId) {
         searchBox.value = '';
         render();
     }
-    // Usa a API do TinyMCE para inserir conteúdo
-    if (tinymce.activeEditor) {
-        tinymce.activeEditor.execCommand('mceInsertContent', false, content);
-        tinymce.activeEditor.focus();
+    // Usa a API do CKEditor para inserir conteúdo
+    if (ckEditorInstance) {
+        ckEditorInstance.data.insertContent(content);
+        ckEditorInstance.editing.view.focus();
     }
 }
 
@@ -275,66 +240,72 @@ function filterModels() { const query = searchBox.value.toLowerCase().trim(); co
 // --- MANIPULAÇÃO DE DADOS (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 function deleteTab(tabId) { const tabToDelete = appState.tabs.find(t => t.id === tabId); if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return; const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID); const destinationOptions = regularTabs.filter(t => t.id !== tabId); const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) { alert("Seleção inválida. A exclusão foi cancelada."); return; } modifyStateAndBackup(() => { const destinationTabId = destinationOptions[choiceIndex].id; appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } }); appState.tabs = appState.tabs.filter(t => t.id !== tabId); appState.activeTabId = destinationTabId; render(); }); }
-function addNewModelFromEditor() { const content = tinymce.activeEditor.getContent(); if (!content) { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } ModalManager.show({ type: 'modelEditor', title: 'Salvar Novo Modelo', initialData: { name: '' }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; render(); }); } }); }
+function addNewModelFromEditor() { const content = ckEditorInstance ? ckEditorInstance.getData() : ''; if (!content) { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } ModalManager.show({ type: 'modelEditor', title: 'Salvar Novo Modelo', initialData: { name: '' }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; render(); }); } }); }
 function editModel(modelId) { const model = appState.models.find(m => m.id === modelId); ModalManager.show({ type: 'modelEditor', title: 'Editar Modelo', initialData: { name: model.name, content: model.content }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { model.name = data.name; model.content = data.content; render(); }); } }); }
 function deleteModel(modelId) { const model = appState.models.find(m => m.id === modelId); if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) { modifyStateAndBackup(() => { appState.models = appState.models.filter(m => m.id !== modelId); render(); }); } }
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
 function moveModelToAnotherTab(modelId) { const model = appState.models.find(m => m.id === modelId); const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId); if (destinationOptions.length === 0) { alert("Não há outras abas para mover este modelo."); return; } const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) { modifyStateAndBackup(() => { model.tabId = destinationOptions[choiceIndex].id; render(); }); } else if(choice) { alert("Seleção inválida."); } }
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
-function handleImportFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) {
-            importFileInput.value = '';
-            return;
-        }
-        try {
-            const importedState = JSON.parse(e.target.result);
-            if (importedState.models && importedState.tabs && importedState.activeTabId) {
-                appState = importedState;
-                saveStateToStorage();
-                render();
-                alert('Modelos importados com sucesso!');
-                const now = new Date();
-                appState.lastBackupTimestamp = now.toISOString();
-                updateBackupStatus(now);
-            } else {
-                throw new Error('Formato de arquivo inválido.');
-            }
-        } catch (error) {
-            alert('Erro ao importar o arquivo. Verifique se é um JSON válido.');
-        } finally {
-            importFileInput.value = '';
-        }
-    };
-    reader.readAsText(file);
-}
+function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
 
 // --- INICIALIZAÇÃO DA APLICAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
     loadStateFromStorage(); 
     render(); 
 
-    // --- INICIALIZAÇÃO DO TINYMCE (REFATORADO) ---
-    // A configuração agora é carregada a partir da variável TINYMCE_CONFIG
-    // definida no arquivo js/tinymce-config.js.
-    if (typeof TINYMCE_CONFIG !== 'undefined') {
-        tinymce.init(TINYMCE_CONFIG);
+    // --- INICIALIZAÇÃO DO CKEDITOR ---
+    if (typeof ClassicEditor !== 'undefined' && typeof CKEDITOR_CONFIG !== 'undefined') {
+        ClassicEditor
+            .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
+            .then(editor => {
+                window.ckEditorInstance = editor; // Armazena a instância para uso global
+                console.log('CKEditor inicializado com sucesso.');
+
+                // Inicializa o módulo de ditado, conectando-o ao novo editor
+                if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                    SpeechDictation.init({ 
+                        micIcon: document.getElementById('dictation-mic-icon'), 
+                        langSelect: document.getElementById('dictation-lang-select'), 
+                        statusDisplay: document.getElementById('dictation-status'), 
+                        dictationModal: document.getElementById('dictation-modal'),
+                        onResult: (transcript) => { 
+                            editor.data.insertContent(transcript); 
+                        } 
+                    });
+                    
+                    const closeBtn = document.getElementById('dictation-close-btn');
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', () => { 
+                            SpeechDictation.stop(); 
+                        }); 
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
+            });
     } else {
-        console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada. Verifique se o arquivo js/tinymce-config.js está sendo carregado corretamente ANTES de script.js.');
+        console.error('CKEditor ou sua configuração (CKEDITOR_CONFIG) não foram encontrados.');
     }
 
-    // --- EVENT LISTENERS DA SIDEBAR (PERMANECEM IGUAIS) ---
+    // --- EVENT LISTENERS DA SIDEBAR ---
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
+    formatDocBtn.addEventListener('click', () => {
+        if (ckEditorInstance) {
+            // A função original era complexa. A principal ação era justificar.
+            // Adaptamos para usar o comando nativo do CKEditor.
+            ckEditorInstance.execute('justify');
+            alert('Documento formatado com alinhamento justificado.');
+        }
+    });
     clearDocBtn.addEventListener('click', () => {
         if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
-            tinymce.activeEditor.setContent('');
+            if (ckEditorInstance) {
+                ckEditorInstance.setData('');
+            }
         }
     });
     searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
