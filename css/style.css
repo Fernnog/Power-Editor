@@ -556,3 +556,31 @@ blockquote p {
     fill: none !important;
     stroke: currentColor; /* Usa a cor do tema para consistência */
 }
+
+/* O CKEditor cria sua própria estrutura. Esta regra garante que ele ocupe o espaço corretamente. */
+.editor-wrapper .ck.ck-editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Garante que a área de edição (conteúdo) seja expansível */
+.editor-wrapper .ck.ck-editor__main {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Aplica o fundo amarelo e a justificação na área de texto, como antes */
+.ck-editor__editable_inline {
+    background-color: #ffd580 !important;
+    padding: 0 15px !important; /* Mantém o espaçamento interno */
+    text-align: justify;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Garante que os ícones SVG customizados sejam exibidos corretamente (sem preenchimento) */
+.ck.ck-button svg {
+    fill: none !important;
+    stroke: currentColor;
+}
