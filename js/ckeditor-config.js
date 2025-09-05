@@ -1,17 +1,20 @@
 // js/ckeditor-config.js
 
 /**
- * Explicação da Mudança:
- * O erro "Class extends value undefined" ocorre porque a versão CDN do ClassicEditor
- * não expõe a classe `Plugin` no escopo global da mesma forma que um ambiente de build (com imports).
- * A abordagem correta para builds de CDN é criar plugins como funções simples. O CKEditor
- * irá executar cada função listada em `extraPlugins`, passando a instância do editor como argumento.
+ * Explicação da Correção:
+ * O erro "ClassicEditor.ButtonView is not a constructor" ocorre porque a referência correta
+ * na build de CDN é através do namespace `ui`. A forma correta é `ClassicEditor.ui.ButtonView`.
+ *
+ * Adicionalmente, os erros "toolbarview-item-unavailable" para 'underline' e 'alignment'
+ * indicam que a build padrão "Classic" não inclui esses plugins. Eles foram removidos
+ * da configuração da barra de ferramentas para permitir que o editor seja inicializado.
  */
 
-// --- Plugin de Ditado por Voz (como uma função) ---
+// --- Plugin de Ditado por Voz (com o caminho do construtor corrigido) ---
 function MicPlugin(editor) {
     editor.ui.componentFactory.add('customMicButton', locale => {
-        const button = new ClassicEditor.ButtonView(locale);
+        // CORREÇÃO: Usar ClassicEditor.ui.ButtonView
+        const button = new ClassicEditor.ui.ButtonView(locale);
         button.set({
             label: 'Ditar texto',
             icon: ICON_MIC,
@@ -28,10 +31,11 @@ function MicPlugin(editor) {
     });
 }
 
-// --- Plugin de Correção com IA (como uma função) ---
+// --- Plugin de Correção com IA (com o caminho do construtor corrigido) ---
 function AiCorrectionPlugin(editor) {
     editor.ui.componentFactory.add('customAiButton', locale => {
-        const button = new ClassicEditor.ButtonView(locale);
+        // CORREÇÃO: Usar ClassicEditor.ui.ButtonView
+        const button = new ClassicEditor.ui.ButtonView(locale);
         button.set({
             label: 'Corrigir Texto com IA',
             icon: ICON_AI_BRAIN,
@@ -41,9 +45,7 @@ function AiCorrectionPlugin(editor) {
         button.on('execute', async () => {
             const model = editor.model;
             const selection = model.document.selection;
-            const selectedText = model.getSelectedContent(selection);
-            // CKEditor 5 usa um 'data processor' para converter o modelo para texto puro.
-            const text = editor.data.stringify(selectedText);
+            const text = editor.data.stringify(model.getSelectedContent(selection));
 
             if (!text) {
                 alert("Por favor, selecione o texto que deseja corrigir.");
@@ -53,13 +55,10 @@ function AiCorrectionPlugin(editor) {
             try {
                 button.isEnabled = false;
                 button.icon = ICON_SPINNER;
-
                 const correctedText = await GeminiService.correctText(text, CONFIG.apiKey);
-                
                 model.change(writer => {
                     model.insertContent(writer.createText(correctedText), selection);
                 });
-
             } catch (error) {
                 console.error("Erro na correção:", error);
                 alert('Erro ao corrigir o texto.');
@@ -72,10 +71,11 @@ function AiCorrectionPlugin(editor) {
     });
 }
 
-// --- Plugin de Gerenciador de Substituições (como uma função) ---
+// --- Plugin de Gerenciador de Substituições (com o caminho do construtor corrigido) ---
 function ReplacePlugin(editor) {
     editor.ui.componentFactory.add('customReplaceButton', locale => {
-        const button = new ClassicEditor.ButtonView(locale);
+        // CORREÇÃO: Usar ClassicEditor.ui.ButtonView
+        const button = new ClassicEditor.ui.ButtonView(locale);
         button.set({
             label: 'Gerenciar Substituições',
             icon: ICON_REPLACE,
@@ -98,21 +98,17 @@ function ReplacePlugin(editor) {
 }
 
 // CONFIGURAÇÃO PRINCIPAL DO CKEDITOR
-// A variável agora será definida corretamente antes de ser usada por script.js
 const CKEDITOR_CONFIG = {
-    // Agora passamos as próprias funções, não as classes
     extraPlugins: [MicPlugin, AiCorrectionPlugin, ReplacePlugin],
     toolbar: {
         items: [
             'undo', 'redo', '|',
-            'bold', 'italic', 'underline', '|',
+            'heading', '|', // 'heading' é uma boa alternativa que está na build
+            'bold', 'italic', /* 'underline' removido */ '|',
             'bulletedList', 'numberedList', 'blockQuote', '|',
-            'alignment', '|',
+            // 'alignment' removido
             'customMicButton', 'customAiButton', 'customReplaceButton'
         ]
     },
     language: 'pt-br',
-    alignment: {
-        options: [ 'left', 'right', 'center', 'justify' ]
-    }
 };
