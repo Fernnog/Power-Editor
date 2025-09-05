@@ -30,6 +30,9 @@ const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
 const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
+const sidebarBtnAi = document.getElementById('sidebar-btn-ai');
+const sidebarBtnDictate = document.getElementById('sidebar-btn-dictate');
+const sidebarBtnReplace = document.getElementById('sidebar-btn-replace');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
@@ -49,14 +52,13 @@ function insertModelContent(content, tabId) {
         searchBox.value = '';
         render();
     }
-    // Usa a API do CKEditor para inserir conteúdo
     if (ckEditorInstance) {
         ckEditorInstance.data.insertContent(content);
         ckEditorInstance.editing.view.focus();
     }
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
+// --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
@@ -239,7 +241,7 @@ let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
 function filterModels() { const query = searchBox.value.toLowerCase().trim(); const activeContentArea = document.getElementById('active-content-area'); activeContentArea.style.borderColor = appState.tabs.find(t=>t.id === appState.activeTabId)?.color || '#ccc'; if (query) { activeContentArea.style.borderColor = '#aaa'; } if (!query) { if (appState.activeTabId === FAVORITES_TAB_ID) { return appState.models.filter(m => m.isFavorite); } else { return appState.models.filter(m => m.tabId === appState.activeTabId); } } const models = appState.models; if (query.includes(' ou ')) { const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.some(term => modelText.includes(term)); }); } else if (query.includes(' e ')) { const terms = query.split(' e ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.every(term => modelText.includes(term)); }); } else { return models.filter(model => model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query) ); } }
 
-// --- MANIPULAÇÃO DE DADOS (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
+// --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 function deleteTab(tabId) { const tabToDelete = appState.tabs.find(t => t.id === tabId); if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return; const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID); const destinationOptions = regularTabs.filter(t => t.id !== tabId); const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) { alert("Seleção inválida. A exclusão foi cancelada."); return; } modifyStateAndBackup(() => { const destinationTabId = destinationOptions[choiceIndex].id; appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } }); appState.tabs = appState.tabs.filter(t => t.id !== tabId); appState.activeTabId = destinationTabId; render(); }); }
 function addNewModelFromEditor() { const content = ckEditorInstance ? ckEditorInstance.getData() : ''; if (!content) { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } ModalManager.show({ type: 'modelEditor', title: 'Salvar Novo Modelo', initialData: { name: '' }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; render(); }); } }); }
@@ -255,72 +257,14 @@ window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage(); 
     render(); 
 
-    // --- INICIALIZAÇÃO DO CKEDITOR (COM TRATAMENTO DE ERRO MELHORADO) ---
-    ClassicEditor
-        .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
-        .then(editor => {
-            console.log('CKEditor inicializado com sucesso.');
-            window.ckEditorInstance = editor; // Guarda a instância globalmente
-
-            // Re-conecta o botão de ditado do modal ao novo editor
-            if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
-                SpeechDictation.init({ 
-                    micIcon: document.getElementById('dictation-mic-icon'), 
-                    langSelect: document.getElementById('dictation-lang-select'), 
-                    statusDisplay: document.getElementById('dictation-status'), 
-                    dictationModal: document.getElementById('dictation-modal'),
-                    onResult: (transcript) => { 
-                        editor.data.insertContent(transcript); 
-                    } 
-                });
-                
-                const closeBtn = document.getElementById('dictation-close-btn');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => { 
-                        SpeechDictation.stop(); 
-                    }); 
-                }
-            }
-        })
-        .catch(error => {
-            // Esta linha irá exibir o erro de forma clara no console do navegador
-            console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
-        });
-
-    // --- EVENT LISTENERS DA SIDEBAR (PERMANECEM IGUAIS) ---
-    searchBox.addEventListener('input', debouncedFilter);
-    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
-    addNewTabBtn.addEventListener('click', addNewTab);
-    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-    clearDocBtn.addEventListener('click', () => {
-        if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
-            if(ckEditorInstance) {
-                ckEditorInstance.setData('');
-            }
-        }
-    });
-    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
-    exportBtn.addEventListener('click', exportModels);
-    importBtn.addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', handleImportFile);
-
     // --- INICIALIZAÇÃO E LISTENERS DOS BOTÕES DE AÇÃO DA SIDEBAR ---
-    const sidebarBtnAi = document.getElementById('sidebar-btn-ai');
-    const sidebarBtnDictate = document.getElementById('sidebar-btn-dictate');
-    const sidebarBtnReplace = document.getElementById('sidebar-btn-replace');
-
     if (sidebarBtnAi && sidebarBtnDictate && sidebarBtnReplace) {
-        // 1. Injeta os ícones SVG nos botões
         sidebarBtnAi.innerHTML = ICON_AI_BRAIN;
         sidebarBtnDictate.innerHTML = ICON_MIC;
         sidebarBtnReplace.innerHTML = ICON_REPLACE;
 
-        // 2. Adiciona os eventos de clique
-        sidebarBtnAi.addEventListener('click', async () => {
+        sidebarBtnAi.addEventListener('click', () => {
             if (!ckEditorInstance) return alert('Editor não carregado.');
-            
             const model = ckEditorInstance.model;
             const selection = model.document.selection;
             const text = ckEditorInstance.data.stringify(model.getSelectedContent(selection));
@@ -330,23 +274,14 @@ window.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Aplica o estado de carregamento
-            sidebarBtnAi.innerHTML = ICON_SPINNER;
-            sidebarBtnAi.disabled = true;
-
-            try {
-                const correctedText = await GeminiService.correctText(text, CONFIG.apiKey);
+            GeminiService.correctText(text, CONFIG.apiKey).then(correctedText => {
                 model.change(writer => {
                     model.insertContent(writer.createText(correctedText), selection);
                 });
-            } catch (error) {
+            }).catch(error => {
                 console.error("Erro na correção:", error);
                 alert('Erro ao corrigir o texto.');
-            } finally {
-                // Restaura o botão ao estado original
-                sidebarBtnAi.innerHTML = ICON_AI_BRAIN;
-                sidebarBtnAi.disabled = false;
-            }
+            });
         });
 
         sidebarBtnDictate.addEventListener('click', () => {
@@ -368,4 +303,65 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // --- INICIALIZAÇÃO DO CKEDITOR (MODIFICADA PARA DECOUPLED EDITOR) ---
+    DecoupledEditor
+        .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
+        .then(editor => {
+            console.log('CKEditor (Decoupled) inicializado com sucesso.');
+            window.ckEditorInstance = editor;
+
+            // Adiciona a barra de ferramentas ao container especificado no HTML
+            const toolbarContainer = document.querySelector('.toolbar');
+            if (toolbarContainer) {
+                 toolbarContainer.appendChild(editor.ui.view.toolbar.element);
+            } else {
+                console.warn("Container da toolbar (.toolbar) não encontrado. A barra de ferramentas não será exibida.");
+            }
+
+            // Re-conecta o ditado ao novo editor
+            if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                SpeechDictation.init({ 
+                    micIcon: document.getElementById('dictation-mic-icon'), 
+                    langSelect: document.getElementById('dictation-lang-select'), 
+                    statusDisplay: document.getElementById('dictation-status'), 
+                    dictationModal: document.getElementById('dictation-modal'),
+                    onResult: (transcript) => { 
+                        editor.data.insertContent(transcript); 
+                    } 
+                });
+                
+                const closeBtn = document.getElementById('dictation-close-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => { 
+                        SpeechDictation.stop(); 
+                    }); 
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
+        });
+
+    // --- EVENT LISTENERS DA SIDEBAR ---
+    searchBox.addEventListener('input', debouncedFilter);
+    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+    addNewTabBtn.addEventListener('click', addNewTab);
+    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    formatDocBtn.addEventListener('click', () => {
+        alert('A função "Formatar Doc" ainda não foi portada para o novo editor.');
+        // EditorActions.formatDocument(); // Esta linha está desativada
+    });
+    clearDocBtn.addEventListener('click', () => {
+        if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
+            if(ckEditorInstance) {
+                ckEditorInstance.setData('');
+            }
+        }
+    });
+    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
+    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+    exportBtn.addEventListener('click', exportModels);
+    importBtn.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', handleImportFile);
 });
