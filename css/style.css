@@ -32,13 +32,11 @@ body, html {
 }
 
 .toolbar {
-    background-color: #e9ecef;
-    padding: 10px;
-    border-radius: 5px 5px 0 0;
+    background-color: #f8f9fa;
+    padding: 8px;
     border: 1px solid #ccc;
     border-bottom: none;
-    display: flex;
-    align-items: center;
+    border-radius: 5px 5px 0 0;
 }
 
 .toolbar button, .toolbar select {
