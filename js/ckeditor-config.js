@@ -25,17 +25,22 @@ function MicPlugin(editor) {
 
     // 2. Registrar o Botão na UI (a aparência)
     editor.ui.componentFactory.add('customMicButton', locale => {
-        const button = new editor.ui.Button(locale); // Usamos o construtor genérico
-        button.set({
+        const command = editor.commands.get('executeMicDictation');
+        const buttonView = new editor.ui.ButtonView(locale); // CORREÇÃO: Usar ButtonView
+
+        buttonView.set({
             label: 'Ditar texto',
             icon: ICON_MIC,
             tooltip: true
         });
-        // Vincula o botão ao comando
-        button.bind('isOn', 'isEnabled').to(editor.commands.get('executeMicDictation'));
-        // Executa o comando ao clicar
-        button.on('execute', () => editor.execute('executeMicDictation'));
-        return button;
+
+        // Vincula o estado do botão (ativado/desativado) ao comando.
+        buttonView.bind('isOn', 'isEnabled').to(command);
+
+        // Executa o comando quando o botão é clicado.
+        buttonView.on('execute', () => editor.execute('executeMicDictation'));
+
+        return buttonView;
     });
 }
 
@@ -48,7 +53,10 @@ function AiCorrectionPlugin(editor) {
             const command = editor.commands.get('executeAiCorrection');
             const model = editor.model;
             const selection = model.document.selection;
-            const text = editor.data.stringify(model.getSelectedContent(selection));
+            
+            // CKEditor 5 usa um método diferente para obter o texto selecionado como string
+            const selectedContent = model.getSelectedContent(selection);
+            const text = editor.data.stringify(selectedContent);
 
             if (!text) {
                 alert("Por favor, selecione o texto que deseja corrigir.");
@@ -57,11 +65,14 @@ function AiCorrectionPlugin(editor) {
             
             try {
                 command.isEnabled = false;
-                // A atualização do ícone precisa ser feita no próprio botão (ver abaixo)
                 const correctedText = await GeminiService.correctText(text, CONFIG.apiKey);
+                
+                // Insere o conteúdo corrigido de forma segura
                 model.change(writer => {
-                    model.insertContent(writer.createText(correctedText), selection);
+                    const textNode = writer.createText(correctedText);
+                    model.insertContent(textNode, selection);
                 });
+
             } catch (error) {
                 console.error("Erro na correção:", error);
                 alert('Erro ao corrigir o texto.');
@@ -73,28 +84,24 @@ function AiCorrectionPlugin(editor) {
 
     // 2. Registrar o Botão
     editor.ui.componentFactory.add('customAiButton', locale => {
-        const button = new editor.ui.Button(locale);
         const command = editor.commands.get('executeAiCorrection');
-        
-        button.set({
+        const buttonView = new editor.ui.ButtonView(locale); // CORREÇÃO: Usar ButtonView
+
+        buttonView.set({
             label: 'Corrigir Texto com IA',
             icon: ICON_AI_BRAIN,
             tooltip: true
         });
         
-        button.bind('isEnabled').to(command);
-        button.on('execute', () => editor.execute('executeAiCorrection'));
+        buttonView.bind('isEnabled').to(command);
+        buttonView.on('execute', () => editor.execute('executeAiCorrection'));
 
         // Lógica para trocar o ícone durante o processamento
         command.on('change:isEnabled', () => {
-            if (!command.isEnabled) {
-                button.icon = ICON_SPINNER;
-            } else {
-                button.icon = ICON_AI_BRAIN;
-            }
+            buttonView.icon = command.isEnabled ? ICON_AI_BRAIN : ICON_SPINNER;
         });
 
-        return button;
+        return buttonView;
     });
 }
 
@@ -116,20 +123,23 @@ function ReplacePlugin(editor) {
     
     // 2. Registrar o Botão
     editor.ui.componentFactory.add('customReplaceButton', locale => {
-        const button = new editor.ui.Button(locale);
-        button.set({
+        const command = editor.commands.get('openReplaceManager');
+        const buttonView = new editor.ui.ButtonView(locale); // CORREÇÃO: Usar ButtonView
+        
+        buttonView.set({
             label: 'Gerenciar Substituições',
             icon: ICON_REPLACE,
             tooltip: true
         });
-        button.bind('isOn', 'isEnabled').to(editor.commands.get('openReplaceManager'));
-        button.on('execute', () => editor.execute('openReplaceManager'));
-        return button;
+
+        buttonView.bind('isOn', 'isEnabled').to(command);
+        buttonView.on('execute', () => editor.execute('openReplaceManager'));
+
+        return buttonView;
     });
 }
 
-
-// CONFIGURAÇÃO PRINCIPAL DO CKEDITOR
+// CONFIGURAÇÃO PRINCIPAL DO CKEDITOR (permanece a mesma)
 const CKEDITOR_CONFIG = {
     extraPlugins: [MicPlugin, AiCorrectionPlugin, ReplacePlugin],
     toolbar: {
