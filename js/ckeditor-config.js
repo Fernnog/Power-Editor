@@ -9,34 +9,13 @@ const CKEDITOR_CONFIG = {
     toolbar: {
         items: [
             'undo', 'redo', '|',
-            'heading', '|',
-            'style', // NOSSO NOVO DROPDOWN DE ESTILOS!
-            '|',
-            'bold', 'italic', '|',
-            'bulletedList', 'numberedList'
+            'bold', 'italic', 'underline', '|',
+            'bulletedList', 'numberedList', '|',
+            'outdent', 'indent'
         ]
     },
 
-    language: 'pt-br',
+    language: 'pt-br'
 
-    // AQUI ACONTECE A MÁGICA: Ensinamos o editor sobre nossos novos estilos.
-    style: {
-        definitions: [
-            {
-                name: 'Recuo de Parágrafo (3cm)',
-                element: 'p', // Aplica-se a parágrafos
-                styles: {
-                    'text-indent': '3cm'
-                }
-            },
-            {
-                name: 'Recuo de Citação (6cm)',
-                element: 'p', // Aplica-se a parágrafos
-                styles: {
-                    'margin-left': '6cm',
-                    'font-style': 'italic'
-                }
-            }
-        ]
-    }
+    // A configuração de 'style' foi removida pois o plugin não está disponível no build padrão.
 };
