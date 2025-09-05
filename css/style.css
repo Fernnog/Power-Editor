@@ -585,54 +585,27 @@ blockquote p {
     stroke: currentColor;
 }
 
-/* --- Estilos para o novo painel de Ações Rápidas --- */
-#quick-actions-container {
-    background-color: #fff;
-    border-radius: 5px;
-    padding: 10px 15px;
+/* --- Estilos para a Barra de Ações com Ícones --- */
+#sidebar-icon-actions {
+    display: flex;
+    justify-content: space-around; /* Distribui os botões igualmente */
+    align-items: center;
+    padding: 12px 0;
     margin-top: 15px;
-    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
 }
 
-.quick-actions-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
+/* Usamos a classe .action-btn que já existe e a especializamos aqui */
+#sidebar-icon-actions .action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%; /* Deixa os botões redondos */
 }
 
-.quick-actions-header h4 {
-    margin: 0;
-    font-size: 14px;
-    color: #333;
-}
-
-.lock-icon {
-    font-size: 16px;
-}
-
-.quick-action-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #ffd580; /* Cor amarela consistente */
-    border: 1px solid #daa520;
-    padding: 8px 12px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.quick-action-item .action-btn {
-    background-color: white;
-    border-color: #daa520;
-    width: 28px; /* Tamanho ligeiramente menor */
-    height: 28px;
-}
-
-.quick-action-item .action-btn:hover {
-    background-color: #fffbeB;
+/* Garante que os SVGs dentro dos botões tenham o tamanho certo */
+#sidebar-icon-actions .action-btn svg {
+    width: 20px;
+    height: 20px;
 }
