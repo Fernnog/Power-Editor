@@ -305,4 +305,57 @@ window.addEventListener('DOMContentLoaded', () => {
     exportBtn.addEventListener('click', exportModels);
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
+
+    // --- EVENT LISTENERS PARA AS NOVAS AÇÕES RÁPIDAS ---
+    const quickActionAiBtn = document.querySelector('#quick-action-ai button');
+    const quickActionDictateBtn = document.querySelector('#quick-action-dictate button');
+    const quickActionReplaceBtn = document.querySelector('#quick-action-replace button');
+
+    if (quickActionAiBtn) {
+        quickActionAiBtn.addEventListener('click', async () => {
+            if (!ckEditorInstance) return;
+
+            const model = ckEditorInstance.model;
+            const selection = model.document.selection;
+            const text = ckEditorInstance.data.stringify(model.getSelectedContent(selection));
+
+            if (!text) {
+                alert("Por favor, selecione o texto que deseja corrigir.");
+                return;
+            }
+
+            try {
+                const correctedText = await GeminiService.correctText(text, CONFIG.apiKey);
+                model.change(writer => {
+                    model.insertContent(writer.createText(correctedText), selection);
+                });
+            } catch (error) {
+                console.error("Erro na correção:", error);
+                alert('Erro ao corrigir o texto.');
+            }
+        });
+    }
+
+    if (quickActionDictateBtn) {
+        quickActionDictateBtn.addEventListener('click', () => {
+            if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
+                SpeechDictation.start();
+            } else {
+                alert('O reconhecimento de voz não é suportado.');
+            }
+        });
+    }
+
+    if (quickActionReplaceBtn) {
+        quickActionReplaceBtn.addEventListener('click', () => {
+            ModalManager.show({
+                type: 'replacementManager',
+                title: 'Gerenciador de Substituições',
+                initialData: { replacements: appState.replacements || [] },
+                onSave: (data) => {
+                    modifyStateAndBackup(() => { appState.replacements = data.replacements; });
+                }
+            });
+        });
+    }
 });
