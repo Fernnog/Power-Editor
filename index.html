@@ -14,9 +14,12 @@
         
         <!-- Coluna Principal: Editor de Texto -->
         <div class="editor-area">
-            <!-- NOVO WRAPPER PARA O EDITOR E A RÉGUA -->
+            <!-- CONTAINER DA BARRA DE FERRAMENTAS ADICIONADO -->
+            <div class="toolbar"></div>
+            
+            <!-- WRAPPER PARA O EDITOR E A RÉGUA -->
             <div class="editor-wrapper">
-                <!-- NOVAS DIVS PARA AS RÉGUAS -->
+                <!-- DIVS PARA AS RÉGUAS -->
                 <div id="ruler-horizontal" class="ruler"></div>
                 <div id="ruler-vertical" class="ruler"></div>
 
@@ -34,12 +37,10 @@
                     <button id="clear-search-btn" class="control-btn btn-secondary">Limpar Pesquisa</button>
                     <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
                     <button id="clear-doc-btn" class="control-btn btn-primary">Apagar Doc</button>
-                    <button id="apply-indent-btn" class="control-btn btn-secondary">Recuo Parágrafo</button>
-                    <button id="apply-quote-btn" class="control-btn btn-secondary">Recuo Citação</button>
                 </div>
             </div>
             
-            <!-- NOVO CONTAINER COMPACTO PARA AÇÕES -->
+            <!-- CONTAINER COMPACTO PARA AÇÕES -->
             <div id="sidebar-icon-actions">
                 <button id="sidebar-btn-ai" class="action-btn" title="Corrigir texto selecionado com IA"></button>
                 <button id="sidebar-btn-dictate" class="action-btn" title="Iniciar ditado por voz"></button>
