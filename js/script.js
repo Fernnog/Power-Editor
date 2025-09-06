@@ -53,10 +53,16 @@ function insertModelContent(content, tabId) {
         render();
     }
     if (ckEditorInstance) {
-        ckEditorInstance.data.insertContent(content);
+        // A API correta para inserir conteúdo HTML preservando a formatação
+        ckEditorInstance.model.change(writer => {
+            const viewFragment = ckEditorInstance.data.processor.toView(content);
+            const modelFragment = ckEditorInstance.data.toModel(viewFragment);
+            ckEditorInstance.model.insertContent(modelFragment, ckEditorInstance.model.document.selection);
+        });
         ckEditorInstance.editing.view.focus();
     }
 }
+
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
@@ -327,7 +333,9 @@ window.addEventListener('DOMContentLoaded', () => {
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
                     onResult: (transcript) => { 
-                        editor.data.insertContent(transcript); 
+                        editor.model.change(writer => {
+                            editor.model.insertContent(writer.createText(transcript), editor.model.document.selection);
+                        });
                     } 
                 });
                 
@@ -348,10 +356,11 @@ window.addEventListener('DOMContentLoaded', () => {
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    
     formatDocBtn.addEventListener('click', () => {
-        alert('A função "Formatar Doc" ainda não foi portada para o novo editor.');
-        // EditorActions.formatDocument(); // Esta linha está desativada
+        EditorActions.formatDocument(ckEditorInstance);
     });
+
     clearDocBtn.addEventListener('click', () => {
         if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
             if(ckEditorInstance) {
@@ -359,6 +368,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
     searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
     exportBtn.addEventListener('click', exportModels);
