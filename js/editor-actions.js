@@ -5,59 +5,69 @@ const EditorActions = (() => {
      * Aplica formatação customizada ao documento no editor CKEditor.
      * @param {object} editor - A instância ativa do CKEditor.
      */
-    function formatDocument(editor) {
+   function formatDocument(editor) {
     if (!editor) {
         alert('Editor não está pronto. Tente novamente.');
         return;
     }
 
+    console.clear(); // Limpa o console para o novo teste
+    console.log("--- INICIANDO DIAGNÓSTICO AVANÇADO 'Formatar Doc' ---");
+
     const model = editor.model;
     const root = model.document.getRoot();
 
-    // Variáveis para contar as alterações e melhorar o feedback
-    let paragraphsAdjusted = 0;
-    let quotesCreated = 0;
+    if (root.childCount === 0) {
+        alert('O editor está vazio.');
+        return;
+    }
+
+    let modifiedCount = 0;
 
     model.change(writer => {
+        console.log("[DEBUG] Bloco 'model.change' iniciado. O 'writer' está ativo.");
+
         for (const child of root.getChildren()) {
-            // Aplica a regra apenas a parágrafos que não fazem parte de uma lista.
             if (child.is('element', 'paragraph') && !child.hasAttribute('listItemId')) {
                 const currentIndent = child.getAttribute('indent') || 0;
-
-                // LÓGICA FINAL E CORRIGIDA
-                // Se o recuo for maior que 1, converte para citação.
-                if (currentIndent > 1) {
-                    writer.rename(child, 'blockQuote');
-                    writer.removeAttribute('indent', child);
-                    quotesCreated++; // Incrementa o contador de citações
                 
-                // Se não houver recuo, aplica o recuo padrão e justifica.
-                } else if (currentIndent === 0) {
+                console.log(`\n-> Analisando parágrafo. Indent atual: ${currentIndent}`);
+                
+                // A lógica agora foca apenas em parágrafos sem recuo para o teste
+                if (currentIndent === 0) {
+                    modifiedCount++;
+                    
+                    // Log do estado ANTES da modificação
+                    console.log("  [ANTES] Atributos do modelo:", Object.fromEntries(child.getAttributes()));
+
+                    // APLICAÇÃO DAS AÇÕES
                     writer.setAttribute('alignment', 'justify', child);
                     writer.setAttribute('indent', 1, child);
-                    paragraphsAdjusted++; // Incrementa o contador de parágrafos
+                    
+                    // AÇÃO DE DIAGNÓSTICO VISUAL: Aplicar um marcador de fundo amarelo
+                    writer.setAttribute('highlight', 'yellowMarker', child);
+
+                    // Log do estado DEPOIS da modificação
+                    console.log("  [DEPOIS] Atributos do modelo:", Object.fromEntries(child.getAttributes()));
+                    console.log("  [AÇÃO EXECUTADA] Tentativa de justificar, indentar e aplicar highlight amarelo.");
+                } else {
+                     console.log("  -> Parágrafo ignorado (já possui indent > 0).");
                 }
-                // Parágrafos com recuo nível 1 são ignorados e permanecem como estão.
             }
         }
     });
+    
+    console.log("\n--- DIAGNÓSTICO AVANÇADO FINALIZADO ---");
+    console.log(`- Total de parágrafos que foram processados: ${modifiedCount}`);
 
     editor.editing.view.focus();
 
-    // Feedback aprimorado para o usuário
-    if (paragraphsAdjusted > 0 || quotesCreated > 0) {
-        let feedbackMessage = "Formatação concluída!\n";
-        if (paragraphsAdjusted > 0) {
-            feedbackMessage += `\n- ${paragraphsAdjusted} parágrafo(s) ajustado(s).`;
-        }
-        if (quotesCreated > 0) {
-            feedbackMessage += `\n- ${quotesCreated} citação(ões) criada(s).`;
-        }
-        alert(feedbackMessage);
+    if (modifiedCount > 0) {
+         alert(`Diagnóstico avançado concluído! ${modifiedCount} parágrafo(s) foram processados. Verifique o console (F12) e se o texto ficou com o fundo amarelo.`);
     } else {
-        alert('Nenhum parágrafo precisou de formatação.');
+         alert('Diagnóstico avançado concluído! Nenhum parágrafo sem recuo foi encontrado para o teste.');
     }
-}    
+}
    
     /**
      * Limpa todo o conteúdo do editor.
