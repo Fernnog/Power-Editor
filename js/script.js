@@ -24,11 +24,8 @@ const addNewModelBtn = document.getElementById('add-new-model-btn');
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
 const importFileInput = document.getElementById('import-file-input');
-const searchBtn = document.getElementById('search-btn');
-const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
-// REMOVIDO: const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 const sidebarBtnAi = document.getElementById('sidebar-btn-ai');
 const sidebarBtnDictate = document.getElementById('sidebar-btn-dictate');
@@ -36,10 +33,9 @@ const sidebarBtnReplace = document.getElementById('sidebar-btn-replace');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 
-// NOVO: Função para renderizar o status do backup no card
 function renderBackupStatus() {
     const card = document.getElementById('backup-status-card');
-    if (!card) return; // Garante que o elemento existe
+    if (!card) return;
 
     if (appState.lastBackupTimestamp) {
         const date = new Date(appState.lastBackupTimestamp);
@@ -54,7 +50,6 @@ function renderBackupStatus() {
     }
 }
 
-// MODIFICADO: triggerAutoBackup agora chama renderBackupStatus
 function triggerAutoBackup() {
     const now = new Date();
     const year = now.getFullYear();
@@ -65,8 +60,8 @@ function triggerAutoBackup() {
     const timestamp = `${year}${month}${day}_${hours}${minutes}`;
     const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
 
-    appState.lastBackupTimestamp = now.toISOString(); // Atualiza o timestamp no estado
-    renderBackupStatus(); // Chama a nova função para atualizar o UI
+    appState.lastBackupTimestamp = now.toISOString();
+    renderBackupStatus();
 
     const dataStr = JSON.stringify(appState, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -121,7 +116,6 @@ function loadStateFromStorage() {
     } else {
         setDefaultState();
     }
-    // MODIFICADO: Chama a nova função de renderização
     renderBackupStatus();
     
     if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; }
@@ -137,7 +131,6 @@ function insertModelContent(content, tabId) {
     if (ckEditorInstance) {
         const editor = ckEditorInstance;
         
-        // CORREÇÃO: Este é o método oficial e robusto para inserir conteúdo HTML
         editor.model.change(writer => {
             const viewFragment = editor.data.processor.toView(content);
             const modelFragment = editor.data.toModel(viewFragment);
@@ -353,19 +346,17 @@ function handleImportFile(event) {
         try {
             const importedState = JSON.parse(e.target.result);
 
-            // NOVO: Lógica para extrair e usar o timestamp do nome do arquivo
-            const fileNameMatch = file.name.match(/(\d{8})_(\d{4})/); // Ex: "YYYYMMDD_HHmm"
+            const fileNameMatch = file.name.match(/(\d{8})_(\d{4})/);
             if (fileNameMatch) {
-                const dateStr = fileNameMatch[1]; // "YYYYMMDD"
-                const timeStr = fileNameMatch[2]; // "HHmm"
+                const dateStr = fileNameMatch[1];
+                const timeStr = fileNameMatch[2];
                 const year = dateStr.substring(0, 4);
-                const month = parseInt(dateStr.substring(4, 6), 10) - 1; // Mês é 0-indexed
+                const month = parseInt(dateStr.substring(4, 6), 10) - 1;
                 const day = dateStr.substring(6, 8);
                 const hours = timeStr.substring(0, 2);
                 const minutes = timeStr.substring(2, 4);
                 const fileTimestamp = new Date(year, month, day, hours, minutes).toISOString();
                 
-                // Mantém o timestamp mais recente entre o importado e o que já existe
                 if (!importedState.lastBackupTimestamp || fileTimestamp > importedState.lastBackupTimestamp) {
                     importedState.lastBackupTimestamp = fileTimestamp;
                 }
@@ -376,7 +367,6 @@ function handleImportFile(event) {
                 saveStateToStorage();
                 render();
                 alert('Modelos importados com sucesso!');
-                // MODIFICADO: Chama a nova função de renderização
                 renderBackupStatus();
             } else {
                 throw new Error('Formato de arquivo inválido.');
@@ -395,11 +385,9 @@ window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage(); 
     render(); 
 
-    // --- MELHORIA DE UX: Desabilitar botões que dependem do editor até que ele carregue
     formatDocBtn.disabled = true;
     clearDocBtn.disabled = true;
 
-    // --- INICIALIZAÇÃO E LISTENERS DOS BOTÕES DE AÇÃO DA SIDEBAR ---
     if (sidebarBtnAi && sidebarBtnDictate && sidebarBtnReplace) {
         sidebarBtnAi.innerHTML = ICON_AI_BRAIN;
         sidebarBtnDictate.innerHTML = ICON_MIC;
@@ -416,7 +404,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // NOVO: Adiciona classe de processamento e desabilita o botão
             sidebarBtnAi.classList.add('is-processing');
             sidebarBtnAi.disabled = true;
 
@@ -428,7 +415,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 console.error("Erro na correção:", error);
                 alert('Erro ao corrigir o texto.');
             }).finally(() => {
-                // NOVO: Remove classe de processamento e reabilita o botão
                 sidebarBtnAi.classList.remove('is-processing');
                 sidebarBtnAi.disabled = false;
             });
@@ -454,7 +440,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- INICIALIZAÇÃO DO CKEDITOR (MODIFICADA PARA DECOUPLED EDITOR) ---
     DecoupledEditor
         .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
         .then(editor => {
@@ -468,9 +453,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 console.warn("Container da toolbar (.toolbar) não encontrado. A barra de ferramentas não será exibida.");
             }
             
-            // --- CORREÇÃO CRÍTICA: Ativar os botões da sidebar APENAS APÓS o editor estar pronto ---
-            
-            // 1. Ativação dos listeners
             formatDocBtn.addEventListener('click', () => {
                 EditorActions.formatDocument(ckEditorInstance);
             });
@@ -481,26 +463,20 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // 2. Re-habilita os botões para uso
             formatDocBtn.disabled = false;
             clearDocBtn.disabled = false;
 
-            // Re-conecta o ditado ao novo editor
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
                     micIcon: document.getElementById('dictation-mic-icon'), 
                     langSelect: document.getElementById('dictation-lang-select'), 
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
-                    toolbarMicButton: sidebarBtnDictate, // NOVO: Passa a referência do botão da toolbar
+                    toolbarMicButton: sidebarBtnDictate,
                     onResult: (transcript) => {
-                        // **INÍCIO DA CORREÇÃO**
-                        // O método antigo 'editor.data.insertContent' estava incorreto.
-                        // O método correto no CKEditor 5 é usar o 'editor.model' para modificar o conteúdo.
                         ckEditorInstance.model.change(writer => {
                             writer.insertText(transcript + ' ', ckEditorInstance.model.document.selection.getLastPosition());
                         });
-                        // **FIM DA CORREÇÃO**
                     }
                 });
                 
@@ -516,13 +492,11 @@ window.addEventListener('DOMContentLoaded', () => {
             console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
         });
 
-    // --- EVENT LISTENERS DA SIDEBAR (sem os que foram movidos) ---
+    // --- EVENT LISTENERS DA SIDEBAR (COM REMOÇÕES E ADIÇÕES) ---
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
     exportBtn.addEventListener('click', exportModels);
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
