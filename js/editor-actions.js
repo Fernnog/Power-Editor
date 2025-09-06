@@ -1,4 +1,4 @@
-// Substitua TODO o conteúdo de 'editor-actions.js' por este código atualizado.
+// js/editor-actions.js
 const EditorActions = (() => {
 
     /**
@@ -18,17 +18,21 @@ const EditorActions = (() => {
             for (const child of root.getChildren()) {
                 // Aplica a regra apenas a parágrafos que não fazem parte de uma lista.
                 if (child.is('element', 'paragraph') && !child.hasAttribute('listItemId')) {
-                    const currentIndent = child.getAttribute('indent');
+                    const currentIndent = child.getAttribute('indent') || 0;
 
-                    // Se já tiver qualquer nível de recuo, converte para citação (6cm).
-                    if (currentIndent > 0) {
+                    // **INÍCIO DA NOVA LÓGICA**
+                    // Se o recuo for maior que 1, converte o parágrafo para citação.
+                    if (currentIndent > 1) {
                         writer.rename(child, 'blockQuote');
                         writer.removeAttribute('indent', child);
-                    } else {
-                        // Se não tiver recuo, aplica justificação e o recuo de 3cm (nível 1).
+                    
+                    // Se não houver recuo (for igual a 0), aplica o recuo simples (nível 1) e justifica.
+                    } else if (currentIndent === 0) {
                         writer.setAttribute('alignment', 'justify', child);
                         writer.setAttribute('indent', 1, child);
                     }
+                    // Parágrafos com recuo nível 1 são ignorados e permanecem como estão.
+                    // **FIM DA NOVA LÓGICA**
                 }
             }
         });
