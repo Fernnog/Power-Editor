@@ -354,9 +354,15 @@ window.addEventListener('DOMContentLoaded', () => {
                     langSelect: document.getElementById('dictation-lang-select'), 
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
-                    onResult: (transcript) => { 
-                        editor.data.insertContent(transcript); 
-                    } 
+                    onResult: (transcript) => {
+                        // **INÍCIO DA CORREÇÃO**
+                        // O método antigo 'editor.data.insertContent' estava incorreto.
+                        // O método correto no CKEditor 5 é usar o 'editor.model' para modificar o conteúdo.
+                        ckEditorInstance.model.change(writer => {
+                            writer.insertText(transcript + ' ', ckEditorInstance.model.document.selection.getLastPosition());
+                        });
+                        // **FIM DA CORREÇÃO**
+                    }
                 });
                 
                 const closeBtn = document.getElementById('dictation-close-btn');
