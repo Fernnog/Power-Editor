@@ -114,13 +114,40 @@ body, html {
     margin-bottom: 15px;
 }
 
+/* INÍCIO DA ALTERAÇÃO: Estilos para o wrapper de busca e o botão de limpar */
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* Adicionado para manter o espaçamento que o grid tinha */
+}
+
 #search-box {
     width: 100%;
-    padding: 8px;
+    padding: 8px 30px 8px 8px; /* Adicionado espaço à direita para o botão */
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
+.search-clear-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 20px;
+    color: #888;
+    padding: 0 5px;
+    display: none; /* O JavaScript será responsável por exibir este botão */
+}
+
+.search-clear-btn:hover {
+    color: #333;
+}
+/* FIM DA ALTERAÇÃO */
 
 /* --- ESTILOS MODERNOS PARA ABAS (3D STACK) --- */
 .tabs-container {
