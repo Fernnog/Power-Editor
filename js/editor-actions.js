@@ -1,44 +1,50 @@
 const EditorActions = (() => {
     /**
-     * Aplica formatação padrão (recuo e espaçamento) ao documento no editor TinyMCE.
+     * Aplica formatação customizada ao documento no editor CKEditor.
+     * Regras:
+     * - Justifica o texto e aplica recuo de primeiro nível (3cm) em parágrafos que não são de lista e não possuem recuo.
+     * - Parágrafos com recuo significativo (nível 1+) são convertidos em citação (6cm).
+     * @param {object} editor - A instância ativa do CKEditor.
      */
-    function formatDocument() {
-        const editor = tinymce.activeEditor;
+    function formatDocument(editor) {
         if (!editor) {
             alert('Editor não encontrado.');
             return;
         }
 
-        // Usa a API do TinyMCE para percorrer todos os nós de bloco (parágrafos, títulos, etc.)
-        editor.selection.select(editor.getBody(), true); // Seleciona todo o conteúdo
-        editor.execCommand('JustifyFull'); // Aplica justificação a tudo
-        editor.selection.collapse(true); // Limpa a seleção
+        const model = editor.model;
+        const root = model.document.getRoot();
 
-        const blocks = editor.dom.select('p,h1,h2,h3,h4,h5,h6,li');
+        model.change(writer => {
+            // Percorre todos os nós de bloco (parágrafos, etc.) no documento
+            for (const child of root.getChildren()) {
+                // Aplica a regra apenas a parágrafos que não são parte de uma lista
+                if (child.is('element', 'paragraph') && !child.hasAttribute('listItemId')) {
+                    const currentIndent = child.getAttribute('indent');
 
-        editor.undoManager.transact(() => { // Agrupa todas as alterações em um único "desfazer"
-            blocks.forEach(block => {
-                const blockName = block.nodeName.toLowerCase();
-                
-                // Aplica espaçamento 1.5 a todos os blocos
-                editor.dom.setStyle(block, 'line-height', '1.5');
-
-                // Aplica recuo de 3cm a parágrafos, removendo de outros elementos
-                if (blockName === 'p') {
-                    editor.dom.setStyle(block, 'text-indent', '3cm');
-                } else {
-                    editor.dom.setStyle(block, 'text-indent', '');
+                    // Se o parágrafo já tiver recuo (nível 1 ou maior), transforma em citação
+                    if (currentIndent >= 1) {
+                        writer.rename(child, 'blockQuote');
+                        // Remove o atributo de indentação antigo, pois o blockquote já tem seu próprio estilo
+                        writer.removeAttribute('indent', child);
+                    } else {
+                        // Se não tiver recuo, aplica alinhamento justificado e recuo de primeiro nível
+                        writer.setAttribute('alignment', 'justify', child);
+                        // A configuração padrão do CKEditor para indent=1 é de 40px, que é aproximadamente 1.05cm.
+                        // Para um recuo visual de ~3cm, precisamos de um nível maior. Usamos 3 como um bom aproximado.
+                        // Nota: O valor exato pode ser ajustado com CSS customizado se necessário.
+                        writer.setAttribute('indent', 3, child);
+                    }
+                } else if (child.is('element', 'blockQuote')) {
+                    // Garante que citações existentes também sejam justificadas
+                    writer.setAttribute('alignment', 'justify', child);
                 }
-            });
+            }
         });
 
-        editor.focus();
+        editor.editing.view.focus();
         alert('Documento formatado com sucesso!');
     }
-
-    // As funções indentFirstLine, formatAsBlockquote e clearDocument foram removidas
-    // pois sua lógica foi absorvida pela configuração do TinyMCE ou implementada
-    // diretamente nos event listeners em script.js, tornando este módulo mais limpo.
 
     // Expõe a função pública
     return {
