@@ -5,70 +5,60 @@ const EditorActions = (() => {
      * Aplica formatação customizada ao documento no editor CKEditor.
      * @param {object} editor - A instância ativa do CKEditor.
      */
-   // Cole este código de diagnóstico no lugar da função formatDocument existente
-function formatDocument(editor) {
+    function formatDocument(editor) {
     if (!editor) {
         alert('Editor não está pronto. Tente novamente.');
         return;
     }
 
-    console.clear(); // Limpa o console para uma nova análise
-    console.log("--- INICIANDO DIAGNÓSTICO 'Formatar Doc' ---");
-
     const model = editor.model;
     const root = model.document.getRoot();
-    const children = Array.from(root.getChildren()); // Converte para array para facilitar a contagem
 
-    console.log(`[INFO] Documento encontrado com ${children.length} elemento(s) raiz.`);
-
-    if (children.length === 0) {
-        console.warn("[AVISO] O documento está vazio. Nenhuma formatação será aplicada.");
-        alert('O editor está vazio.');
-        return;
-    }
-
-    let paragraphsFound = 0;
-    let paragraphsModified = 0;
+    // Variáveis para contar as alterações e melhorar o feedback
+    let paragraphsAdjusted = 0;
+    let quotesCreated = 0;
 
     model.change(writer => {
-        children.forEach((child, index) => {
-            console.log(`\n[Elemento #${index + 1}] Analisando...`, child);
-
-            // VERIFICAÇÃO 1: É um parágrafo válido para formatação?
+        for (const child of root.getChildren()) {
+            // Aplica a regra apenas a parágrafos que não fazem parte de uma lista.
             if (child.is('element', 'paragraph') && !child.hasAttribute('listItemId')) {
-                paragraphsFound++;
                 const currentIndent = child.getAttribute('indent') || 0;
-                
-                console.log(`  -> É um parágrafo. Recuo (indent) atual: ${currentIndent}`);
 
-                // VERIFICAÇÃO 2: A lógica de formatação se aplica?
+                // LÓGICA FINAL E CORRIGIDA
+                // Se o recuo for maior que 1, converte para citação.
                 if (currentIndent > 1) {
-                    paragraphsModified++;
-                    console.log("    [AÇÃO] Recuo > 1. Convertendo para citação (blockQuote).");
                     writer.rename(child, 'blockQuote');
                     writer.removeAttribute('indent', child);
+                    quotesCreated++; // Incrementa o contador de citações
+                
+                // Se não houver recuo, aplica o recuo padrão e justifica.
                 } else if (currentIndent === 0) {
-                    paragraphsModified++;
-                    console.log("    [AÇÃO] Recuo == 0. Aplicando recuo 1 e justificação.");
                     writer.setAttribute('alignment', 'justify', child);
                     writer.setAttribute('indent', 1, child);
-                } else {
-                    console.log("    [IGNORADO] Parágrafo já possui recuo nível 1. Nenhuma ação necessária.");
+                    paragraphsAdjusted++; // Incrementa o contador de parágrafos
                 }
-            } else {
-                console.log("  -> Não é um parágrafo formatável (pode ser um título, lista, etc.).");
+                // Parágrafos com recuo nível 1 são ignorados e permanecem como estão.
             }
-        });
+        }
     });
 
-    console.log(`\n--- DIAGNÓSTICO FINALIZADO ---`);
-    console.log(`  - Parágrafos formatáveis encontrados: ${paragraphsFound}`);
-    console.log(`  - Parágrafos que deveriam ter sido modificados: ${paragraphsModified}`);
-
     editor.editing.view.focus();
-    alert(`Diagnóstico concluído! Verifique o console do navegador (F12) para os resultados.`);
-}
 
+    // Feedback aprimorado para o usuário
+    if (paragraphsAdjusted > 0 || quotesCreated > 0) {
+        let feedbackMessage = "Formatação concluída!\n";
+        if (paragraphsAdjusted > 0) {
+            feedbackMessage += `\n- ${paragraphsAdjusted} parágrafo(s) ajustado(s).`;
+        }
+        if (quotesCreated > 0) {
+            feedbackMessage += `\n- ${quotesCreated} citação(ões) criada(s).`;
+        }
+        alert(feedbackMessage);
+    } else {
+        alert('Nenhum parágrafo precisou de formatação.');
+    }
+}    
+   
     /**
      * Limpa todo o conteúdo do editor.
      * @param {object} editor - A instância ativa do CKEditor.
