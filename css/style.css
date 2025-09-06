@@ -1,182 +1,141 @@
-/* Configurações Globais */
+/* Configurações Globais /
 :root {
-    --primary-color: #ce2a66;
-    --primary-color-dark: #a12050;
-    /* Melhoria de Arquitetura: Variáveis para o layout da página */
-    --page-width: 21cm;
-    --page-height: 29.7cm;
-    --page-margin: 2cm;
+--primary-color: #ce2a66;
+--primary-color-dark: #a12050;
+/ Melhoria de Arquitetura: Variáveis para o layout da página */
+--page-width: 21cm;
+--page-height: 29.7cm;
+--page-margin: 2cm;
 }
-
 body, html {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f4f5f7;
-    height: 100vh;
+margin: 0;
+padding: 0;
+font-family: Arial, sans-serif;
+background-color: #f4f5f7;
+height: 100vh;
 }
-
 /* Container Principal */
 .app-container {
-    display: flex;
-    height: 100%;
+display: flex;
+height: 100%;
 }
-
 /* Área do Editor */
 .editor-area {
-    flex: 3;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    box-sizing: border-box;
+flex: 3;
+display: flex;
+flex-direction: column;
+padding: 0;
+box-sizing: border-box;
 }
-
 .toolbar {
-    background-color: #f8f9fa;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-bottom: none;
-    border-radius: 5px 5px 0 0;
+background-color: #f8f9fa;
+padding: 8px;
+border: 1px solid #ccc;
+border-bottom: none;
+border-radius: 5px 5px 0 0;
 }
-
-.toolbar button, .toolbar select {
-    padding: 5px 10px;
-    margin-right: 5px;
-    margin-bottom: 5px;
-    cursor: pointer;
-    border: 1px solid #aaa;
-    background-color: #fff;
-    vertical-align: middle;
-    border-radius: 6px;
-    transition: background-color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 38px;
-    min-height: 38px;
-}
-
-.toolbar button svg {
-    width: 20px;
-    height: 20px;
-    stroke-width: 1.5;
-    color: #333;
-}
-
 .text-editor {
-    flex-grow: 1;
-    border: 1px solid #ccc;
-    padding: 15px;
-    background-color: #ffd580;
-    overflow-y: auto;
-    font-size: 16px;
-    line-height: 1.5;
-    text-align: justify; /* Adicionado para justificar por padrão */
+flex-grow: 1;
+border: 1px solid #ccc;
+padding: 15px;
+background-color: #ffd580;
+overflow-y: auto;
+font-size: 16px;
+line-height: 1.5;
+text-align: justify; /* Adicionado para justificar por padrão */
 }
 .text-editor p {
-    margin-bottom: 1em;
+margin-bottom: 1em;
 }
-
 /* Área da Sidebar */
 .sidebar-area {
-    flex: 1;
-    background-color: #e9ecef;
-    border-left: 1px solid #ccc;
-    padding: 15px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+flex: 1;
+background-color: #e9ecef;
+border-left: 1px solid #ccc;
+padding: 15px;
+box-sizing: border-box;
+display: flex;
+flex-direction: column;
+height: 100vh;
 }
-
 .sidebar-area h3 {
-    margin-top: 0;
-    text-align: center;
-    color: #333;
+margin-top: 0;
+text-align: center;
+color: #333;
 }
-
 .sidebar-controls {
-    margin-bottom: 15px;
+margin-bottom: 15px;
 }
-
 #search-box {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+width: 100%;
+padding: 8px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 4px;
 }
-
-/* --- ESTILOS MODERNOS PARA ABAS (3D STACK) --- */
+/* --- ESTILOS MODERNOS PARA ABAS (3D STACK) --- /
 .tabs-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-bottom: 10px; /* Espaço para as sombras */
-    border-bottom: none;
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+padding-bottom: 10px; / Espaço para as sombras */
+border-bottom: none;
 }
-
 .tab-item {
-    padding: 8px 15px;
-    cursor: pointer;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.25s ease-in-out;
-    position: relative;
-    /* Variavel para cor dinâmica */
-    --tab-color: #6c757d; 
+padding: 8px 15px;
+cursor: pointer;
+font-size: 13px;
+display: flex;
+align-items: center;
+gap: 5px;
+transition: all 0.25s ease-in-out;
+position: relative;
+/* Variavel para cor dinâmica */
+--tab-color: #6c757d;
 }
-
 /* Aba ativa: no topo, destacada, com sombra e borda grossa */
 .tab-item.active {
-    z-index: 10;
-    color: #333;
-    border: 2px solid var(--tab-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1);
-    font-weight: bold;
-    border-radius: 8px;
-    transform: scale(1.03);
-    background-color: #fff;
+z-index: 10;
+color: #333;
+border: 2px solid var(--tab-color);
+box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1);
+font-weight: bold;
+border-radius: 8px;
+transform: scale(1.03);
+background-color: #fff;
 }
-
 /* Abas inativas: atrás, mais claras, simulando pilha */
 .tab-item:not(.active) {
-    z-index: 1;
-    color: white;
-    background-color: var(--tab-color);
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 8px;
-    opacity: 0.7;
+z-index: 1;
+color: white;
+background-color: var(--tab-color);
+border: 1px solid rgba(0,0,0,0.1);
+border-radius: 8px;
+opacity: 0.7;
 }
-
 .tab-item:hover:not(.active) {
-    opacity: 0.9;
-    transform: translateY(-2px);
+opacity: 0.9;
+transform: translateY(-2px);
 }
-
-/* --- ÁREA DE CONTEÚDO ATIVA --- */
+/* --- ÁREA DE CONTEÚDO ATIVA --- /
 #active-content-area {
-    position: relative; /* Adicionado para ancorar os botões de ação */
-    flex-grow: 1;
-    overflow: hidden;
-    display: flex; /* Para o UL crescer */
-    flex-direction: column;
-    border: 3px solid #ccc; /* Borda grossa padrão */
-    border-radius: 5px;
-    background-color: #fff;
-    transition: border-color 0.3s;
+position: relative; / Adicionado para ancorar os botões de ação /
+flex-grow: 1;
+overflow: hidden;
+display: flex; / Para o UL crescer /
+flex-direction: column;
+border: 3px solid #ccc; / Borda grossa padrão */
+border-radius: 5px;
+background-color: #fff;
+transition: border-color 0.3s;
 }
-
 #model-list {
-    list-style-type: none;
-    padding: 10px;
-    margin: 0;
-    overflow-y: auto;
-    flex-grow: 1;
+list-style-type: none;
+padding: 10px;
+margin: 0;
+overflow-y: auto;
+flex-grow: 1;
 }
-
 .model-item { background-color: #ffd580; border: 1px solid #daa520; border-radius: 5px; padding: 8px 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; transition: background-color 0.2s; }
 .model-item:hover { background-color: #ffc75f; }
 .model-item .model-name { font-weight: bold; font-size: 15px; cursor: default; word-break: break-word; padding-right: 10px; display: flex; align-items: center; gap: 8px; flex-grow: 1; }
@@ -187,8 +146,7 @@ body, html {
 .sidebar-footer button:hover { background-color: #e9ecef; }
 #add-new-tab-btn { background-color: #6c757d; color: white; border-color: #5a6268; }
 #add-new-tab-btn:hover { background-color: #5a6268; }
-
-/* --- ESTILOS DO MODAL UNIFICADO --- */
+/* --- ESTILOS DO MODAL UNIFICADO --- /
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
 .modal-overlay.visible { display: flex; }
 .modal-content { background-color: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
@@ -199,17 +157,17 @@ body, html {
 .modal-toolbar button { width: 30px; height: 30px; border: 1px solid #ddd; background-color: #fff; cursor: pointer; margin-right: 5px; }
 .modal-toolbar button:hover { background-color: #e9ecef; }
 .text-editor-modal {
-    width: 100%;
-    min-height: 150px;
-    max-height: 50vh; /* Define uma altura máxima de 50% da altura da tela */
-    overflow-y: auto; /* Adiciona a barra de rolagem vertical quando necessário */
-    padding: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 0 0 4px 4px;
-    background-color: #fff;
-    font-size: 16px;
-    margin-bottom: 15px;
+width: 100%;
+min-height: 150px;
+max-height: 50vh; / Define uma altura máxima de 50% da altura da tela /
+overflow-y: auto; / Adiciona a barra de rolagem vertical quando necessário */
+padding: 10px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 0 0 4px 4px;
+background-color: #fff;
+font-size: 16px;
+margin-bottom: 15px;
 }
 .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .modal-buttons button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
@@ -217,85 +175,79 @@ body, html {
 #modal-btn-save:hover { background-color: #218838; }
 #modal-btn-cancel { background-color: #dc3545; color: white; }
 #modal-btn-cancel:hover { background-color: #c82333; }
-
 /* --- ESTILOS DO NOVO GERENCIADOR DE SUBSTITUIÇÕES (DENTRO DO MODAL DINÂMICO) --- */
 .modal-description {
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 20px;
-    line-height: 1.4;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+font-size: 14px;
+color: #555;
+margin-bottom: 20px;
+line-height: 1.4;
+padding-bottom: 10px;
+border-bottom: 1px solid #eee;
 }
-
 #replacement-search-input {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    font-size: 16px;
+width: 100%;
+padding: 10px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 4px;
+margin-bottom: 15px;
+font-size: 16px;
 }
-
 #replacement-list-container {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 15px 0;
-    max-height: 300px; /* Altura máxima para permitir rolagem */
-    overflow-y: auto;  /* Habilita a rolagem vertical */
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
+list-style: none;
+padding: 0;
+margin: 0 0 15px 0;
+max-height: 300px; /* Altura máxima para permitir rolagem /
+overflow-y: auto; / Habilita a rolagem vertical */
+border: 1px solid #dee2e6;
+border-radius: 4px;
 }
-
 .replacement-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 10px;
 }
 .replacement-row:not(:last-child) {
-    border-bottom: 1px solid #e9ecef;
+border-bottom: 1px solid #e9ecef;
 }
 .replacement-row:hover {
-    background-color: #f8f9fa;
+background-color: #f8f9fa;
 }
-
 .replacement-row input {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    margin-bottom: 0; /* Sobrescreve regra geral do modal */
+flex: 1;
+padding: 8px;
+border: 1px solid #ddd;
+border-radius: 4px;
+font-size: 14px;
+margin-bottom: 0; /* Sobrescreve regra geral do modal */
 }
 .replacement-row .arrow {
-    font-weight: bold;
-    color: #888;
+font-weight: bold;
+color: #888;
 }
 .delete-rule-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    color: #adb5bd;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    cursor: pointer;
-    font-size: 20px;
-    font-weight: bold;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s, background-color 0.2s;
-    padding: 0;
-    flex-shrink: 0;
+background: transparent;
+border: 1px solid transparent;
+color: #adb5bd;
+border-radius: 50%;
+width: 28px;
+height: 28px;
+cursor: pointer;
+font-size: 20px;
+font-weight: bold;
+line-height: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: color 0.2s, background-color 0.2s;
+padding: 0;
+flex-shrink: 0;
 }
 .delete-rule-btn:hover {
-    background-color: #fbe0e3;
-    color: #dc3545;
+background-color: #fbe0e3;
+color: #dc3545;
 }
-
 /* Estilos para o Modal de Ditado */
 .dictation-content { background-color: #fff; padding: 20px 30px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; position: relative; }
 #dictation-lang-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; background-color: #f8f9fa; }
@@ -307,303 +259,275 @@ body, html {
 #dictation-close-btn { position: absolute; top: -10px; right: -5px; background: #e0e0e0; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 18px; line-height: 25px; text-align: center; cursor: pointer; font-weight: bold; }
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
 @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 123, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); } }
-
 /* Adicionado para feedback visual direto no botão da toolbar */
 #dictate-btn.listening {
-    animation: pulse-red 1.5s infinite;
+animation: pulse-red 1.5s infinite;
 }
 #dictate-btn.processing {
-    animation: pulse-blue 1.5s infinite;
+animation: pulse-blue 1.5s infinite;
 }
-
 .model-header { display: flex; align-items: center; margin-bottom: 8px; }
 .control-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .control-btn { padding: 10px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 13px; transition: filter 0.2s; }
 .control-btn:hover { filter: brightness(0.95); }
-.control-btn.btn-primary { 
-    background-color: var(--primary-color); 
-    color: white; 
-    border-color: var(--primary-color-dark); 
+.control-btn.btn-primary {
+background-color: var(--primary-color);
+color: white;
+border-color: var(--primary-color-dark);
 }
 .control-btn.btn-secondary { background-color: #f0f0f0; color: #333; border-color: #ccc; }
-.backup-status { 
-    margin-left: auto; /* Empurra para a direita */
-    padding: 5px 10px; 
-    font-size: 12px; 
-    color: #ffffff; 
-    background-color: var(--primary-color); 
-    border-radius: 4px; 
-    white-space: nowrap; /* Evita que o texto quebre */
+.backup-status {
+margin-left: auto; /* Empurra para a direita /
+padding: 5px 10px;
+font-size: 12px;
+color: #ffffff;
+background-color: var(--primary-color);
+border-radius: 4px;
+white-space: nowrap; / Evita que o texto quebre */
 }
-
 .text-editor ol { list-style: none; counter-reset: list-counter; margin-left: 3cm; padding-left: 0; }
 .text-editor ol > li { counter-increment: list-counter; position: relative; padding-left: 1.5em; margin-bottom: 0.5em; text-indent: 0; }
 .text-editor ol > li::before { content: counter(list-counter) "."; position: absolute; left: -1.5em; top: 0; width: 1.2em; text-align: right; font-weight: bold; }
-
 /* ESTILOS APRIMORADOS PARA BLOCKQUOTE - CITAÇÕES COM 7CM E ITÁLICO */
 .text-editor blockquote,
 .tox-editor-container blockquote,
 blockquote {
-    margin-left: 7cm !important;
-    margin-right: 0 !important;
-    padding-left: 15px;
-    border-left: 3px solid #ccc;
-    color: #333;
-    font-style: italic !important;
-    text-indent: 0 !important;
-    line-height: 1.5;
-    margin-top: 1em;
-    margin-bottom: 1em;
+margin-left: 7cm !important;
+margin-right: 0 !important;
+padding-left: 15px;
+border-left: 3px solid #ccc;
+color: #333;
+font-style: italic !important;
+text-indent: 0 !important;
+line-height: 1.5;
+margin-top: 1em;
+margin-bottom: 1em;
 }
-
 /* Garante que parágrafos dentro de blockquote não tenham recuo de primeira linha */
 .text-editor blockquote p,
 .tox-editor-container blockquote p,
 blockquote p {
-    text-indent: 0 !important;
-    margin-bottom: 0.5em;
+text-indent: 0 !important;
+margin-bottom: 0.5em;
 }
-
 /* --- ESTILOS UNIFICADOS PARA BOTÕES DE ÍCONE E AÇÕES DE ABAS --- */
 #tab-actions-container {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-    transition: opacity 0.3s, transform 0.3s;
-    transform: translateY(10px);
-    opacity: 0;
-    pointer-events: none;
+position: absolute;
+bottom: 10px;
+right: 10px;
+display: flex;
+gap: 8px;
+transition: opacity 0.3s, transform 0.3s;
+transform: translateY(10px);
+opacity: 0;
+pointer-events: none;
 }
 #tab-actions-container.visible {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
+transform: translateY(0);
+opacity: 1;
+pointer-events: auto;
 }
 .action-btn,
 .tab-action-btn {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    padding: 0;
+background: #f8f9fa;
+border: 1px solid #dee2e6;
+border-radius: 50%;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+padding: 0;
 }
 .action-btn:hover,
 .tab-action-btn:hover {
-    background-color: #e9ecef;
-    transform: scale(1.1);
-    border-color: #adb5bd;
+background-color: #e9ecef;
+transform: scale(1.1);
+border-color: #adb5bd;
 }
 .tab-action-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
+cursor: not-allowed;
+opacity: 0.5;
 }
 .action-btn {
-    width: 32px;
-    height: 32px;
+width: 32px;
+height: 32px;
 }
 .tab-action-btn {
-    width: 34px;
-    height: 34px;
+width: 34px;
+height: 34px;
 }
 .action-btn svg,
 .tab-action-btn svg {
-    stroke-width: 2;
-    color: #495057;
+stroke-width: 2;
+color: #495057;
 }
 .action-btn svg {
-    width: 16px;
-    height: 16px;
+width: 16px;
+height: 16px;
 }
 .tab-action-btn svg {
-    width: 18px;
-    height: 18px;
+width: 18px;
+height: 18px;
 }
-
 /* Pop-up da paleta de cores */
 .color-palette-popup {
-    position: absolute;
-    bottom: 50px;
-    right: 0;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 8px;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    z-index: 1010;
+position: absolute;
+bottom: 50px;
+right: 0;
+background: white;
+border: 1px solid #dee2e6;
+border-radius: 8px;
+padding: 8px;
+display: grid;
+grid-template-columns: repeat(6, 1fr);
+gap: 6px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+z-index: 1010;
 }
 .color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid white;
-    transition: transform 0.2s, box-shadow 0.2s;
+width: 24px;
+height: 24px;
+border-radius: 50%;
+cursor: pointer;
+border: 2px solid white;
+transition: transform 0.2s, box-shadow 0.2s;
 }
 .color-swatch:hover {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 2px #adb5bd;
+transform: scale(1.15);
+box-shadow: 0 0 0 2px #adb5bd;
 }
-
 #toolbar-logo {
-    max-height: 30px;
-    width: auto;
-    margin-right: 15px; /* Espaçamento entre o logo e os botões */
+max-height: 30px;
+width: auto;
+margin-right: 15px; /* Espaçamento entre o logo e os botões */
 }
-
 /* Animação para o spinner de carregamento */
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+from { transform: rotate(0deg); }
+to { transform: rotate(360deg); }
 }
-
 /* Aplica a animação ao ícone do spinner quando o botão de IA estiver desabilitado */
 .tox-tbtn[aria-label="Corrigir Texto com IA"][aria-disabled="true"] svg {
-    animation: spin 1s linear infinite;
+animation: spin 1s linear infinite;
 }
-
 /* Animação para o texto sendo processado - APRIMORADA */
 @keyframes pulse-yellow {
-    0% { background-color: rgba(255, 229, 100, 0.7); }
-    50% { background-color: rgba(255, 229, 100, 0.4); }
-    100% { background-color: rgba(255, 229, 100, 0.7); }
+0% { background-color: rgba(255, 229, 100, 0.7); }
+50% { background-color: rgba(255, 229, 100, 0.4); }
+100% { background-color: rgba(255, 229, 100, 0.7); }
 }
-
 .ia-processing {
-    animation: pulse-yellow 1.5s infinite;
-    border-radius: 3px;
-    background-color: rgba(255, 229, 100, 0.7);
-    transition: background-color 0.3s;
-    cursor: wait; /* Adiciona cursor de espera */
-    position: relative;
+animation: pulse-yellow 1.5s infinite;
+border-radius: 3px;
+background-color: rgba(255, 229, 100, 0.7);
+transition: background-color 0.3s;
+cursor: wait; /* Adiciona cursor de espera */
+position: relative;
 }
-
 /* Adiciona um indicador visual extra para o processamento da IA */
 .tox-editor-container .ia-processing {
-    cursor: wait;
+cursor: wait;
 }
-
 .ia-processing::after {
-    content: " ⏳";
-    font-size: 0.8em;
-    opacity: 0.7;
+content: " ⏳";
+font-size: 0.8em;
+opacity: 0.7;
 }
-
 /* --- Wrapper para o editor, agora sem padding para o layout de página inteira --- */
 .editor-wrapper {
-    position: relative;
-    flex-grow: 1;
-    background-color: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
+position: relative;
+flex-grow: 1;
+background-color: #f0f0f0;
+display: flex;
+flex-direction: column;
+overflow-y: auto;
 }
-
 /* --- Réguas ocultas --- */
 .ruler-container,
 #ruler-horizontal,
 #ruler-vertical,
 .ruler-marker {
-    display: none !important;
+display: none !important;
 }
-
-/* --- Editor TinyMCE configurado para ocupar todo o espaço --- */
+/* --- Editor TinyMCE configurado para ocupar todo o espaço --- /
 .tox-tinymce {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    border: none !important; /* Garante a remoção de bordas */
+width: 100%;
+height: 100%;
+box-sizing: border-box;
+border: none !important; / Garante a remoção de bordas */
 }
-
-/* --- Aprimoramento Visual da Toolbar do TinyMCE --- */
+/* --- Aprimoramento Visual da Toolbar do TinyMCE --- /
 .tox .tox-editor-header {
-    background-color: #ffffff; /* Fundo branco para um visual limpo */
-    border-bottom: 1px solid #e0e0e0; /* Linha de separação sutil */
-    padding: 4px 2px;
+background-color: #ffffff; / Fundo branco para um visual limpo /
+border-bottom: 1px solid #e0e0e0; / Linha de separação sutil */
+padding: 4px 2px;
 }
-
-/* --- Transforma a barra de ferramentas em um container flexível --- */
+/* --- Transforma a barra de ferramentas em um container flexível --- /
 .tox .tox-toolbar__primary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 8px; /* Adiciona um respiro nas laterais */
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 0 8px; / Adiciona um respiro nas laterais */
 }
-
 /* --- Garante que o grupo de botões não ocupe todo o espaço --- */
 .tox .tox-toolbar__group {
-    flex-shrink: 0;
+flex-shrink: 0;
 }
-
-/* --- Correção de Estilo dos Ícones --- */
-/* Garante que APENAS os nossos ícones customizados sejam renderizados como contornos */
+/* --- Correção de Estilo dos Ícones --- /
+/ Garante que APENAS os nossos ícones customizados sejam renderizados como contornos /
 .tox-tbtn[aria-label="Ditar texto"] svg,
 .tox-tbtn[aria-label="Corrigir Texto com IA"] svg,
 .tox-tbtn[aria-label="Gerenciar Substituições"] svg,
 .tox-tbtn[aria-label="Copiar Formatado (compatível com Google Docs)"] svg,
 .tox-tbtn[aria-label="Salvar como documento (.odt/.rtf)"] svg {
-    fill: none !important;
-    stroke: currentColor; /* Usa a cor do tema para consistência */
+fill: none !important;
+stroke: currentColor; / Usa a cor do tema para consistência */
 }
-
 /* O CKEditor cria sua própria estrutura. Esta regra garante que ele ocupe o espaço corretamente. */
 .editor-wrapper .ck.ck-editor {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+height: 100%;
+display: flex;
+flex-direction: column;
 }
-
 /* Garante que a área de edição (conteúdo) seja expansível */
 .editor-wrapper .ck.ck-editor__main {
-    flex-grow: 1;
-    overflow-y: auto;
+flex-grow: 1;
+overflow-y: auto;
 }
-
-/* Aplica o fundo amarelo e a justificação na área de texto, como antes */
+/* Aplica o fundo amarelo e a justificação na área de texto, como antes /
 .ck-editor__editable_inline {
-    background-color: #ffd580 !important;
-    padding: 0 15px !important; /* Mantém o espaçamento interno */
-    text-align: justify;
-    font-size: 16px;
-    line-height: 1.5;
+background-color: #ffd580 !important;
+padding: 0 15px !important; / Mantém o espaçamento interno */
+text-align: justify;
+font-size: 16px;
+line-height: 1.5;
 }
-
 /* Garante que os ícones SVG customizados sejam exibidos corretamente (sem preenchimento) */
 .ck.ck-button svg {
-    fill: none !important;
-    stroke: currentColor;
+fill: none !important;
+stroke: currentColor;
 }
-
-/* --- Estilos para a Barra de Ações com Ícones --- */
+/* --- Estilos para a Barra de Ações com Ícones --- /
 #sidebar-icon-actions {
-    display: flex;
-    justify-content: space-around; /* Distribui os botões igualmente */
-    align-items: center;
-    padding: 12px 0;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    border-top: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
+display: flex;
+justify-content: space-around; / Distribui os botões igualmente */
+align-items: center;
+padding: 12px 0;
+margin-top: 15px;
+margin-bottom: 5px;
+border-top: 1px solid #ddd;
+border-bottom: 1px solid #ddd;
 }
-
-/* Usamos a classe .action-btn que já existe e a especializamos aqui */
+/* Usamos a classe .action-btn que já existe e a especializamos aqui /
 #sidebar-icon-actions .action-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%; /* Deixa os botões redondos */
+width: 36px;
+height: 36px;
+border-radius: 50%; / Deixa os botões redondos */
 }
-
 /* Garante que os SVGs dentro dos botões tenham o tamanho certo */
 #sidebar-icon-actions .action-btn svg {
-    width: 20px;
-    height: 20px;
+width: 20px;
+height: 20px;
 }
