@@ -28,22 +28,104 @@ const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const formatDocBtn = document.getElementById('format-doc-btn');
 const clearDocBtn = document.getElementById('clear-doc-btn');
-const backupStatusEl = document.getElementById('backup-status');
+// REMOVIDO: const backupStatusEl = document.getElementById('backup-status');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 const sidebarBtnAi = document.getElementById('sidebar-btn-ai');
 const sidebarBtnDictate = document.getElementById('sidebar-btn-dictate');
 const sidebarBtnReplace = document.getElementById('sidebar-btn-replace');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
-function triggerAutoBackup() { const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); const timestamp = `${year}${month}${day}_${hours}${minutes}`; const filename = `${timestamp}_ModelosDosMeusDocumentos.json`; appState.lastBackupTimestamp = now.toISOString(); const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); updateBackupStatus(now); }
+
+// NOVO: Função para renderizar o status do backup no card
+function renderBackupStatus() {
+    const card = document.getElementById('backup-status-card');
+    if (!card) return; // Garante que o elemento existe
+
+    if (appState.lastBackupTimestamp) {
+        const date = new Date(appState.lastBackupTimestamp);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        card.innerHTML = `<span>Último Backup: ${day}/${month}/${year} ${hours}:${minutes}</span>`;
+    } else {
+        card.innerHTML = '<span>Nenhum backup recente.</span>';
+    }
+}
+
+// MODIFICADO: triggerAutoBackup agora chama renderBackupStatus
+function triggerAutoBackup() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timestamp = `${year}${month}${day}_${hours}${minutes}`;
+    const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
+
+    appState.lastBackupTimestamp = now.toISOString(); // Atualiza o timestamp no estado
+    renderBackupStatus(); // Chama a nova função para atualizar o UI
+
+    const dataStr = JSON.stringify(appState, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function debouncedTriggerAutoBackup() { clearTimeout(backupDebounceTimer); backupDebounceTimer = setTimeout(() => { triggerAutoBackup(); }, 2500); }
 function modifyStateAndBackup(modificationFn) { modificationFn(); saveStateToStorage(); debouncedTriggerAutoBackup(); }
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
 
 // --- FUNÇÕES DE PERSISTÊNCIA ---
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
-function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } if (appState.lastBackupTimestamp) { updateBackupStatus(new Date(appState.lastBackupTimestamp)); } else { updateBackupStatus(null); } if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; } }
+function loadStateFromStorage() {
+    const savedState = localStorage.getItem('editorModelosApp');
+    const setDefaultState = () => {
+        const defaultTabId = `tab-${Date.now()}`;
+        colorIndex = 0;
+        appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null };
+    };
+
+    if (savedState) {
+        try {
+            const parsedState = JSON.parse(savedState);
+            if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
+                appState = parsedState;
+                if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
+                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
+                }
+                appState.tabs.forEach(tab => {
+                    if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
+                        tab.color = getNextColor();
+                    }
+                });
+                if (!appState.replacements) {
+                    appState.replacements = [];
+                }
+            } else {
+                throw new Error("Formato de estado inválido.");
+            }
+        } catch (e) {
+            console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
+            setDefaultState();
+        }
+    } else {
+        setDefaultState();
+    }
+    // MODIFICADO: Chama a nova função de renderização
+    renderBackupStatus();
+    
+    if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; }
+}
 
 // --- FUNÇÕES DO EDITOR (ATUALIZADA) ---
 function insertModelContent(content, tabId) {
@@ -258,7 +340,55 @@ function deleteModel(modelId) { const model = appState.models.find(m => m.id ===
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
 function moveModelToAnotherTab(modelId) { const model = appState.models.find(m => m.id === modelId); const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId); if (destinationOptions.length === 0) { alert("Não há outras abas para mover este modelo."); return; } const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) { modifyStateAndBackup(() => { model.tabId = destinationOptions[choiceIndex].id; render(); }); } else if(choice) { alert("Seleção inválida."); } }
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
-function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); const now = new Date(); appState.lastBackupTimestamp = now.toISOString(); updateBackupStatus(now); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) {
+            importFileInput.value = '';
+            return;
+        }
+        try {
+            const importedState = JSON.parse(e.target.result);
+
+            // NOVO: Lógica para extrair e usar o timestamp do nome do arquivo
+            const fileNameMatch = file.name.match(/(\d{8})_(\d{4})/); // Ex: "YYYYMMDD_HHmm"
+            if (fileNameMatch) {
+                const dateStr = fileNameMatch[1]; // "YYYYMMDD"
+                const timeStr = fileNameMatch[2]; // "HHmm"
+                const year = dateStr.substring(0, 4);
+                const month = parseInt(dateStr.substring(4, 6), 10) - 1; // Mês é 0-indexed
+                const day = dateStr.substring(6, 8);
+                const hours = timeStr.substring(0, 2);
+                const minutes = timeStr.substring(2, 4);
+                const fileTimestamp = new Date(year, month, day, hours, minutes).toISOString();
+                
+                // Mantém o timestamp mais recente entre o importado e o que já existe
+                if (!importedState.lastBackupTimestamp || fileTimestamp > importedState.lastBackupTimestamp) {
+                    importedState.lastBackupTimestamp = fileTimestamp;
+                }
+            }
+            
+            if (importedState.models && importedState.tabs && importedState.activeTabId) {
+                appState = importedState;
+                saveStateToStorage();
+                render();
+                alert('Modelos importados com sucesso!');
+                // MODIFICADO: Chama a nova função de renderização
+                renderBackupStatus();
+            } else {
+                throw new Error('Formato de arquivo inválido.');
+            }
+        } catch (error) {
+            alert('Erro ao importar o arquivo. Verifique se é um JSON válido.');
+        } finally {
+            importFileInput.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
 
 // --- INICIALIZAÇÃO DA APLICAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
@@ -286,6 +416,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // NOVO: Adiciona classe de processamento e desabilita o botão
+            sidebarBtnAi.classList.add('is-processing');
+            sidebarBtnAi.disabled = true;
+
             GeminiService.correctText(text, CONFIG.apiKey).then(correctedText => {
                 model.change(writer => {
                     model.insertContent(writer.createText(correctedText), selection);
@@ -293,6 +427,10 @@ window.addEventListener('DOMContentLoaded', () => {
             }).catch(error => {
                 console.error("Erro na correção:", error);
                 alert('Erro ao corrigir o texto.');
+            }).finally(() => {
+                // NOVO: Remove classe de processamento e reabilita o botão
+                sidebarBtnAi.classList.remove('is-processing');
+                sidebarBtnAi.disabled = false;
             });
         });
 
@@ -354,6 +492,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     langSelect: document.getElementById('dictation-lang-select'), 
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
+                    toolbarMicButton: sidebarBtnDictate, // NOVO: Passa a referência do botão da toolbar
                     onResult: (transcript) => {
                         // **INÍCIO DA CORREÇÃO**
                         // O método antigo 'editor.data.insertContent' estava incorreto.
