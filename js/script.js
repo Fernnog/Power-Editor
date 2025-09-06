@@ -53,16 +53,10 @@ function insertModelContent(content, tabId) {
         render();
     }
     if (ckEditorInstance) {
-        // A API correta para inserir conteúdo HTML preservando a formatação
-        ckEditorInstance.model.change(writer => {
-            const viewFragment = ckEditorInstance.data.processor.toView(content);
-            const modelFragment = ckEditorInstance.data.toModel(viewFragment);
-            ckEditorInstance.model.insertContent(modelFragment, ckEditorInstance.model.document.selection);
-        });
+        ckEditorInstance.data.insertContent(content);
         ckEditorInstance.editing.view.focus();
     }
 }
-
 
 // --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
@@ -263,6 +257,10 @@ window.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage(); 
     render(); 
 
+    // --- MELHORIA DE UX: Desabilitar botões que dependem do editor até que ele carregue
+    formatDocBtn.disabled = true;
+    clearDocBtn.disabled = true;
+
     // --- INICIALIZAÇÃO E LISTENERS DOS BOTÕES DE AÇÃO DA SIDEBAR ---
     if (sidebarBtnAi && sidebarBtnDictate && sidebarBtnReplace) {
         sidebarBtnAi.innerHTML = ICON_AI_BRAIN;
@@ -315,15 +313,32 @@ window.addEventListener('DOMContentLoaded', () => {
         .create(document.querySelector('#editor'), CKEDITOR_CONFIG)
         .then(editor => {
             console.log('CKEditor (Decoupled) inicializado com sucesso.');
-            window.ckEditorInstance = editor;
+            ckEditorInstance = editor;
 
-            // Adiciona a barra de ferramentas ao container especificado no HTML
             const toolbarContainer = document.querySelector('.toolbar');
             if (toolbarContainer) {
                  toolbarContainer.appendChild(editor.ui.view.toolbar.element);
             } else {
                 console.warn("Container da toolbar (.toolbar) não encontrado. A barra de ferramentas não será exibida.");
             }
+            
+            // --- CORREÇÃO CRÍTICA: Ativar os botões da sidebar APENAS APÓS o editor estar pronto ---
+            
+            // 1. Ativação dos listeners
+            formatDocBtn.addEventListener('click', () => {
+                EditorActions.formatDocument(ckEditorInstance);
+            });
+            
+            clearDocBtn.addEventListener('click', () => {
+                if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
+                    // A função agora está em EditorActions para melhor organização
+                    EditorActions.clearDocument(ckEditorInstance);
+                }
+            });
+
+            // 2. Re-habilita os botões para uso
+            formatDocBtn.disabled = false;
+            clearDocBtn.disabled = false;
 
             // Re-conecta o ditado ao novo editor
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
@@ -333,9 +348,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
                     onResult: (transcript) => { 
-                        editor.model.change(writer => {
-                            editor.model.insertContent(writer.createText(transcript), editor.model.document.selection);
-                        });
+                        editor.data.insertContent(transcript); 
                     } 
                 });
                 
@@ -351,24 +364,11 @@ window.addEventListener('DOMContentLoaded', () => {
             console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
         });
 
-    // --- EVENT LISTENERS DA SIDEBAR ---
+    // --- EVENT LISTENERS DA SIDEBAR (sem os que foram movidos) ---
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    
-    formatDocBtn.addEventListener('click', () => {
-        EditorActions.formatDocument(ckEditorInstance);
-    });
-
-    clearDocBtn.addEventListener('click', () => {
-        if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
-            if(ckEditorInstance) {
-                ckEditorInstance.setData('');
-            }
-        }
-    });
-
     searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
     exportBtn.addEventListener('click', exportModels);
