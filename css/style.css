@@ -32,11 +32,13 @@ body, html {
 }
 
 .toolbar {
-    background-color: #f8f9fa;
-    padding: 8px;
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 5px 5px 0 0;
     border: 1px solid #ccc;
     border-bottom: none;
-    border-radius: 5px 5px 0 0;
+    display: flex;
+    align-items: center;
 }
 
 .toolbar button, .toolbar select {
@@ -606,4 +608,12 @@ blockquote p {
 #sidebar-icon-actions .action-btn svg {
     width: 20px;
     height: 20px;
-}```
+}
+
+/* ADICIONADO: ESTILO PARA CITAÇÃO DE 6CM NO CKEDITOR */
+.ck-editor__editable_inline blockquote {
+    margin-left: 6cm;
+    font-style: italic;
+    border-left: 3px solid #ccc;
+    padding-left: 10px;
+}
