@@ -33,10 +33,14 @@
                 <span>Nenhum backup recente.</span>
             </div>
             <div class="sidebar-controls">
-                <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+                <!-- INÍCIO DA ALTERAÇÃO: Wrapper adicionado para o campo de busca e o botão de limpar -->
+                <div class="search-wrapper">
+                    <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+                    <button id="search-clear-btn" class="search-clear-btn" title="Limpar busca">&times;</button>
+                </div>
+                <!-- FIM DA ALTERAÇÃO -->
                 <div class="control-buttons-grid">
-                    <button id="search-btn" class="control-btn btn-secondary">Pesquisar</button>
-                    <button id="clear-search-btn" class="control-btn btn-secondary">Limpar Pesquisa</button>
+                    <!-- ALTERAÇÃO: Botões de 'Pesquisar' e 'Limpar Pesquisa' removidos -->
                     <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
                     <button id="clear-doc-btn" class="control-btn btn-primary">Apagar Doc</button>
                 </div>
