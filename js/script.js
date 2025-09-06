@@ -53,8 +53,16 @@ function insertModelContent(content, tabId) {
         render();
     }
     if (ckEditorInstance) {
-        ckEditorInstance.data.insertContent(content);
-        ckEditorInstance.editing.view.focus();
+        const editor = ckEditorInstance;
+        
+        // CORREÇÃO: Este é o método oficial e robusto para inserir conteúdo HTML
+        editor.model.change(writer => {
+            const viewFragment = editor.data.processor.toView(content);
+            const modelFragment = editor.data.toModel(viewFragment);
+            editor.model.insertContent(modelFragment, editor.model.document.selection);
+        });
+
+        editor.editing.view.focus();
     }
 }
 
@@ -331,7 +339,6 @@ window.addEventListener('DOMContentLoaded', () => {
             
             clearDocBtn.addEventListener('click', () => {
                 if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
-                    // A função agora está em EditorActions para melhor organização
                     EditorActions.clearDocument(ckEditorInstance);
                 }
             });
