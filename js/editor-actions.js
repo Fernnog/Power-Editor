@@ -5,7 +5,7 @@ const EditorActions = (() => {
      * Aplica formatação customizada ao documento no editor CKEditor.
      * @param {object} editor - A instância ativa do CKEditor.
      */
-   function formatDocument(editor) {
+  function formatDocument(editor) {
     if (!editor) {
         alert('Editor não está pronto. Tente novamente.');
         return;
@@ -14,39 +14,39 @@ const EditorActions = (() => {
     const model = editor.model;
     const root = model.document.getRoot();
 
-    let paragraphsAdjusted = 0;
+    let paragraphsAligned = 0;
     let quotesCreated = 0;
 
-    // É crucial envolver todas as operações em um único bloco 'change'
-    // para garantir que tudo seja tratado como uma única ação de "desfazer".
     model.change(writer => {
         for (const child of root.getChildren()) {
+            // A verificação para ignorar itens de lista continua crucial
             if (child.is('element', 'paragraph') && !child.hasAttribute('listItemId')) {
                 const currentIndent = child.getAttribute('indent') || 0;
 
+                // REGRA 1: Se o recuo for grande, transforma em citação.
                 if (currentIndent > 1) {
-                    // Seleciona o parágrafo inteiro antes de executar o comando
                     writer.setSelection(child, 'on');
-                    editor.execute('blockQuote'); // Comando para criar citação
+                    editor.execute('blockQuote');
                     quotesCreated++;
-                } else if (currentIndent === 0) {
-                    // Seleciona o parágrafo inteiro para aplicar os comandos
+                
+                // REGRA 2: Se o recuo for pequeno (nível 1), remove o recuo.
+                } else if (currentIndent === 1) {
                     writer.setSelection(child, 'on');
-                    editor.execute('alignment', { value: 'justify' }); // Comando para justificar
-                    editor.execute('indent'); // Comando para aumentar o recuo em 1 nível
-                    paragraphsAdjusted++;
+                    editor.execute('outdent'); // Comando para remover recuo
+                    paragraphsAligned++;
                 }
+                // REGRA 3: Se o recuo for 0, nenhuma ação é necessária.
             }
         }
     });
 
     editor.editing.view.focus();
 
-    // Feedback aprimorado para o usuário
-    if (paragraphsAdjusted > 0 || quotesCreated > 0) {
+    // Feedback final e aprimorado para o usuário
+    if (paragraphsAligned > 0 || quotesCreated > 0) {
         let feedbackMessage = "Formatação concluída!\n";
-        if (paragraphsAdjusted > 0) {
-            feedbackMessage += `\n- ${paragraphsAdjusted} parágrafo(s) ajustado(s).`;
+        if (paragraphsAligned > 0) {
+            feedbackMessage += `\n- ${paragraphsAligned} parágrafo(s) alinhado(s) à margem.`;
         }
         if (quotesCreated > 0) {
             feedbackMessage += `\n- ${quotesCreated} citação(ões) criada(s).`;
