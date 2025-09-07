@@ -48,13 +48,29 @@ const EditorActions = (() => {
                     const smallIndentMatch = textContent.match(/^\s{1,5}/);
 
                     if (largeIndentMatch || smallIndentMatch) {
-                        // Remove os espaços iniciais do primeiro nó de texto
+                        
+                        // --- INÍCIO DA CORREÇÃO ---
+                        // A lógica foi alterada para usar a API correta do CKEditor 5,
+                        // que não possui o método `writer.setText`.
+                        
                         const textNodes = Array.from(child.getChildren()).filter(node => node.is('text'));
                         if (textNodes.length > 0) {
                             const firstTextNode = textNodes[0];
-                            const newData = firstTextNode.data.replace(/^\s+/, '');
-                            writer.setText(newData, firstTextNode);
+                            // Encontra a correspondência exata dos espaços em branco no início do nó de texto.
+                            const indentMatch = firstTextNode.data.match(/^\s+/);
+                            
+                            if (indentMatch) {
+                                // Cria um "Range" (intervalo) que seleciona apenas os espaços em branco.
+                                const rangeToRemove = writer.createRange(
+                                    writer.createPositionAt(firstTextNode, 0),
+                                    writer.createPositionAt(firstTextNode, indentMatch[0].length)
+                                );
+                                // Usa o método correto `writer.remove()` para apagar apenas o intervalo selecionado.
+                                writer.remove(rangeToRemove);
+                            }
                         }
+                        // --- FIM DA CORREÇÃO ---
+
 
                         if (largeIndentMatch) {
                             // Envolve o parágrafo em um blockQuote
@@ -99,4 +115,4 @@ const EditorActions = (() => {
         formatDocument,
         clearDocument
     };
-})();
+})();```
