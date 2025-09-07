@@ -1,7 +1,13 @@
 // js/ckeditor-formatdoc-command.js
 
+// --- INÍCIO DA CORREÇÃO ---
+// Acessamos as classes base a partir do objeto 'core' do editor.
+const Command = DecoupledEditor.core.Command;
+const Plugin = DecoupledEditor.core.Plugin;
+// --- FIM DA CORREÇÃO ---
+
 // Um "Comando" é a lógica da ação em si.
-class FormatDocumentCommand extends DecoupledEditor.Command {
+class FormatDocumentCommand extends Command { // Agora estende a constante correta
     execute() {
         const editor = this.editor;
         const model = editor.model;
@@ -11,8 +17,6 @@ class FormatDocumentCommand extends DecoupledEditor.Command {
         let quotesCreated = 0;
 
         model.change(writer => {
-            // Iteramos de trás para frente para evitar erros de referência
-            // ao modificar a estrutura do documento durante o loop.
             const childrenToProcess = Array.from(root.getChildren()).reverse();
 
             for (const child of childrenToProcess) {
@@ -65,7 +69,7 @@ class FormatDocumentCommand extends DecoupledEditor.Command {
 }
 
 // Um "Plugin" é o que 'instala' o nosso comando no editor.
-class FormatDocPlugin extends DecoupledEditor.Plugin {
+class FormatDocPlugin extends Plugin { // Agora estende a constante correta
     init() {
         this.editor.commands.add('formatDocument', new FormatDocumentCommand(this.editor));
     }
