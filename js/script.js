@@ -454,7 +454,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             
             formatDocBtn.addEventListener('click', () => {
-                EditorActions.formatDocument(ckEditorInstance);
+                ckEditorInstance.execute('formatDocument');
             });
             
             clearDocBtn.addEventListener('click', () => {
