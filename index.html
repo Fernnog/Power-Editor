@@ -6,7 +6,7 @@
     <title>Power Editor</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/decoupled-document/ckeditor.js"></script>
+    <!-- O script principal do CKEditor foi movido para o final do body para otimizar o carregamento -->
 </head>
 <body>
 
@@ -105,16 +105,31 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/speech.js"></script>
-    <script src="js/editor-actions.js"></script>
-    <script src="js/backup-manager.js"></script>
-    <script src="js/ModalManager.js"></script>
-    <script src="js/gemini-service.js"></script>
-    <!-- O novo arquivo de ícones deve ser carregado ANTES dos scripts que o utilizam -->
-    <script src="js/ui-icons.js"></script> 
-    <script src="js/ckeditor-formatdoc-command.js"></script>
-    <script src="js/ckeditor-config.js"></script>
-    <script src="js/script.js"></script>
-    </body>
+    <!-- --- INÍCIO DA SEÇÃO DE SCRIPTS CORRIGIDA E OTIMIZADA --- -->
+
+    <!-- 1. Carrega a biblioteca principal do Editor. Essencial, deve ser o primeiro. -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/decoupled-document/ckeditor.js"></script>
+    
+    <!-- 2. Carrega nossas dependências e módulos de suporte com 'defer' para não bloquear a renderização. -->
+    <script src="js/config.js" defer></script>
+    <script src="js/speech.js" defer></script>
+    <script src="js/backup-manager.js" defer></script>
+    <script src="js/ModalManager.js" defer></script>
+    <script src="js/gemini-service.js" defer></script>
+    <script src="js/ui-icons.js" defer></script> 
+    
+    <!-- 3. Agora que o Editor existe, podemos carregar nosso plugin customizado que depende dele. -->
+    <script src="js/ckeditor-formatdoc-command.js" defer></script>
+
+    <!-- 4. Agora que nosso plugin existe, podemos carregar a configuração que o utiliza. -->
+    <script src="js/ckeditor-config.js" defer></script>
+
+    <!-- 5. O módulo de ações que ainda contém a função 'clearDocument'. -->
+    <script src="js/editor-actions.js" defer></script>
+
+    <!-- 6. Finalmente, o script principal que une tudo e inicializa a aplicação. -->
+    <script src="js/script.js" defer></script>
+
+    <!-- --- FIM DA SEÇÃO DE SCRIPTS --- -->
+</body>
 </html>
