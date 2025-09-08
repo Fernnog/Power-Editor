@@ -1,104 +1,80 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Documentos Avançado</title>
+    <title>Editor de Documentos</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Área Principal do Editor -->
-        <main class="editor-area">
+        <!-- Área do Editor -->
+        <div class="editor-area">
             <div class="toolbar">
-                <!-- Botões de Ação Rápida -->
-                <div class="control-buttons-grid">
-                    <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
-                    <button id="clear-doc-btn" class="control-btn btn-secondary">Apagar Doc</button>
+                <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
+                <button id="clear-doc-btn" class="control-btn btn-secondary">Apagar Doc</button>
+                <div id="backup-status-card">
+                    <span id="backup-status">Carregando...</span>
                 </div>
-                <div id="backup-status" class="backup-status">Aguardando alterações...</div>
             </div>
             <div class="editor-wrapper">
                 <div class="text-editor">
-                    <!-- O CKEditor será renderizado aqui -->
+                    <!-- O CKEditor será instanciado aqui -->
                 </div>
             </div>
-        </main>
+        </div>
 
-        <!-- Barra Lateral de Modelos -->
-        <aside class="sidebar-area">
+        <!-- Área da Sidebar -->
+        <div class="sidebar-area">
             <h3>Modelos de Documento</h3>
-            <div id="backup-status-card">
-                <span>Backup Automático Ativado</span>
+            <div class="search-wrapper">
+                <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU'">
+                <button class="search-clear-btn">&times;</button>
             </div>
-            <div class="sidebar-controls">
-                <div class="search-wrapper">
-                    <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU'">
-                    <button class="search-clear-btn" style="display: none;">&times;</button>
+            <div id="tabs-container" class="tabs-container">
+                <!-- Abas serão renderizadas aqui -->
+            </div>
+            <div id="active-content-area">
+                <ul id="model-list">
+                    <!-- Modelos serão renderizados aqui -->
+                </ul>
+                <div id="tab-actions-container">
+                    <button class="tab-action-btn" id="rename-tab-btn" title="Renomear Aba">${ICON_PENCIL}</button>
+                    <button class="tab-action-btn" id="change-color-btn" title="Mudar Cor">${ICON_PALETTE}</button>
+                    <button class="tab-action-btn" id="delete-tab-btn" title="Excluir Aba">${ICON_TRASH}</button>
                 </div>
             </div>
             
-            <div class="tabs-container" id="tabs-list">
-                <!-- Abas serão renderizadas aqui pelo JavaScript -->
-            </div>
-
-            <div id="active-content-area">
-                <ul id="model-list">
-                    <!-- Modelos da aba ativa serão renderizados aqui -->
-                </ul>
-                <div id="tab-actions-container">
-                    <!-- Botões de ação da aba (renomear, cor, excluir) -->
-                </div>
-            </div>
-
+            <!-- INÍCIO DA ALTERAÇÃO: Substituição da estrutura de botões -->
             <div id="sidebar-icon-actions">
-                 <!-- Botões de ícone como Gerenciar Substituições -->
+                <button id="add-tab-icon-btn" class="action-btn" title="Nova Aba"></button>
+                <button id="import-btn-icon" class="action-btn" title="Importar Backup"></button>
+                <button id="export-btn-icon" class="action-btn" title="Exportar Backup"></button>
             </div>
+            <!-- FIM DA ALTERAÇÃO: O antigo 'sidebar-footer' foi removido -->
 
-            <div class="sidebar-footer">
-                <button id="add-new-tab-btn">Nova Aba</button>
-                <button id="import-btn">Importar</button>
-                <button id="export-btn">Exportar</button>
-            </div>
-        </aside>
+        </div>
     </div>
 
     <!-- Modal Unificado -->
     <div id="modal-container" class="modal-overlay">
         <div class="modal-content">
-            <h3 id="modal-title">Título do Modal</h3>
-            <div id="modal-dynamic-content">
-                <!-- Conteúdo dinâmico será injetado aqui -->
-            </div>
+            <h3 id="modal-title"></h3>
+            <div id="modal-dynamic-content"></div>
             <div class="modal-buttons">
                 <button id="modal-btn-cancel">Cancelar</button>
-                <button id="modal-btn-save">Salvar e Fechar</button>
+                <button id="modal-btn-save">Salvar</button>
             </div>
         </div>
     </div>
     
-    <!-- ======================================================= -->
-    <!--          ORDEM DE CARREGAMENTO DOS SCRIPTS              -->
-    <!-- A ordem a seguir é crucial para o funcionamento correto -->
-    <!-- ======================================================= -->
-
-    <!-- Módulos sem dependências diretas -->
-    <script src="js/ui-icons.js"></script>
-    
-    <!-- Biblioteca principal do CKEditor (DEVE VIR ANTES DOS PLUGINS) -->
+    <!-- Scripts -->
     <script src="https://cdn.ckeditor.com/ckeditor5/35.4.0/decoupled-document/ckeditor.js"></script>
-
-    <!-- Nosso plugin customizado (DEVE VIR APÓS A BIBLIOTECA E ANTES DO SCRIPT.JS) -->
-    <script src="js/ckeditor-formatdoc-command.js"></script>
-
-    <!-- Módulos de suporte da aplicação -->
-    <script src="js/ModalManager.js"></script>
+    <script src="js/ui-icons.js"></script>
     <script src="js/backup-manager.js"></script>
+    <script src="js/ModalManager.js"></script>
     <script src="js/editor-actions.js"></script>
-    <!-- Outros módulos como 'speech.js' ou 'gemini-service.js' viriam aqui -->
-
-    <!-- Script principal que inicializa a aplicação (DEVE SER O ÚLTIMO) -->
+    <script src="js/ckeditor-formatdoc-command.js"></script>
     <script src="js/script.js"></script>
-
 </body>
 </html>
