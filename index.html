@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,14 +8,10 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Área do Editor -->
+        <!-- ÁREA DO EDITOR -->
         <div class="editor-area">
             <div class="toolbar">
-                <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
-                <button id="clear-doc-btn" class="control-btn btn-secondary">Apagar Doc</button>
-                <div id="backup-status-card">
-                    <span id="backup-status">Carregando...</span>
-                </div>
+                <!-- A toolbar customizada do editor e botões de ação serão inseridos aqui -->
             </div>
             <div class="editor-wrapper">
                 <div class="text-editor">
@@ -24,43 +20,53 @@
             </div>
         </div>
 
-        <!-- Área da Sidebar -->
+        <!-- ÁREA DA SIDEBAR -->
         <div class="sidebar-area">
             <h3>Modelos de Documento</h3>
-            <div class="search-wrapper">
-                <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU'">
-                <button class="search-clear-btn">&times;</button>
+            <div id="backup-status-card">
+                <span id="backup-status">Nenhum backup realizado ainda.</span>
             </div>
-            <div id="tabs-container" class="tabs-container">
-                <!-- Abas serão renderizadas aqui -->
+            <div class="sidebar-controls">
+                <div class="search-wrapper">
+                    <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU'">
+                    <button class="search-clear-btn">&times;</button>
+                </div>
+                 <div class="control-buttons-grid">
+                    <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
+                    <button id="clear-doc-btn" class="control-btn btn-secondary">Apagar Doc</button>
+                </div>
+            </div>
+
+            <div class="tabs-container">
+                <!-- Abas de modelos serão renderizadas aqui -->
             </div>
             <div id="active-content-area">
                 <ul id="model-list">
-                    <!-- Modelos serão renderizados aqui -->
+                    <!-- A lista de modelos será renderizada aqui -->
                 </ul>
                 <div id="tab-actions-container">
-                    <button class="tab-action-btn" id="rename-tab-btn" title="Renomear Aba">${ICON_PENCIL}</button>
-                    <button class="tab-action-btn" id="change-color-btn" title="Mudar Cor">${ICON_PALETTE}</button>
-                    <button class="tab-action-btn" id="delete-tab-btn" title="Excluir Aba">${ICON_TRASH}</button>
+                    <!-- Ações da aba (editar, cor, excluir) serão renderizadas aqui -->
                 </div>
             </div>
             
-            <!-- INÍCIO DA ALTERAÇÃO: Substituição da estrutura de botões -->
             <div id="sidebar-icon-actions">
-                <button id="add-tab-icon-btn" class="action-btn" title="Nova Aba"></button>
-                <button id="import-btn-icon" class="action-btn" title="Importar Backup"></button>
-                <button id="export-btn-icon" class="action-btn" title="Exportar Backup"></button>
+                <!-- Botões de ação globais da sidebar serão inseridos aqui -->
             </div>
-            <!-- FIM DA ALTERAÇÃO: O antigo 'sidebar-footer' foi removido -->
 
+            <div class="sidebar-footer">
+                <button id="import-btn">Importar</button>
+                <button id="export-btn">Exportar</button>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Unificado -->
-    <div id="modal-container" class="modal-overlay">
+    <!-- MODAL UNIFICADO -->
+    <div class="modal-overlay" id="modal-container">
         <div class="modal-content">
-            <h3 id="modal-title"></h3>
-            <div id="modal-dynamic-content"></div>
+            <h3 id="modal-title">Título do Modal</h3>
+            <div id="modal-dynamic-content">
+                <!-- Conteúdo dinâmico será injetado aqui pelo ModalManager.js -->
+            </div>
             <div class="modal-buttons">
                 <button id="modal-btn-cancel">Cancelar</button>
                 <button id="modal-btn-save">Salvar</button>
@@ -68,13 +74,22 @@
         </div>
     </div>
     
-    <!-- Scripts -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/35.4.0/decoupled-document/ckeditor.js"></script>
+    <!-- BIBLIOTECAS E SCRIPTS DA APLICAÇÃO -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/decoupled-document/ckeditor.js"></script>
+    
+    <!-- Módulos da Aplicação -->
     <script src="js/ui-icons.js"></script>
-    <script src="js/backup-manager.js"></script>
     <script src="js/ModalManager.js"></script>
+    <script src="js/backup-manager.js"></script>
     <script src="js/editor-actions.js"></script>
-    <script src="js/ckeditor-formatdoc-command.js"></script>
+    <script src="js/speech.js"></script>
+    <script src="js/gemini-service.js"></script>
+    <script src="js/config.js"></script> <!-- Arquivo local do usuário para a chave de API -->
+    <script src="js/ckeditor-config.js"></script>
+    
+    <!-- A linha <script src="js/ckeditor-formatdoc-command.js"></script> foi REMOVIDA daqui -->
+    
+    <!-- Script Principal -->
     <script src="js/script.js"></script>
 </body>
 </html>
