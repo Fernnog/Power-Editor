@@ -1,264 +1,353 @@
-// js/script.js (Versão Completa e Corrigida)
+// js/script.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    _renderStaticIcons();
-    _initializeApp();
-});
+    // --- ESTADO DA APLICAÇÃO ---
+    let appState = {
+        tabs: [],
+        models: [],
+        activeTabId: null,
+        editor: null,
+        replacements: [] // Adicionado para armazenar as regras de substituição
+    };
 
-let appState = {
-    tabs: [],
-    models: {},
-    activeTabId: null,
-};
+    // --- ELEMENTOS DO DOM ---
+    const tabsContainer = document.getElementById('tabs-container');
+    const modelList = document.getElementById('model-list');
+    const searchBox = document.getElementById('search-box');
+    const activeContentArea = document.getElementById('active-content-area');
+    
+    // Botões principais
+    const formatDocBtn = document.getElementById('format-doc-btn');
+    const clearDocBtn = document.getElementById('clear-doc-btn');
+    const importBtn = document.getElementById('import-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const addModelBtn = document.getElementById('add-new-model-btn');
+    const addNewTabBtn = document.getElementById('add-new-tab-btn');
 
-let editor = null;
+    // --- INICIALIZAÇÃO DO CKEDITOR ---
+    async function initCKEditor() {
+        try {
+            // --- INÍCIO DA NOVA LÓGICA DO PLUGIN 'FORMATAR DOC' ---
+            // Este plugin é definido localmente para garantir que ele tenha acesso ao 'editor'
+            // no momento certo, resolvendo o erro 'Cannot read properties of undefined (reading 'Command')'.
+            function FormatDocPlugin(editor) {
+                // Registra o comando 'formatDocument' no núcleo do editor.
+                editor.commands.add('formatDocument', {
+                    execute: () => {
+                        const model = editor.model;
+                        const root = model.document.getRoot();
 
-/**
- * Ponto de entrada da aplicação. Carrega o estado e inicializa a UI e o editor.
- */
-function _initializeApp() {
-    _loadState();
-    _initializeUI();
-    _initializeEditor();
-    _attachEventListeners();
-}
+                        // Envolve todas as alterações em um único bloco 'change' para otimização e 'undo'
+                        model.change(writer => {
+                            // Itera sobre todos os elementos filhos diretos do editor (parágrafos, listas, etc.)
+                            for (const child of root.getChildren()) {
+                                // Critério 1: Ignora qualquer elemento que não seja um parágrafo.
+                                if (!child.is('element', 'paragraph')) {
+                                    continue;
+                                }
 
-/**
- * Renderiza os ícones estáticos da aplicação que não dependem do estado.
- * CORREÇÃO: Esta função preenche os botões da sidebar, tornando-os visíveis.
- */
-function _renderStaticIcons() {
-    try {
-        document.getElementById('add-tab-icon-btn').innerHTML = ICON_PLUS;
-        document.getElementById('import-btn-icon').innerHTML = ICON_MOVE; // Ícone para Importar
-        document.getElementById('export-btn-icon').innerHTML = ICON_PALETTE; // Ícone para Exportar
-    } catch (error) {
-        console.error("Erro ao renderizar ícones estáticos. Verifique se os IDs dos botões no HTML estão corretos.", error);
-    }
-}
+                                // Critério 2: Ignora parágrafos que já fazem parte de um item de lista (numerada ou bullet).
+                                if (child.parent && child.parent.is('element', 'listItem')) {
+                                    continue;
+                                }
+                                
+                                // Critério 3: Lógica de formatação baseada no atributo de recuo ('indent').
+                                const indent = child.getAttribute('indent') || 0;
 
-/**
- * Carrega o estado da aplicação do LocalStorage. Se não houver estado, cria um padrão.
- */
-function _loadState() {
-    const savedState = localStorage.getItem('documentEditorState');
-    if (savedState) {
-        appState = JSON.parse(savedState);
-    } else {
-        // Estado inicial padrão se não houver nada salvo
-        const defaultTabId = `tab-${Date.now()}`;
-        appState = {
-            tabs: [{ id: defaultTabId, name: 'Geral', color: '#6c757d' }],
-            models: { [defaultTabId]: [] },
-            activeTabId: defaultTabId,
-        };
-        _saveState();
-    }
-}
+                                if (indent > 0) {
+                                    // Se houver QUALQUER nível de recuo, transforma o parágrafo em uma citação.
+                                    // Selecionamos o parágrafo inteiro antes de executar o comando 'blockQuote'.
+                                    writer.setSelection(writer.createRangeOn(child));
+                                    editor.execute('blockQuote');
+                                } else {
+                                    // Se não houver recuo, garantimos que o atributo 'indent' seja removido,
+                                    // resetando o parágrafo para o alinhamento padrão (à esquerda).
+                                    writer.removeAttribute('indent', child);
+                                }
+                            }
+                        });
+                        console.log("Documento formatado com sucesso via comando customizado.");
+                    }
+                });
+            }
+            // --- FIM DA NOVA LÓGICA DO PLUGIN ---
 
-/**
- * Salva o estado atual da aplicação no LocalStorage.
- */
-function _saveState() {
-    localStorage.setItem('documentEditorState', JSON.stringify(appState));
-}
+            const editorInstance = await DecoupledEditor.create(document.querySelector('.text-editor'), {
+                // Aqui, registramos nosso plugin customizado in-line.
+                extraPlugins: [FormatDocPlugin], 
+                toolbar: {
+                    items: [
+                        'undo', 'redo', '|',
+                        'bold', 'italic', 'underline', '|',
+                        'bulletedList', 'numberedList', '|',
+                        'outdent', 'indent', '|',
+                        'blockQuote'
+                    ]
+                },
+                language: 'pt-br'
+            });
 
-/**
- * Inicializa e renderiza os componentes da interface (abas, lista de modelos).
- */
-function _initializeUI() {
-    _renderTabs();
-    if (appState.activeTabId) {
-        _renderModelList(appState.activeTabId);
-    }
-}
+            document.querySelector('.toolbar').appendChild(editorInstance.ui.view.toolbar.element);
+            appState.editor = editorInstance;
+            
+            // Carrega o conteúdo salvo no LocalStorage ao iniciar
+            const savedContent = localStorage.getItem('editorContent');
+            if (savedContent) {
+                appState.editor.setData(savedContent);
+            }
 
-/**
- * Inicializa a instância do CKEditor.
- * CORREÇÃO: Adiciona `extraPlugins` para carregar nosso comando customizado.
- */
-function _initializeEditor() {
-    DecoupledEditor
-        .create(document.querySelector('.text-editor'), {
-            language: 'pt-br',
-            toolbar: {
-                items: [
-                    'undo', 'redo', '|', 'bold', 'italic', 'underline', '|',
-                    'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'blockQuote'
-                ]
-            },
-            // ATIVAÇÃO DO PLUGIN "FORMATAR DOC"
-            extraPlugins: [FormatDocPlugin],
-        })
-        .then(newEditor => {
-            editor = newEditor;
-            window.editor = newEditor; // Para acesso global se necessário
-            document.querySelector('.toolbar').appendChild(editor.ui.view.toolbar.element);
-        })
-        .catch(error => {
+            // Listener para salvar automaticamente o conteúdo do editor
+            appState.editor.model.document.on('change:data', () => {
+                const content = appState.editor.getData();
+                localStorage.setItem('editorContent', content);
+                BackupManager.schedule(getStateForBackup());
+            });
+
+        } catch (error) {
             console.error('Ocorreu um erro ao inicializar o CKEditor:', error);
-        });
-}
+        }
+    }
+    
+    // --- LÓGICA DE DADOS (CARREGAR, SALVAR) ---
+    function loadState() {
+        const savedState = localStorage.getItem('appState');
+        if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            appState.tabs = parsedState.tabs || [];
+            appState.models = parsedState.models || [];
+            appState.activeTabId = parsedState.activeTabId || (appState.tabs.length > 0 ? appState.tabs[0].id : null);
+            appState.replacements = parsedState.replacements || [];
+        } else {
+            // Estado inicial se não houver nada salvo
+            const defaultTabId = `tab-${Date.now()}`;
+            appState.tabs = [{ id: defaultTabId, name: 'Geral', color: '#6c757d' }];
+            appState.models = [];
+            appState.activeTabId = defaultTabId;
+        }
+    }
 
-/**
- * Anexa todos os listeners de eventos da aplicação.
- * CORREÇÃO: Aponta para os novos IDs dos botões da sidebar.
- */
-function _attachEventListeners() {
-    // Listeners da Toolbar
-    document.getElementById('format-doc-btn').addEventListener('click', () => {
-        if (editor) {
-            editor.execute('formatDocument');
+    function saveState() {
+        localStorage.setItem('appState', JSON.stringify(getStateForBackup()));
+        BackupManager.schedule(getStateForBackup());
+    }
+    
+    function getStateForBackup() {
+        // Retorna uma cópia do estado sem a instância do editor
+        return {
+            tabs: appState.tabs,
+            models: appState.models,
+            activeTabId: appState.activeTabId,
+            replacements: appState.replacements
+        };
+    }
+
+    // --- FUNÇÕES DE RENDERIZAÇÃO (UI) ---
+    function renderTabs() {
+        tabsContainer.innerHTML = '';
+        appState.tabs.forEach(tab => {
+            const tabEl = document.createElement('div');
+            tabEl.className = 'tab-item';
+            tabEl.textContent = tab.name;
+            tabEl.dataset.tabId = tab.id;
+            tabEl.style.setProperty('--tab-color', tab.color);
+            if (tab.id === appState.activeTabId) {
+                tabEl.classList.add('active');
+                activeContentArea.style.borderColor = tab.color;
+            }
+            tabsContainer.appendChild(tabEl);
+        });
+    }
+
+    function renderModels() {
+        modelList.innerHTML = '';
+        const filteredModels = getFilteredModels();
+        filteredModels.forEach(model => {
+            const li = document.createElement('li');
+            li.className = 'model-item';
+            li.dataset.modelId = model.id;
+            
+            li.innerHTML = `
+                <div class="model-header">
+                    <span class="model-color-indicator" style="background-color: ${getTabColorById(model.tabId)};"></span>
+                    <span class="model-name">${model.name}</span>
+                </div>
+                <div class="model-actions">
+                    <button class="action-btn add-content-btn" title="Adicionar ao Editor">${ICON_PLUS}</button>
+                    <button class="action-btn edit-model-btn" title="Editar Modelo">${ICON_PENCIL}</button>
+                    <button class="action-btn delete-model-btn" title="Excluir Modelo">${ICON_TRASH}</button>
+                </div>
+            `;
+            modelList.appendChild(li);
+        });
+    }
+    
+    function getFilteredModels() {
+        const query = searchBox.value.toLowerCase();
+        return appState.models
+            .filter(m => m.tabId === appState.activeTabId)
+            .filter(m => m.name.toLowerCase().includes(query));
+    }
+    
+    function getTabColorById(tabId) {
+        const tab = appState.tabs.find(t => t.id === tabId);
+        return tab ? tab.color : '#ccc';
+    }
+    
+    // --- EVENT LISTENERS ---
+    
+    // ATUALIZAÇÃO DO LISTENER DO BOTÃO 'FORMATAR DOC'
+    formatDocBtn.addEventListener('click', () => {
+        if (appState.editor) {
+            console.log("Executando o comando 'formatDocument'...");
+            // A chamada agora é simples e segura, usando a API nativa do editor
+            appState.editor.execute('formatDocument');
+
+            // Adiciona um feedback visual temporário para o usuário
+            formatDocBtn.classList.add('is-processing');
+            setTimeout(() => formatDocBtn.classList.remove('is-processing'), 1000);
         }
     });
 
-    document.getElementById('clear-doc-btn').addEventListener('click', () => {
-        if (editor && confirm('Tem certeza que deseja apagar todo o conteúdo?')) {
-            EditorActions.clearDocument(editor);
+    clearDocBtn.addEventListener('click', () => {
+        if (confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
+            EditorActions.clearDocument(appState.editor);
+        }
+    });
+
+    tabsContainer.addEventListener('click', e => {
+        if (e.target.classList.contains('tab-item')) {
+            const tabId = e.target.dataset.tabId;
+            appState.activeTabId = tabId;
+            renderTabs();
+            renderModels();
+            saveState();
         }
     });
     
-    // Listeners da Sidebar (com IDs corrigidos)
-    document.getElementById('add-tab-icon-btn').addEventListener('click', () => {
-        const tabName = prompt('Digite o nome da nova aba:');
-        if (tabName && tabName.trim()) {
-            _addNewTab(tabName.trim());
-        }
-    });
+    modelList.addEventListener('click', e => {
+        const button = e.target.closest('.action-btn');
+        if (!button) return;
 
-    document.getElementById('import-btn-icon').addEventListener('click', _importData);
-    document.getElementById('export-btn-icon').addEventListener('click', _exportData);
-}
+        const modelId = button.closest('.model-item').dataset.modelId;
+        const model = appState.models.find(m => m.id === modelId);
 
-// --- Funções de Renderização da UI ---
-
-function _renderTabs() {
-    const tabsContainer = document.querySelector('.tabs-container');
-    tabsContainer.innerHTML = '';
-    appState.tabs.forEach(tab => {
-        const tabEl = document.createElement('div');
-        tabEl.className = 'tab-item';
-        tabEl.textContent = tab.name;
-        tabEl.dataset.tabId = tab.id;
-        tabEl.style.setProperty('--tab-color', tab.color || '#6c757d');
-        if (tab.id === appState.activeTabId) {
-            tabEl.classList.add('active');
-        }
-        tabEl.addEventListener('click', () => _setActiveTab(tab.id));
-        tabsContainer.appendChild(tabEl);
-    });
-}
-
-function _renderModelList(tabId) {
-    const modelListEl = document.getElementById('model-list');
-    modelListEl.innerHTML = '';
-    const models = appState.models[tabId] || [];
-
-    if (models.length === 0) {
-        modelListEl.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Nenhum modelo nesta aba.</p>';
-        return;
-    }
-
-    models.forEach(model => {
-        const item = document.createElement('li');
-        item.className = 'model-item';
-        item.innerHTML = `
-            <div class="model-header">
-                <span class="model-name">${model.name}</span>
-            </div>
-            <div class="model-actions">
-                <button class="action-btn add-btn" title="Adicionar ao editor">${ICON_PLUS}</button>
-                <button class="action-btn edit-btn" title="Editar modelo">${ICON_PENCIL}</button>
-                <button class="action-btn delete-btn" title="Excluir modelo">${ICON_TRASH}</button>
-            </div>
-        `;
-        // Adicionar eventos para os botões do modelo aqui (add, edit, delete)
-        item.querySelector('.add-btn').addEventListener('click', () => {
-            if(editor) editor.setData(editor.getData() + model.content);
-        });
-        item.querySelector('.edit-btn').addEventListener('click', () => _editModel(model.id));
-        item.querySelector('.delete-btn').addEventListener('click', () => _deleteModel(model.id));
-        
-        modelListEl.appendChild(item);
-    });
-}
-
-// --- Funções de Manipulação de Estado (CRUD) ---
-
-function _addNewTab(name) {
-    const newTabId = `tab-${Date.now()}`;
-    appState.tabs.push({ id: newTabId, name: name, color: '#6c757d' });
-    appState.models[newTabId] = [];
-    _saveState();
-    _setActiveTab(newTabId);
-    BackupManager.schedule(appState);
-}
-
-function _setActiveTab(tabId) {
-    appState.activeTabId = tabId;
-    _saveState();
-    _renderTabs();
-    _renderModelList(tabId);
-}
-
-function _editModel(modelId) {
-    // Lógica para abrir o modal de edição
-    alert(`Lógica de edição para o modelo ${modelId} a ser implementada.`);
-}
-
-function _deleteModel(modelId) {
-    if (confirm('Tem certeza que deseja excluir este modelo?')) {
-        const models = appState.models[appState.activeTabId];
-        const modelIndex = models.findIndex(m => m.id === modelId);
-        if (modelIndex > -1) {
-            models.splice(modelIndex, 1);
-            _saveState();
-            _renderModelList(appState.activeTabId);
-            BackupManager.schedule(appState);
-        }
-    }
-}
-
-// --- Funções de Importação e Exportação ---
-
-function _exportData() {
-    const dataStr = JSON.stringify(appState, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Modelos_Documentos_Backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function _importData() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = e => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = readerEvent => {
-                try {
-                    const content = readerEvent.target.result;
-                    const newState = JSON.parse(content);
-                    if (newState.tabs && newState.models) {
-                        appState = newState;
-                        _saveState();
-                        _initializeApp(); // Reinicializa a UI com os novos dados
-                        alert('Backup importado com sucesso!');
-                    } else {
-                        alert('Arquivo de backup inválido.');
+        if (button.classList.contains('add-content-btn')) {
+            if (appState.editor && model) {
+                appState.editor.model.change(writer => {
+                    const viewFragment = appState.editor.data.processor.toView(model.content);
+                    const modelFragment = appState.editor.data.toModel(viewFragment);
+                    appState.editor.model.insertContent(modelFragment, appState.editor.model.document.selection);
+                });
+            }
+        } else if (button.classList.contains('edit-model-btn')) {
+            if (model) {
+                ModalManager.show({
+                    title: 'Editar Modelo',
+                    type: 'modelEditor',
+                    initialData: { name: model.name, content: model.content },
+                    onSave: (data) => {
+                        model.name = data.name;
+                        model.content = data.content;
+                        saveState();
+                        renderModels();
                     }
-                } catch (err) {
-                    alert('Erro ao ler o arquivo de backup.');
-                    console.error(err);
-                }
-            };
-            reader.readAsText(file);
+                });
+            }
+        } else if (button.classList.contains('delete-model-btn')) {
+             if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) {
+                appState.models = appState.models.filter(m => m.id !== modelId);
+                saveState();
+                renderModels();
+            }
         }
-    };
-    input.click();
-}
+    });
+
+    searchBox.addEventListener('input', renderModels);
+    
+    addModelBtn.addEventListener('click', () => {
+        ModalManager.show({
+            title: 'Criar Novo Modelo',
+            type: 'modelEditor',
+            initialData: {},
+            onSave: (data) => {
+                if (!data.name) {
+                    alert('O nome do modelo não pode estar vazio.');
+                    return;
+                }
+                const newModel = {
+                    id: `model-${Date.now()}`,
+                    tabId: appState.activeTabId,
+                    name: data.name,
+                    content: data.content
+                };
+                appState.models.push(newModel);
+                saveState();
+                renderModels();
+            }
+        });
+    });
+
+    addNewTabBtn.addEventListener('click', () => {
+        const name = prompt('Digite o nome da nova aba:');
+        if (name) {
+            const newTab = {
+                id: `tab-${Date.now()}`,
+                name: name,
+                color: '#6c757d' // Cor padrão para novas abas
+            };
+            appState.tabs.push(newTab);
+            appState.activeTabId = newTab.id;
+            saveState();
+            renderTabs();
+            renderModels();
+        }
+    });
+    
+    exportBtn.addEventListener('click', () => {
+        triggerAutoBackup(getStateForBackup()); // Usa a função de backup-manager.js
+    });
+
+    importBtn.addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.onchange = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const importedState = JSON.parse(event.target.result);
+                        if (importedState.tabs && importedState.models) {
+                            appState.tabs = importedState.tabs;
+                            appState.models = importedState.models;
+                            appState.activeTabId = importedState.activeTabId || appState.tabs[0]?.id;
+                            appState.replacements = importedState.replacements || [];
+                            saveState();
+                            renderTabs();
+                            renderModels();
+                            alert('Backup importado com sucesso!');
+                        } else {
+                            alert('Arquivo de backup inválido.');
+                        }
+                    } catch (err) {
+                        alert('Erro ao ler o arquivo de backup.');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        fileInput.click();
+    });
+
+    // --- FUNÇÃO DE INICIALIZAÇÃO GERAL ---
+    function initializeApp() {
+        loadState();
+        renderTabs();
+        renderModels();
+        initCKEditor();
+    }
+
+    initializeApp();
+});
