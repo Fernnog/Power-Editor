@@ -1,95 +1,135 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Documentos</title>
+    <title>Power Editor</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="stylesheet" href="css/style.css">
+    <!-- O script principal do CKEditor foi movido para o final do body para otimizar o carregamento -->
 </head>
 <body>
+
     <div class="app-container">
-        <!-- ÁREA DO EDITOR -->
+        
+        <!-- Coluna Principal: Editor de Texto -->
         <div class="editor-area">
-            <div class="toolbar">
-                <!-- A toolbar customizada do editor e botões de ação serão inseridos aqui -->
-            </div>
+            <!-- CONTAINER DA BARRA DE FERRAMENTAS ADICIONADO -->
+            <div class="toolbar"></div>
+            
+            <!-- WRAPPER PARA O EDITOR E A RÉGUA -->
             <div class="editor-wrapper">
-                <div class="text-editor">
-                    <!-- O CKEditor será instanciado aqui -->
-                </div>
+                <!-- DIVS PARA AS RÉGUAS -->
+                <div id="ruler-horizontal" class="ruler"></div>
+                <div id="ruler-vertical" class="ruler"></div>
+
+                <div id="editor" class="text-editor"></div>
             </div>
         </div>
 
-        <!-- ÁREA DA SIDEBAR -->
+        <!-- Coluna da Direita: Sidebar de Modelos -->
         <div class="sidebar-area">
-            <h3>Modelos de Documento</h3>
-            <div id="backup-status-card">
-                <span id="backup-status">Nenhum backup realizado ainda.</span>
+            <div id="backup-status-card" title="Status do último backup realizado (importado ou exportado).">
+                <span>Nenhum backup recente.</span>
             </div>
             <div class="sidebar-controls">
+                <!-- INÍCIO DA ALTERAÇÃO: Wrapper adicionado para o campo de busca e o botão de limpar -->
                 <div class="search-wrapper">
-                    <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU'">
-                    <button class="search-clear-btn">&times;</button>
+                    <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+                    <button id="search-clear-btn" class="search-clear-btn" title="Limpar busca">&times;</button>
                 </div>
-                 <div class="control-buttons-grid">
+                <!-- FIM DA ALTERAÇÃO -->
+                <div class="control-buttons-grid">
+                    <!-- ALTERAÇÃO: Botões de 'Pesquisar' e 'Limpar Pesquisa' removidos -->
                     <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
-                    <button id="clear-doc-btn" class="control-btn btn-secondary">Apagar Doc</button>
-                </div>
-            </div>
-
-            <div class="tabs-container">
-                <!-- Abas de modelos serão renderizadas aqui -->
-            </div>
-            <div id="active-content-area">
-                <ul id="model-list">
-                    <!-- A lista de modelos será renderizada aqui -->
-                </ul>
-                <div id="tab-actions-container">
-                    <!-- Ações da aba (editar, cor, excluir) serão renderizadas aqui -->
+                    <button id="clear-doc-btn" class="control-btn btn-primary">Apagar Doc</button>
                 </div>
             </div>
             
+            <!-- CONTAINER COMPACTO PARA AÇÕES -->
             <div id="sidebar-icon-actions">
-                <!-- Botões de ação globais da sidebar serão inseridos aqui -->
+                <button id="sidebar-btn-ai" class="action-btn" title="Corrigir texto selecionado com IA"></button>
+                <button id="sidebar-btn-dictate" class="action-btn" title="Iniciar ditado por voz"></button>
+                <button id="sidebar-btn-replace" class="action-btn" title="Abrir gerenciador de substituições"></button>
             </div>
 
+            <!-- ÚNICO CONTAINER PARA TODAS AS ABAS -->
+            <div id="tabs-container" class="tabs-container">
+                <!-- As abas serão preenchidas pelo JavaScript -->
+            </div>
+
+            <!-- Container apenas para a lista -->
+            <div id="active-content-area" class="active-content-area">
+                <ul id="model-list">
+                    <!-- A lista de modelos será preenchida pelo JavaScript -->
+                </ul>
+                <div id="tab-actions-container"></div>
+            </div>
+            
             <div class="sidebar-footer">
+                <button id="add-new-tab-btn">Aba</button>
+                <button id="add-new-model-btn">Adicionar</button>
                 <button id="import-btn">Importar</button>
                 <button id="export-btn">Exportar</button>
+                <input type="file" id="import-file-input" accept=".json" style="display: none;">
             </div>
         </div>
     </div>
 
-    <!-- MODAL UNIFICADO -->
-    <div class="modal-overlay" id="modal-container">
+    <!-- Estrutura do Modal Genérico e Dinâmico (Inicialmente Oculta) -->
+    <div id="modal-container" class="modal-overlay">
         <div class="modal-content">
             <h3 id="modal-title">Título do Modal</h3>
-            <div id="modal-dynamic-content">
-                <!-- Conteúdo dinâmico será injetado aqui pelo ModalManager.js -->
-            </div>
+            
+            <!-- O conteúdo específico (editor de modelo ou gerenciador de substituição) será inserido aqui -->
+            <div id="modal-dynamic-content"></div>
+            
             <div class="modal-buttons">
-                <button id="modal-btn-cancel">Cancelar</button>
                 <button id="modal-btn-save">Salvar</button>
+                <button id="modal-btn-cancel">Cancelar</button>
             </div>
         </div>
     </div>
-    
-    <!-- BIBLIOTECAS E SCRIPTS DA APLICAÇÃO -->
+
+    <!-- Estrutura do Modal de Ditado (Inicialmente Oculta) -->
+    <div id="dictation-modal" class="modal-overlay">
+        <div class="dictation-content">
+            <select id="dictation-lang-select" title="Selecionar idioma">
+                <option value="pt-BR" selected>Português (Brasil)</option>
+                <option value="en-US">English (US)</option>
+                <option value="es-ES">Español (España)</option>
+            </select>
+            <span id="dictation-status">Clique no microfone para começar</span>
+            <div id="dictation-mic-icon" class="mic-icon">🎤</div>
+            <button id="dictation-close-btn">&times;</button>
+        </div>
+    </div>
+
+    <!-- --- INÍCIO DA SEÇÃO DE SCRIPTS CORRIGIDA E OTIMIZADA --- -->
+
+    <!-- 1. Carrega a biblioteca principal do Editor. Essencial, deve ser o primeiro. -->
     <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/decoupled-document/ckeditor.js"></script>
     
-    <!-- Módulos da Aplicação -->
-    <script src="js/ui-icons.js"></script>
-    <script src="js/ModalManager.js"></script>
-    <script src="js/backup-manager.js"></script>
-    <script src="js/editor-actions.js"></script>
-    <script src="js/speech.js"></script>
-    <script src="js/gemini-service.js"></script>
-    <script src="js/config.js"></script> <!-- Arquivo local do usuário para a chave de API -->
-    <script src="js/ckeditor-config.js"></script>
+    <!-- 2. Carrega nossas dependências e módulos de suporte com 'defer' para não bloquear a renderização. -->
+    <script src="js/config.js" defer></script>
+    <script src="js/speech.js" defer></script>
+    <script src="js/backup-manager.js" defer></script>
+    <script src="js/ModalManager.js" defer></script>
+    <script src="js/gemini-service.js" defer></script>
+    <script src="js/ui-icons.js" defer></script> 
     
-    <!-- A linha <script src="js/ckeditor-formatdoc-command.js"></script> foi REMOVIDA daqui -->
-    
-    <!-- Script Principal -->
-    <script src="js/script.js"></script>
+    <!-- 3. Agora que o Editor existe, podemos carregar nosso plugin customizado que depende dele. -->
+    <script src="js/ckeditor-formatdoc-command.js" defer></script>
+
+    <!-- 4. Agora que nosso plugin existe, podemos carregar a configuração que o utiliza. -->
+    <script src="js/ckeditor-config.js" defer></script>
+
+    <!-- 5. O módulo de ações que ainda contém a função 'clearDocument'. -->
+    <script src="js/editor-actions.js" defer></script>
+
+    <!-- 6. Finalmente, o script principal que une tudo e inicializa a aplicação. -->
+    <script src="js/script.js" defer></script>
+
+    <!-- --- FIM DA SEÇÃO DE SCRIPTS --- -->
 </body>
 </html>
