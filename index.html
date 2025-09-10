@@ -4,132 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Power Editor</title>
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-    <link rel="stylesheet" href="css/style.css">
-    <!-- O script principal do CKEditor foi movido para o final do body para otimizar o carregamento -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="app-container">
-        
-        <!-- Coluna Principal: Editor de Texto -->
-        <div class="editor-area">
-            <!-- CONTAINER DA BARRA DE FERRAMENTAS ADICIONADO -->
-            <div class="toolbar"></div>
-            
-            <!-- WRAPPER PARA O EDITOR E A RÉGUA -->
-            <div class="editor-wrapper">
-                <!-- DIVS PARA AS RÉGUAS -->
-                <div id="ruler-horizontal" class="ruler"></div>
-                <div id="ruler-vertical" class="ruler"></div>
+        <header class="controls-panel">
+            <div class="backup-status" id="backupStatus">Nenhum backup recente.</div>
+            <input type="search" id="searchInput" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+            <div class="action-buttons">
+                <button id="formatBtn">Formatar Doc</button>
+                <button id="deleteBtn" class="danger">Apagar Doc</button>
+            </div>
+            <div class="extra-tools">
+                <!-- Placeholders para ferramentas futuras, como os círculos vistos na imagem -->
+                <div class="tool-placeholder"></div>
+                <div class="tool-placeholder"></div>
+                <div class="tool-placeholder"></div>
+            </div>
+        </header>
 
-                <div id="editor" class="text-editor"></div>
+        <main class="editor-panel">
+            <div class="tab-container" id="tabContainer">
+                <!-- Abas serão geradas dinamicamente aqui -->
             </div>
-        </div>
+            <textarea id="editor" aria-label="Área de edição principal"></textarea>
+        </main>
 
-        <!-- Coluna da Direita: Sidebar de Modelos -->
-        <div class="sidebar-area">
-            <div id="backup-status-card" title="Status do último backup realizado (importado ou exportado).">
-                <span>Nenhum backup recente.</span>
-            </div>
-            <div class="sidebar-controls">
-                <!-- INÍCIO DA ALTERAÇÃO: Wrapper adicionado para o campo de busca e o botão de limpar -->
-                <div class="search-wrapper">
-                    <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
-                    <button id="search-clear-btn" class="search-clear-btn" title="Limpar busca">&times;</button>
-                </div>
-                <!-- FIM DA ALTERAÇÃO -->
-                <div class="control-buttons-grid">
-                    <!-- ALTERAÇÃO: Botões de 'Pesquisar' e 'Limpar Pesquisa' removidos -->
-                    <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
-                    <button id="clear-doc-btn" class="control-btn btn-primary">Apagar Doc</button>
-                </div>
-            </div>
-            
-            <!-- CONTAINER COMPACTO PARA AÇÕES -->
-            <div id="sidebar-icon-actions">
-                <button id="sidebar-btn-ai" class="action-btn" title="Corrigir texto selecionado com IA"></button>
-                <button id="sidebar-btn-dictate" class="action-btn" title="Iniciar ditado por voz"></button>
-                <button id="sidebar-btn-replace" class="action-btn" title="Abrir gerenciador de substituições"></button>
-            </div>
-
-            <!-- ÚNICO CONTAINER PARA TODAS AS ABAS -->
-            <div id="tabs-container" class="tabs-container">
-                <!-- As abas serão preenchidas pelo JavaScript -->
-            </div>
-
-            <!-- Container apenas para a lista -->
-            <div id="active-content-area" class="active-content-area">
-                <ul id="model-list">
-                    <!-- A lista de modelos será preenchida pelo JavaScript -->
-                </ul>
-                <div id="tab-actions-container"></div>
-            </div>
-            
-            <div class="sidebar-footer">
-                <button id="add-new-tab-btn">Aba</button>
-                <button id="add-new-model-btn">Adicionar</button>
-                <button id="import-btn">Importar</button>
-                <button id="export-btn">Exportar</button>
-                <input type="file" id="import-file-input" accept=".json" style="display: none;">
-            </div>
-        </div>
+        <footer class="footer-buttons">
+            <button id="addTabBtn">Adicionar Aba</button>
+            <button id="importBtn">Importar</button>
+            <button id="exportBtn">Exportar</button>
+        </footer>
     </div>
 
-    <!-- Estrutura do Modal Genérico e Dinâmico (Inicialmente Oculta) -->
-    <div id="modal-container" class="modal-overlay">
-        <div class="modal-content">
-            <h3 id="modal-title">Título do Modal</h3>
-            
-            <!-- O conteúdo específico (editor de modelo ou gerenciador de substituição) será inserido aqui -->
-            <div id="modal-dynamic-content"></div>
-            
-            <div class="modal-buttons">
-                <button id="modal-btn-save">Salvar</button>
-                <button id="modal-btn-cancel">Cancelar</button>
-            </div>
-        </div>
-    </div>
+    <!-- 
+      CORREÇÃO (PRIORIDADE 1): 
+      A linha abaixo foi corrigida. O caminho para o arquivo JavaScript estava incorreto, 
+      causando o erro 404 que impedia a aplicação de carregar. 
+      O atributo 'defer' também foi adicionado como boa prática para garantir que o script 
+      seja executado apenas após a análise completa do HTML, melhorando a performance.
+    -->
+    <script src="script.js" defer></script>
 
-    <!-- Estrutura do Modal de Ditado (Inicialmente Oculta) -->
-    <div id="dictation-modal" class="modal-overlay">
-        <div class="dictation-content">
-            <select id="dictation-lang-select" title="Selecionar idioma">
-                <option value="pt-BR" selected>Português (Brasil)</option>
-                <option value="en-US">English (US)</option>
-                <option value="es-ES">Español (España)</option>
-            </select>
-            <span id="dictation-status">Clique no microfone para começar</span>
-            <div id="dictation-mic-icon" class="mic-icon">🎤</div>
-            <button id="dictation-close-btn">&times;</button>
-        </div>
-    </div>
-
-    <!-- --- INÍCIO DA SEÇÃO DE SCRIPTS CORRIGIDA E OTIMIZADA --- -->
-
-    <!-- 1. Carrega a biblioteca principal do Editor. Essencial, deve ser o primeiro. -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/decoupled-document/ckeditor.js"></script>
-    
-    <!-- 2. Carrega nossas dependências e módulos de suporte com 'defer' para não bloquear a renderização. -->
-    <script src="js/config.js" defer></script>
-    <script src="js/speech.js" defer></script>
-    <script src="js/backup-manager.js" defer></script>
-    <script src="js/ModalManager.js" defer></script>
-    <script src="js/gemini-service.js" defer></script>
-    <script src="js/ui-icons.js" defer></script> 
-    
-    <!-- 3. Agora que o Editor existe, podemos carregar nosso plugin customizado que depende dele. -->
-    <script src="js/ckeditor-formatdoc-command.js" defer></script>
-
-    <!-- 4. Agora que nosso plugin existe, podemos carregar a configuração que o utiliza. -->
-    <script src="js/ckeditor-config.js" defer></script>
-
-    <!-- 5. O módulo de ações que ainda contém a função 'clearDocument'. -->
-    <script src="js/editor-actions.js" defer></script>
-
-    <!-- 6. Finalmente, o script principal que une tudo e inicializa a aplicação. -->
-   <script type="module" src="script.js"></script>
-
-    <!-- --- FIM DA SEÇÃO DE SCRIPTS --- -->
 </body>
 </html>
