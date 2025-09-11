@@ -544,3 +544,40 @@ blockquote p {
     fill: none !important;
     stroke: currentColor; /* Usa a cor do tema para consistência */
 }
+
+
+/* --- ESTILOS ADICIONADOS PARA PRIORIDADE 1 --- */
+
+/* --- ESTILOS PARA O NOVO CARD DE STATUS DO BACKUP --- */
+#backup-status-card {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#backup-status-card .card-title {
+    display: block;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+#backup-status-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* --- ESTILO PARA O BOTÃO CUSTOMIZADO DE APAGAR NO TINYMCE --- */
+.tox-tbtn.tox-btn-fuchsia {
+    background-color: #d9006c; /* Tom de fúcsia */
+}
+.tox-tbtn.tox-btn-fuchsia:hover {
+    background-color: #a10050; /* Tom mais escuro no hover */
+}
+.tox-tbtn.tox-btn-fuchsia .tox-icon svg {
+    fill: white !important; /* Garante que o ícone seja branco */
+}
