@@ -1,3 +1,11 @@
+Excelente. O processo de refatoração e correção foi um sucesso. Manter a documentação atualizada é uma prática fundamental de um projeto saudável.
+
+Com base em todas as alterações que implementamos e nos aprendizados do processo, preparei uma versão atualizada e aprimorada do seu arquivo `README.md`. Ele agora reflete com precisão o estado atual da aplicação, documenta as novas funcionalidades e reforça as boas práticas de arquitetura que solidificamos.
+
+---
+
+### **README.md (Versão Atualizada)**
+
 # Editor de Documentos - Projeto de Migração e Otimização
 
 Este repositório contém o código-fonte de um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
@@ -13,7 +21,7 @@ O objetivo principal foi migrar as funcionalidades essenciais para uma aplicaç�
 A aplicação é uma SPA (Single Page Application) leve, sem dependência de frameworks, focada em duas áreas principais:
 
 1.  **Área de Edição Avançada:** Um editor de texto rico (*rich text editor*) com funcionalidades de formatação, automação e ferramentas de produtividade.
-2.  **Barra Lateral Inteligente:** Um painel completo para gerenciamento de modelos de documento, organizado por abas coloridas, com busca avançada, e um sistema de backup robusto.
+2.  **Barra Lateral Inteligente:** Um painel completo para gerenciamento de modelos de documento, organizado por abas coloridas, com busca avançada, e um sistema de backup robusto com feedback visual claro.
 
 A filosofia é "performance em primeiro lugar", utilizando tecnologias web nativas para garantir a execução mais rápida possível diretamente no navegador do usuário.
 
@@ -22,20 +30,19 @@ A filosofia é "performance em primeiro lugar", utilizando tecnologias web nativ
 A aplicação evoluiu para uma ferramenta de produtividade robusta, com as seguintes funcionalidades:
 
 #### Identidade Visual Renovada
--   A interface foi atualizada para incorporar uma nova paleta de cores da marca, aplicada em elementos-chave como botões de ação primários, ícones e o status de backup, criando uma experiência de usuário mais coesa e moderna.
+-   A interface foi atualizada para incorporar uma nova paleta de cores da marca, aplicada em elementos-chave como o card de status de backup e botões de ação críticos, criando uma experiência de usuário mais coesa e moderna.
 
 #### Área de Edição Avançada
+-   **Barra de Ferramentas Otimizada:** Ações essenciais estão diretamente na barra de ferramentas do editor para acesso rápido.
+    -   **"Apagar todo o conteúdo":** Um novo botão, destacado com uma cor fúcsia para indicar uma ação destrutiva, permite limpar o editor com uma confirmação de segurança.
 -   **Formatação de Texto e Parágrafo:** Suporte completo para **Negrito**, *Itálico*, <u>Sublinhado</u>, listas numeradas, listas com marcadores, citações (blockquote) e alinhamento de texto.
 -   **Controle de Estilo:** Ajuste de espaçamento entre linhas e recuo de primeira linha.
--   **Automação com 1 Clique:**
-    -   **"Formatar Doc":** Aplica instantaneamente um padrão de formatação profissional a todo o documento.
-    -   **"Apagar Doc":** Limpa todo o conteúdo do editor com uma confirmação de segurança.
 -   **Ferramentas de Produtividade:**
     -   **Ditado por Voz:** Utilize o microfone para transcrever sua fala diretamente no editor.
-    -   **Busca e Substituição:** Uma ferramenta rápida para localizar e substituir todas as ocorrências de um termo.
     -   **Correção Inteligente com IA:** Selecione qualquer trecho de texto e clique no botão **A✓** para enviá-lo à API do Google (Gemini). A IA corrige erros de gramática, ortografia e pontuação, substituindo automaticamente o texto original pela versão aprimorada.
 
 #### Gerenciador de Modelos Inteligente (Sidebar)
+-   **Card de Status de Backup:** Um card de destaque no topo da barra lateral fornece feedback visual imediato sobre a data e hora do último backup realizado (automático ou importado), aumentando a confiança do usuário.
 -   **Organização por Abas:**
     -   **Gestão Completa:** Crie, renomeie, exclua e personalize as cores de suas abas.
     -   **Aba de Favoritos:** Uma aba especial dedicada para agrupar seus modelos mais utilizados.
@@ -47,7 +54,7 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 #### Persistência e Segurança de Dados
 -   **Salvamento Automático no Navegador:** Todo o seu trabalho é salvo automaticamente no `LocalStorage`.
 -   **Backup e Restauração Manual:** Exporte e importe todos os seus dados (modelos e abas) em um único arquivo `JSON`.
--   **Backup Automático por Inatividade:** Para segurança extra, a aplicação inicia o download de um arquivo de backup `JSON` atualizado após um breve período de inatividade.
+-   **Backup Automático por Inatividade:** Para segurança extra, a aplicação inicia o download de um arquivo de backup `JSON` atualizado após um breve período de inatividade e atualiza o card de status visual para confirmar a operação.
 
 ## 4. Como Executar
 
@@ -73,14 +80,16 @@ Por ser uma aplicação majoritariamente client-side, a execução é simples. N
 
 ## 5. Estrutura de Arquivos
 
--   `index.html`: Define a estrutura da página.
--   `css/style.css`: Contém todas as regras de estilização.
--   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), a manipulação do DOM e os eventos principais, incluindo a orquestração da chamada para o serviço de IA.
--   `js/editor-actions.js`: Módulo com ações de formatação do editor.
+-   `index.html`: Define a estrutura da página, incluindo o novo card de status do backup na sidebar.
+-   `css/style.css`: Contém todas as regras de estilização, incluindo o estilo do card de backup e a cor customizada para o botão 'Apagar' no editor.
+-   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), a manipulação do DOM e os eventos principais, incluindo a atualização do card de status de backup.
+-   `js/editor-actions.js`: Módulo de suporte para ações do editor. (Nota: A função 'formatDocument' foi removida, simplificando este módulo).
 -   `js/speech.js`: Módulo para a API de Reconhecimento de Voz.
 -   `js/backup-manager.js`: Módulo de suporte para a lógica de backup.
 -   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais.
--   `js/gemini-service.js`: **(Novo)** Módulo dedicado que encapsula toda a lógica de comunicação com a API do Google AI (Gemini) para a funcionalidade de correção de texto.
+-   `js/gemini-service.js`: Módulo dedicado que encapsula a lógica de comunicação com a API do Google AI (Gemini).
+-   `js/tinymce-config.js`: Módulo que centraliza toda a configuração do editor TinyMCE, incluindo a adição de botões customizados como 'Apagar Doc'.
+-   `js/ui-icons.js`: Arquivo central para todas as constantes de ícones SVG da aplicação, garantindo consistência e prevenindo a duplicação de código.
 -   `js/config.js`: **(Novo/Local)** Arquivo de configuração local **(não incluído no repositório)** para armazenar a chave de API do Google. É necessário criar este arquivo manualmente.
 -   `README.md`: Este arquivo.
 
@@ -89,14 +98,15 @@ Por ser uma aplicação majoritariamente client-side, a execução é simples. N
 Com a base atual sólida, o plano de evolução inclui:
 
 #### Curto Prazo (Quick Wins & UX)
--   [ ] **Melhorar Gestão da Chave de API (UX):** Em vez de usar um arquivo `config.js`, criar um modal de "Configurações" onde o usuário possa inserir e salvar sua chave de API no `LocalStorage` do navegador, tornando a configuração mais amigável.
+-   [ ] **Melhorar Feedback de Ações (Toast Notifications):** Substituir os `alert()` e `confirm()` nativos por notificações "toast" não-bloqueantes para uma UX mais moderna (ex: ao exportar, importar ou apagar o documento).
+-   [ ] **Melhorar Gestão da Chave de API (UX):** Em vez de usar um arquivo `config.js`, criar um modal de "Configurações" onde o usuário possa inserir e salvar sua chave de API no `LocalStorage` do navegador.
 -   [ ] **Otimizar Busca:** Adicionar "debounce" à função de busca para otimizar a performance em listas de modelos muito grandes.
 
 #### Médio Prazo (Arquitetura e Funcionalidades)
--   [ ] **Expandir Funcionalidades de IA:** Já que a integração com a API está pronta, adicionar novas ferramentas como "Mudar Tom do Texto" (formal, informal, etc.) ou "Expandir Ideia" (desenvolver um parágrafo a partir de uma frase).
+-   [ ] **Expandir Funcionalidades de IA:** Adicionar novas ferramentas como "Mudar Tom do Texto" (formal, informal) ou "Expandir Ideia".
 -   [ ] **Variáveis Dinâmicas:** Introduzir um sistema de placeholders nos modelos (ex: `{{nome_do_cliente}}`). Ao inserir um modelo, o sistema solicitaria ao usuário que preenchesse os valores.
 
 #### Longo Prazo (Visão Futura)
--   [ ] **Backend-for-Frontend (BFF) para Segurança da API:** Para uma versão pública da aplicação, implementar um pequeno servidor intermediário que guardaria a chave de API de forma segura, evitando sua exposição no lado do cliente.
+-   [ ] **Backend-for-Frontend (BFF) para Segurança da API:** Implementar um pequeno servidor intermediário que guardaria a chave de API de forma segura.
 -   [ ] **Perfis de Formatação:** Permitir que os usuários criem, salvem e apliquem diferentes conjuntos de regras de estilo com um clique.
 -   [ ] **Histórico de Versões:** Implementar um sistema que salva "snapshots" do documento no `LocalStorage` periodicamente.
