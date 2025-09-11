@@ -1,11 +1,3 @@
-Excelente. O processo de refatoração e correção foi um sucesso. Manter a documentação atualizada é uma prática fundamental de um projeto saudável.
-
-Com base em todas as alterações que implementamos e nos aprendizados do processo, preparei uma versão atualizada e aprimorada do seu arquivo `README.md`. Ele agora reflete com precisão o estado atual da aplicação, documenta as novas funcionalidades e reforça as boas práticas de arquitetura que solidificamos.
-
----
-
-### **README.md (Versão Atualizada)**
-
 # Editor de Documentos - Projeto de Migração e Otimização
 
 Este repositório contém o código-fonte de um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
