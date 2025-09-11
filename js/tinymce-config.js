@@ -1,9 +1,11 @@
+// --- START OF FILE tinymce-config.js ---
+
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
     plugins: 'lists autoresize pagebreak visualblocks',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton',
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
     menubar: false,
     statusbar: false,
@@ -21,6 +23,7 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-copy-formatted', ICON_COPY_FORMATTED);
         editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
+        editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
 
         // --- Definição dos Botões ---
 
@@ -183,6 +186,21 @@ const TINYMCE_CONFIG = {
                     console.error('Erro ao gerar arquivo:', error);
                     createRTFFile(editorContent);
                 }
+            }
+        });
+        
+        // NOVO: Botão de Apagar Documento
+        editor.ui.registry.addButton('customDeleteButton', {
+            icon: 'custom-delete-doc',
+            tooltip: 'Apagar todo o conteúdo',
+            onAction: function() {
+                if (confirm('Tem certeza que deseja apagar todo o conteúdo do editor? Esta ação não pode ser desfeita.')) {
+                    editor.setContent('');
+                }
+            },
+            onSetup: function (api) {
+                api.element.classList.add('tox-btn-fuchsia');
+                return () => {};
             }
         });
         
