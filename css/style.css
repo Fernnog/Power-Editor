@@ -545,9 +545,7 @@ blockquote p {
     stroke: currentColor; /* Usa a cor do tema para consistência */
 }
 
-
-/* --- ESTILOS ADICIONADOS PARA PRIORIDADE 1 --- */
-
+/* --- NOVOS ESTILOS --- */
 /* --- ESTILOS PARA O NOVO CARD DE STATUS DO BACKUP --- */
 #backup-status-card {
     background-color: var(--primary-color);
@@ -571,13 +569,15 @@ blockquote p {
     font-weight: 500;
 }
 
-/* --- ESTILO PARA O BOTÃO CUSTOMIZADO DE APAGAR NO TINYMCE --- */
-.tox-tbtn.tox-btn-fuchsia {
+/* --- ESTILO PARA O BOTÃO CUSTOMIZADO DE APAGAR NO TINYMCE (USANDO ARIA-LABEL) --- */
+.tox-tbtn[aria-label="Apagar todo o conteúdo"] {
     background-color: #d9006c; /* Tom de fúcsia */
 }
-.tox-tbtn.tox-btn-fuchsia:hover {
+
+.tox-tbtn[aria-label="Apagar todo o conteúdo"]:hover {
     background-color: #a10050; /* Tom mais escuro no hover */
 }
-.tox-tbtn.tox-btn-fuchsia .tox-icon svg {
+
+.tox-tbtn[aria-label="Apagar todo o conteúdo"] .tox-icon svg {
     fill: white !important; /* Garante que o ícone seja branco */
 }
