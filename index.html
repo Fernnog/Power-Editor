@@ -4,48 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Power Editor</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- SCRIPT DO TINYMCE ADICIONADO AQUI -->
+    <script src="https://cdn.tiny.cloud/1/ejxjci6unfjljl6y2vali932gyz2bgenhi5lvoyp8yifsd46/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 </head>
 <body>
 
     <div class="app-container">
-        <header class="controls-panel">
-            <div class="backup-status" id="backupStatus">Nenhum backup recente.</div>
-            <input type="search" id="searchInput" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
-            <div class="action-buttons">
-                <button id="formatBtn">Formatar Doc</button>
-                <button id="deleteBtn" class="danger">Apagar Doc</button>
-            </div>
-            <div class="extra-tools">
-                <!-- Placeholders para ferramentas futuras, como os círculos vistos na imagem -->
-                <div class="tool-placeholder"></div>
-                <div class="tool-placeholder"></div>
-                <div class="tool-placeholder"></div>
-            </div>
-        </header>
+        
+        <!-- Coluna Principal: Editor de Texto -->
+        <div class="editor-area">
+            <!-- NOVO WRAPPER PARA O EDITOR E A RÉGUA -->
+            <div class="editor-wrapper">
+                <!-- NOVAS DIVS PARA AS RÉGUAS -->
+                <div id="ruler-horizontal" class="ruler"></div>
+                <div id="ruler-vertical" class="ruler"></div>
 
-        <main class="editor-panel">
-            <div class="tab-container" id="tabContainer">
-                <!-- Abas serão geradas dinamicamente aqui -->
+                <!-- A TEXTAREA DO EDITOR AGORA FICA AQUI DENTRO -->
+                <textarea id="editor" class="text-editor"></textarea>
             </div>
-            <textarea id="editor" aria-label="Área de edição principal"></textarea>
-        </main>
+        </div>
 
-        <footer class="footer-buttons">
-            <button id="addTabBtn">Adicionar Aba</button>
-            <button id="importBtn">Importar</button>
-            <button id="exportBtn">Exportar</button>
-        </footer>
+        <!-- Coluna da Direita: Sidebar de Modelos -->
+        <div class="sidebar-area">
+            <h3>Modelos de Documento</h3>
+            <div class="sidebar-controls">
+                <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+                <div class="control-buttons-grid">
+                    <button id="search-btn" class="control-btn btn-secondary">Pesquisar</button>
+                    <button id="clear-search-btn" class="control-btn btn-secondary">Limpar Pesquisa</button>
+                    <button id="format-doc-btn" class="control-btn btn-primary">Formatar Doc</button>
+                    <button id="clear-doc-btn" class="control-btn btn-primary">Apagar Doc</button>
+                </div>
+            </div>
+            
+            <!-- ÚNICO CONTAINER PARA TODAS AS ABAS -->
+            <div id="tabs-container" class="tabs-container">
+                <!-- As abas serão preenchidas pelo JavaScript -->
+            </div>
+
+            <!-- Container apenas para a lista -->
+            <div id="active-content-area" class="active-content-area">
+                <ul id="model-list">
+                    <!-- A lista de modelos será preenchida pelo JavaScript -->
+                </ul>
+                <div id="tab-actions-container"></div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button id="add-new-tab-btn">Aba</button>
+                <button id="add-new-model-btn">Adicionar</button>
+                <button id="import-btn">Importar</button>
+                <button id="export-btn">Exportar</button>
+                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+            </div>
+        </div>
     </div>
 
-    <!-- 
-      CORREÇÃO (PRIORIDADE 1): 
-      A linha abaixo foi corrigida. O caminho para o arquivo JavaScript estava incorreto, 
-      causando o erro 404 que impedia a aplicação de carregar. 
-      O atributo 'defer' também foi adicionado como boa prática para garantir que o script 
-      seja executado apenas após a análise completa do HTML, melhorando a performance.
-    -->
-    <script src="script.js" defer></script>
+    <!-- Estrutura do Modal Genérico e Dinâmico (Inicialmente Oculta) -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title">Título do Modal</h3>
+            
+            <!-- O conteúdo específico (editor de modelo ou gerenciador de substituição) será inserido aqui -->
+            <div id="modal-dynamic-content"></div>
+            
+            <div class="modal-buttons">
+                <button id="modal-btn-save">Salvar</button>
+                <button id="modal-btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Estrutura do Modal de Ditado (Inicialmente Oculta) -->
+    <div id="dictation-modal" class="modal-overlay">
+        <div class="dictation-content">
+            <select id="dictation-lang-select" title="Selecionar idioma">
+                <option value="pt-BR" selected>Português (Brasil)</option>
+                <option value="en-US">English (US)</option>
+                <option value="es-ES">Español (España)</option>
+            </select>
+            <span id="dictation-status">Clique no microfone para começar</span>
+            <div id="dictation-mic-icon" class="mic-icon">🎤</div>
+            <button id="dictation-close-btn">&times;</button>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/speech.js"></script>
+    <script src="js/editor-actions.js"></script>
+    <script src="js/backup-manager.js"></script>
+    <script src="js/ModalManager.js"></script>
+    <script src="js/gemini-service.js"></script>
+    <!-- O novo arquivo de ícones deve ser carregado ANTES dos scripts que o utilizam -->
+    <script src="js/ui-icons.js"></script> 
+    <script src="js/script.js"></script>
+    <script src="js/tinymce-config.js"></script> 
 </body>
 </html>
