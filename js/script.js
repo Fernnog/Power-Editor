@@ -23,13 +23,11 @@ const importBtn = document.getElementById('import-btn');
 const importFileInput = document.getElementById('import-file-input');
 const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
-const formatDocBtn = document.getElementById('format-doc-btn');
-const clearDocBtn = document.getElementById('clear-doc-btn');
-const backupStatusEl = document.getElementById('backup-status');
+const backupStatusEl = document.getElementById('backup-status-text');
 const tabActionsContainer = document.getElementById('tab-actions-container');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `Último Backup: ${day}/${month}/${year} ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
+function updateBackupStatus(dateObject) { if (!backupStatusEl) return; if (dateObject) { const day = String(dateObject.getDate()).padStart(2, '0'); const month = String(dateObject.getMonth() + 1).padStart(2, '0'); const year = dateObject.getFullYear(); const hours = String(dateObject.getHours()).padStart(2, '0'); const minutes = String(dateObject.getMinutes()).padStart(2, '0'); backupStatusEl.textContent = `${day}/${month}/${year} às ${hours}:${minutes}`; } else { backupStatusEl.textContent = 'Nenhum backup recente.'; } }
 function triggerAutoBackup() { const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); const timestamp = `${year}${month}${day}_${hours}${minutes}`; const filename = `${timestamp}_ModelosDosMeusDocumentos.json`; appState.lastBackupTimestamp = now.toISOString(); const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); updateBackupStatus(now); }
 function debouncedTriggerAutoBackup() { clearTimeout(backupDebounceTimer); backupDebounceTimer = setTimeout(() => { triggerAutoBackup(); }, 2500); }
 function modifyStateAndBackup(modificationFn) { modificationFn(); saveStateToStorage(); debouncedTriggerAutoBackup(); }
@@ -266,12 +264,6 @@ window.addEventListener('DOMContentLoaded', () => {
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    formatDocBtn.addEventListener('click', EditorActions.formatDocument);
-    clearDocBtn.addEventListener('click', () => {
-        if(confirm('Tem certeza que deseja apagar todo o conteúdo do editor?')) {
-            tinymce.activeEditor.setContent('');
-        }
-    });
     searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
     exportBtn.addEventListener('click', exportModels);
