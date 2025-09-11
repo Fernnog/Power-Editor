@@ -97,57 +97,17 @@ body, html {
     color: #333;
 }
 
-#backup-status-card {
-    background-color: var(--primary-color);
-    color: white;
-    text-align: center;
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    cursor: default;
-}
-
 .sidebar-controls {
     margin-bottom: 15px;
 }
 
-/* INÍCIO DA ALTERAÇÃO: Estilos para o wrapper de busca e o botão de limpar */
-.search-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px; /* Adicionado para manter o espaçamento que o grid tinha */
-}
-
 #search-box {
     width: 100%;
-    padding: 8px 30px 8px 8px; /* Adicionado espaço à direita para o botão */
+    padding: 8px;
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
-
-.search-clear-btn {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 20px;
-    color: #888;
-    padding: 0 5px;
-    display: none; /* O JavaScript será responsável por exibir este botão */
-}
-
-.search-clear-btn:hover {
-    color: #333;
-}
-/* FIM DA ALTERAÇÃO */
 
 /* --- ESTILOS MODERNOS PARA ABAS (3D STACK) --- */
 .tabs-container {
@@ -369,13 +329,13 @@ body, html {
 }
 .control-btn.btn-secondary { background-color: #f0f0f0; color: #333; border-color: #ccc; }
 .backup-status { 
-    margin-left: auto; /* Empurra para a direita */
+    margin-left: auto; 
     padding: 5px 10px; 
     font-size: 12px; 
     color: #ffffff; 
     background-color: var(--primary-color); 
     border-radius: 4px; 
-    white-space: nowrap; /* Evita que o texto quebre */
+    align-self: center; 
 }
 
 .text-editor ol { list-style: none; counter-reset: list-counter; margin-left: 3cm; padding-left: 0; }
@@ -499,7 +459,8 @@ blockquote p {
 #toolbar-logo {
     max-height: 30px;
     width: auto;
-    margin-right: 15px; /* Espaçamento entre o logo e os botões */
+    margin-right: 15px;
+    vertical-align: middle;
 }
 
 /* Animação para o spinner de carregamento */
@@ -573,19 +534,6 @@ blockquote p {
     padding: 4px 2px;
 }
 
-/* --- Transforma a barra de ferramentas em um container flexível --- */
-.tox .tox-toolbar__primary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 8px; /* Adiciona um respiro nas laterais */
-}
-
-/* --- Garante que o grupo de botões não ocupe todo o espaço --- */
-.tox .tox-toolbar__group {
-    flex-shrink: 0;
-}
-
 /* --- Correção de Estilo dos Ícones --- */
 /* Garante que APENAS os nossos ícones customizados sejam renderizados como contornos */
 .tox-tbtn[aria-label="Ditar texto"] svg,
@@ -595,83 +543,4 @@ blockquote p {
 .tox-tbtn[aria-label="Salvar como documento (.odt/.rtf)"] svg {
     fill: none !important;
     stroke: currentColor; /* Usa a cor do tema para consistência */
-}
-
-/* O CKEditor cria sua própria estrutura. Esta regra garante que ele ocupe o espaço corretamente. */
-.editor-wrapper .ck.ck-editor {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Garante que a área de edição (conteúdo) seja expansível */
-.editor-wrapper .ck.ck-editor__main {
-    flex-grow: 1;
-    overflow-y: auto;
-}
-
-/* Aplica o fundo amarelo e a justificação na área de texto, como antes */
-.ck-editor__editable_inline {
-    background-color: #ffd580 !important;
-    padding: 0 15px !important; /* Mantém o espaçamento interno */
-    text-align: justify;
-    font-size: 16px;
-    line-height: 1.5;
-}
-
-/* Garante que os ícones SVG customizados sejam exibidos corretamente (sem preenchimento) */
-.ck.ck-button svg {
-    fill: none !important;
-    stroke: currentColor;
-}
-
-/* --- Estilos para a Barra de Ações com Ícones --- */
-#sidebar-icon-actions {
-    display: flex;
-    justify-content: space-around; /* Distribui os botões igualmente */
-    align-items: center;
-    padding: 12px 0;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    border-top: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-}
-
-/* Usamos a classe .action-btn que já existe e a especializamos aqui */
-#sidebar-icon-actions .action-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%; /* Deixa os botões redondos */
-}
-
-/* Garante que os SVGs dentro dos botões tenham o tamanho certo */
-#sidebar-icon-actions .action-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* ADICIONADO: ESTILO PARA CITAÇÃO DE 6CM NO CKEDITOR */
-.ck-editor__editable_inline blockquote {
-    margin-left: 6cm;
-    font-style: italic;
-    border-left: 3px solid #ccc;
-    padding-left: 10px;
-}
-
-@keyframes pulse-fuchsia {
-    0% {
-        box-shadow: 0 0 0 0 rgba(206, 42, 102, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(206, 42, 102, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(206, 42, 102, 0);
-    }
-}
-
-/* Aplica a animação aos botões com a classe de processamento */
-#sidebar-icon-actions .action-btn.is-processing,
-#sidebar-icon-actions .action-btn.processing {
-    animation: pulse-fuchsia 2s infinite;
 }
