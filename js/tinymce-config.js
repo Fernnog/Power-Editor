@@ -1,4 +1,5 @@
-// --- START OF FILE tinymce-config.js ---
+// Adicione a definição do novo ícone no topo do arquivo para organização
+const ICON_DELETE_DOC = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6m4-6v6"></path></svg>`;
 
 const TINYMCE_CONFIG = {
     selector: '#editor',
@@ -23,7 +24,7 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-copy-formatted', ICON_COPY_FORMATTED);
         editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
-        editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
+        editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC); // ÍCONE ADICIONADO
 
         // --- Definição dos Botões ---
 
@@ -188,8 +189,8 @@ const TINYMCE_CONFIG = {
                 }
             }
         });
-        
-        // NOVO: Botão de Apagar Documento
+
+        // BOTÃO DE APAGAR DOCUMENTO (CORRIGIDO E ADICIONADO)
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
@@ -197,10 +198,6 @@ const TINYMCE_CONFIG = {
                 if (confirm('Tem certeza que deseja apagar todo o conteúdo do editor? Esta ação não pode ser desfeita.')) {
                     editor.setContent('');
                 }
-            },
-            onSetup: function (api) {
-                api.element.classList.add('tox-btn-fuchsia');
-                return () => {};
             }
         });
         
