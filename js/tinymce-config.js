@@ -1,12 +1,12 @@
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    plugins: 'lists autoresize pagebreak visualblocks',
+    plugins: 'lists autoresize pagebreak visualblocks wordcount',
     
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
     menubar: false,
-    statusbar: false,
+    statusbar: true,
     
     content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
     
@@ -164,7 +164,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download (CORRIGIDO PARA USAR RTF DIRETAMENTE)
+        // Botão de Download
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
             tooltip: 'Salvar como documento (.rtf)',
@@ -179,7 +179,7 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // BOTÃO DE APAGAR DOCUMENTO
+        // BOTÃO DE APAGAR DOCUMENTO (CORRIGIDO)
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
@@ -191,40 +191,74 @@ const TINYMCE_CONFIG = {
         });
         
         // Funções auxiliares (internas ao setup)
-        
-        // Função createRTFFile (APRIMORADA)
         function createRTFFile(htmlContent) {
-            // Mapeamento de caracteres especiais para o formato RTF
+            // Função auxiliar para escapar caracteres especiais do texto para o formato RTF
             const escapeRtf = (str) => {
                 return str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}')
                           .replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
             };
-    
-            let rtfContent = htmlContent
-                // Processa blockquotes primeiro para evitar conflitos
-                .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gis, (match, content) => {
-                    return `\\pard\\li10500\\fi0\\i ${escapeRtf(content.replace(/<[^>]*>/g, ''))} \\i0\\par\\pard\\fi5250\\li0 `;
-                })
-                // Processa parágrafos com recuo
-                .replace(/<p style="text-indent: 3cm;">(.*?)<\/p>/gis, (match, content) => `\\pard\\fi5250\\li0 ${escapeRtf(content.replace(/<[^>]*>/g, ''))}\\par `)
-                // Processa parágrafos normais
-                .replace(/<p[^>]*>(.*?)<\/p>/gis, (match, content) => `\\pard\\fi0\\li0 ${escapeRtf(content.replace(/<[^>]*>/g, ''))}\\par `)
-                .replace(/<strong[^>]*>(.*?)<\/strong>/gis, '\\b $1\\b0 ')
-                .replace(/<em[^>]*>(.*?)<\/em>/gis, '\\i $1\\i0 ')
-                .replace(/<u[^>]*>(.*?)<\/u>/gis, '\\ul $1\\ul0 ')
-                .replace(/<br\s*\/?>/gi, '\\par ')
-                .replace(/&nbsp;/g, '\\~')
-                .replace(/<[^>]*>/g, ''); // Limpa tags remanescentes
-    
-            rtfContent = escapeRtf(rtfContent);
-    
-            // Header RTF aprimorado para suportar caracteres latinos (incluindo acentos e ç)
+
+            // Função recursiva para processar cada nó do HTML
+            const processNode = (node) => {
+                let rtf = '';
+                // Processa os filhos do nó atual
+                node.childNodes.forEach(child => {
+                    if (child.nodeType === Node.TEXT_NODE) {
+                        rtf += escapeRtf(child.textContent);
+                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                        const tagName = child.tagName.toLowerCase();
+                        switch (tagName) {
+                            case 'strong':
+                            case 'b':
+                                rtf += `{\\b ${processNode(child)}}`;
+                                break;
+                            case 'em':
+                            case 'i':
+                                rtf += `{\\i ${processNode(child)}}`;
+                                break;
+                            case 'u':
+                                rtf += `{\\ul ${processNode(child)}}`;
+                                break;
+                            case 'p':
+                                // Verifica se o parágrafo tem recuo de primeira linha
+                                if (child.style.textIndent) {
+                                    rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`;
+                                } else {
+                                    rtf += `\\pard\\fi0\\li0 ${processNode(child)}\\par\n`;
+                                }
+                                break;
+                            case 'blockquote':
+                                // Define o estilo de citação (recuo esquerdo grande, sem recuo de primeira linha, itálico)
+                                rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`;
+                                break;
+                            case 'br':
+                                 rtf += '\\line ';
+                                 break;
+                            default:
+                                // Para outras tags (como as de listas), processa o conteúdo interno
+                                rtf += processNode(child);
+                                break;
+                        }
+                    }
+                });
+                return rtf;
+            };
+
+            // 1. Cria um elemento temporário para parsear o HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+
+            // 2. Processa a árvore de nós a partir do div temporário
+            const rtfBody = processNode(tempDiv);
+
+            // 3. Monta o documento RTF final com o cabeçalho correto
             const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0
 {\\fonttbl{\\f0 Arial;}}
-\\f0\\fs32\\qj
-${rtfContent}
+\\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32
+${rtfBody}
 }`;
-    
+
+            // 4. Cria e dispara o download do arquivo
             const blob = new Blob([rtfDocument], { type: 'application/rtf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
