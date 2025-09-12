@@ -519,14 +519,6 @@ blockquote p {
     display: none !important;
 }
 
-/* --- Editor TinyMCE configurado para ocupar todo o espaço --- */
-.tox-tinymce {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    border: none !important; /* Garante a remoção de bordas */
-}
-
 /* --- Aprimoramento Visual da Toolbar do TinyMCE --- */
 .tox .tox-editor-header {
     background-color: #ffffff; /* Fundo branco para um visual limpo */
@@ -540,7 +532,7 @@ blockquote p {
 .tox-tbtn[aria-label="Corrigir Texto com IA"] svg,
 .tox-tbtn[aria-label="Gerenciar Substituições"] svg,
 .tox-tbtn[aria-label="Copiar Formatado (compatível com Google Docs)"] svg,
-.tox-tbtn[aria-label="Salvar como documento (.odt/.rtf)"] svg {
+.tox-tbtn[aria-label="Salvar como documento (.rtf)"] svg {
     fill: none !important;
     stroke: currentColor; /* Usa a cor do tema para consistência */
 }
