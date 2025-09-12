@@ -164,30 +164,22 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download
+        // Botão de Download (CORRIGIDO PARA USAR RTF DIRETAMENTE)
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
-            tooltip: 'Salvar como documento (.odt/.rtf)',
+            tooltip: 'Salvar como documento (.rtf)',
             onAction: function() {
                 const editorContent = editor.getContent();
-                
                 try {
-                    const odtXmlContent = generateValidODTContent(editorContent);
-                    
-                    if (typeof JSZip !== 'undefined') {
-                        createODTFile(odtXmlContent);
-                    } else {
-                        createRTFFile(editorContent);
-                    }
-                    
-                } catch (error) {
-                    console.error('Erro ao gerar arquivo:', error);
                     createRTFFile(editorContent);
+                } catch (error) {
+                    console.error('Erro ao gerar arquivo RTF:', error);
+                    alert('Ocorreu um erro ao tentar salvar o documento.');
                 }
             }
         });
         
-        // BOTÃO DE APAGAR DOCUMENTO (CORRIGIDO)
+        // BOTÃO DE APAGAR DOCUMENTO
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
@@ -199,107 +191,40 @@ const TINYMCE_CONFIG = {
         });
         
         // Funções auxiliares (internas ao setup)
-        function generateValidODTContent(htmlContent) {
-            const textContent = htmlContent
-                .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gs, (match, content) => {
-                    return `[CITAÇÃO]${content.replace(/<[^>]*>/g, '')}[/CITAÇÃO]`;
-                })
-                .replace(/<p[^>]*>(.*?)<\/p>/gs, '$1\n\n')
-                .replace(/<strong[^>]*>(.*?)<\/strong>/gs, '$1')
-                .replace(/<em[^>]*>(.*?)<\/em>/gs, '$1')
-                .replace(/<u[^>]*>(.*?)<\/u>/gs, '$1')
-                .replace(/<[^>]*>/g, '')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>');
-
-            return `<?xml version="1.0" encoding="UTF-8"?>
-<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
-                        xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" 
-                        xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" 
-                        xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0">
-  <office:body>
-    <office:text>
-      ${textContent.split('\n\n').map(paragraph => {
-          if (paragraph.trim()) {
-              if (paragraph.includes('[CITAÇÃO]')) {
-                  const citationText = paragraph.replace(/\[CITAÇÃO\](.*?)\[\/CITAÇÃO\]/gs, '$1');
-                  return `<text:p text:style-name="Citacao">${citationText.trim()}</text:p>`;
-              } else {
-                  return `<text:p text:style-name="Standard">${paragraph.trim()}</text:p>`;
-              }
-          }
-          return '';
-      }).filter(p => p).join('\n      ')}
-    </office:text>
-  </office:body>
-</office:document-content>`;
-        }
-
-        function createODTFile(xmlContent) {
-            const zip = new JSZip();
-            
-            const manifest = `<?xml version="1.0" encoding="UTF-8"?>
-<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
-  <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
-  <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
-  <manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
-</manifest:manifest>`;
-
-            const styles = `<?xml version="1.0" encoding="UTF-8"?>
-<office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
-                       xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" 
-                       xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0">
-  <office:styles>
-    <style:style style:name="Standard" style:family="paragraph">
-      <style:paragraph-properties fo:text-align="justify" fo:text-indent="3cm"/>
-      <style:text-properties style:font-name="Arial" fo:font-size="16pt"/>
-    </style:style>
-    <style:style style:name="Citacao" style:family="paragraph">
-      <style:paragraph-properties fo:text-align="justify" fo:margin-left="7cm" fo:text-indent="0cm"/>
-      <style:text-properties style:font-name="Arial" fo:font-size="16pt" fo:font-style="italic"/>
-    </style:style>
-  </office:styles>
-</office:document-styles>`;
-
-            zip.file("META-INF/manifest.xml", manifest);
-            zip.file("content.xml", xmlContent);
-            zip.file("styles.xml", styles);
-            
-            zip.generateAsync({type:"blob"}).then(function(content) {
-                const url = URL.createObjectURL(content);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'documento.odt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-        }
-
+        
+        // Função createRTFFile (APRIMORADA)
         function createRTFFile(htmlContent) {
+            // Mapeamento de caracteres especiais para o formato RTF
+            const escapeRtf = (str) => {
+                return str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}')
+                          .replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
+            };
+    
             let rtfContent = htmlContent
-                .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gs, (match, content) => {
-                    return `\\li4032 \\i ${content.replace(/<[^>]*>/g, '')} \\i0 \\li0\\par `;
+                // Processa blockquotes primeiro para evitar conflitos
+                .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gis, (match, content) => {
+                    return `\\pard\\li10500\\fi0\\i ${escapeRtf(content.replace(/<[^>]*>/g, ''))} \\i0\\par\\pard\\fi5250\\li0 `;
                 })
-                .replace(/<p[^>]*>(.*?)<\/p>/gs, '\\fi1134 $1\\par ')
-                .replace(/<strong[^>]*>(.*?)<\/strong>/gs, '\\b $1\\b0 ')
-                .replace(/<em[^>]*>(.*?)<\/em>/gs, '\\i $1\\i0 ')
-                .replace(/<u[^>]*>(.*?)<\/u>/gs, '\\ul $1\\ul0 ')
-                .replace(/<[^>]*>/g, '')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>');
-
-            const rtfDocument = `{\\rtf1\\ansi\\deff0 
-{\\fonttbl {\\f0 Arial;}}
-\\f0\\fs32\\qj 
+                // Processa parágrafos com recuo
+                .replace(/<p style="text-indent: 3cm;">(.*?)<\/p>/gis, (match, content) => `\\pard\\fi5250\\li0 ${escapeRtf(content.replace(/<[^>]*>/g, ''))}\\par `)
+                // Processa parágrafos normais
+                .replace(/<p[^>]*>(.*?)<\/p>/gis, (match, content) => `\\pard\\fi0\\li0 ${escapeRtf(content.replace(/<[^>]*>/g, ''))}\\par `)
+                .replace(/<strong[^>]*>(.*?)<\/strong>/gis, '\\b $1\\b0 ')
+                .replace(/<em[^>]*>(.*?)<\/em>/gis, '\\i $1\\i0 ')
+                .replace(/<u[^>]*>(.*?)<\/u>/gis, '\\ul $1\\ul0 ')
+                .replace(/<br\s*\/?>/gi, '\\par ')
+                .replace(/&nbsp;/g, '\\~')
+                .replace(/<[^>]*>/g, ''); // Limpa tags remanescentes
+    
+            rtfContent = escapeRtf(rtfContent);
+    
+            // Header RTF aprimorado para suportar caracteres latinos (incluindo acentos e ç)
+            const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0
+{\\fonttbl{\\f0 Arial;}}
+\\f0\\fs32\\qj
 ${rtfContent}
 }`;
-
+    
             const blob = new Blob([rtfDocument], { type: 'application/rtf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
