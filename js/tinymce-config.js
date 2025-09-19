@@ -21,7 +21,7 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-copy-formatted', ICON_COPY_FORMATTED);
         editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
-        editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC); // Esta linha agora funciona, pois ICON_DELETE_DOC vem de ui-icons.js
+        editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
 
         // --- Definição dos Botões ---
 
@@ -179,7 +179,7 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // BOTÃO DE APAGAR DOCUMENTO (CORRIGIDO)
+        // BOTÃO DE APAGAR DOCUMENTO
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
@@ -190,147 +190,117 @@ const TINYMCE_CONFIG = {
             }
         });
         
+        // --- LÓGICA DE EVENTOS DO EDITOR ---
+        
+        // Evento para substituição automática de texto
+        editor.on('input', function() {
+            if (!appState.replacements || appState.replacements.length === 0) return;
+
+            const range = editor.selection.getRng();
+            const startContainer = range.startContainer;
+            const startOffset = range.startOffset;
+
+            // Garante que estamos trabalhando com um nó de texto
+            if (startContainer.nodeType !== Node.TEXT_NODE) return;
+
+            const textContent = startContainer.textContent.substring(0, startOffset);
+            const lastChar = textContent.slice(-1);
+
+            // O gatilho é um espaço
+            if (lastChar === ' ') {
+                const words = textContent.trim().split(/\s+/);
+                const lastWord = words[words.length - 1];
+                
+                if (!lastWord) return;
+
+                const rule = appState.replacements.find(r => r.find === lastWord);
+                
+                if (rule) {
+                    // Previne que o próprio listener seja acionado pela substituição
+                    editor.off('input', arguments.callee);
+                    
+                    // Define o range para selecionar a palavra a ser substituída
+                    range.setStart(startContainer, startOffset - lastWord.length - 1);
+                    range.setEnd(startContainer, startOffset - 1);
+                    
+                    editor.selection.setRng(range);
+                    
+                    // Insere o conteúdo de substituição (e um espaço depois)
+                    editor.execCommand('mceInsertContent', false, rule.replace + '&nbsp;');
+
+                    // Reativa o listener
+                    editor.on('input', arguments.callee);
+                }
+            }
+        });
+        
         // Funções auxiliares (internas ao setup)
         function createRTFFile(htmlContent) {
-            // Função auxiliar para escapar caracteres especiais do texto para o formato RTF
             const escapeRtf = (str) => {
                 return str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}')
                           .replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
             };
-
-            // Função recursiva para processar cada nó do HTML
             const processNode = (node) => {
                 let rtf = '';
-                // Processa os filhos do nó atual
                 node.childNodes.forEach(child => {
                     if (child.nodeType === Node.TEXT_NODE) {
                         rtf += escapeRtf(child.textContent);
                     } else if (child.nodeType === Node.ELEMENT_NODE) {
                         const tagName = child.tagName.toLowerCase();
                         switch (tagName) {
-                            case 'strong':
-                            case 'b':
-                                rtf += `{\\b ${processNode(child)}}`;
-                                break;
-                            case 'em':
-                            case 'i':
-                                rtf += `{\\i ${processNode(child)}}`;
-                                break;
-                            case 'u':
-                                rtf += `{\\ul ${processNode(child)}}`;
-                                break;
+                            case 'strong': case 'b': rtf += `{\\b ${processNode(child)}}`; break;
+                            case 'em': case 'i': rtf += `{\\i ${processNode(child)}}`; break;
+                            case 'u': rtf += `{\\ul ${processNode(child)}}`; break;
                             case 'p':
-                                // Verifica se o parágrafo tem recuo de primeira linha
-                                if (child.style.textIndent) {
-                                    rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`;
-                                } else {
-                                    rtf += `\\pard\\fi0\\li0 ${processNode(child)}\\par\n`;
-                                }
+                                if (child.style.textIndent) { rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`; } 
+                                else { rtf += `\\pard\\fi0\\li0 ${processNode(child)}\\par\n`; }
                                 break;
-                            case 'blockquote':
-                                // Define o estilo de citação (recuo esquerdo grande, sem recuo de primeira linha, itálico)
-                                rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`;
-                                break;
-                            case 'br':
-                                 rtf += '\\line ';
-                                 break;
-                            default:
-                                // Para outras tags (como as de listas), processa o conteúdo interno
-                                rtf += processNode(child);
-                                break;
+                            case 'blockquote': rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`; break;
+                            case 'br': rtf += '\\line '; break;
+                            default: rtf += processNode(child); break;
                         }
                     }
                 });
                 return rtf;
             };
-
-            // 1. Cria um elemento temporário para parsear o HTML
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
-
-            // 2. Processa a árvore de nós a partir do div temporário
             const rtfBody = processNode(tempDiv);
-
-            // 3. Monta o documento RTF final com o cabeçalho correto
-            const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0
-{\\fonttbl{\\f0 Arial;}}
-\\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32
-${rtfBody}
-}`;
-
-            // 4. Cria e dispara o download do arquivo
+            const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32\n${rtfBody}}`;
             const blob = new Blob([rtfDocument], { type: 'application/rtf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = 'documento.rtf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            a.href = url; a.download = 'documento.rtf';
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
         }
 
         function convertForGoogleDocs(htmlContent) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
-            
-            const paragraphs = tempDiv.querySelectorAll('p');
-            paragraphs.forEach(p => {
-                const textIndent = p.style.textIndent || '';
-                
-                if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    p.style.textIndent = '';
-                    p.style.marginLeft = '';
-                    p.style.paddingLeft = '';
-                    
-                    const originalContent = p.innerHTML.trim();
-                    
-                    const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                    
-                    if (originalContent) {
-                        p.innerHTML = indentSpaces + originalContent;
-                    }
-                    
-                    p.style.textIndent = '3cm';
-                    p.style.marginLeft = '0';
-                    p.style.paddingLeft = '0';
+            tempDiv.querySelectorAll('p').forEach(p => {
+                if ((p.style.textIndent || '').includes('3cm')) {
+                    p.style.textIndent = ''; p.style.marginLeft = ''; p.style.paddingLeft = '';
+                    const indentSpaces = '&nbsp;'.repeat(24);
+                    if (p.innerHTML.trim()) { p.innerHTML = indentSpaces + p.innerHTML.trim(); }
+                    p.style.textIndent = '3cm'; p.style.marginLeft = '0'; p.style.paddingLeft = '0';
                 }
             });
-            
-            const blockquotes = tempDiv.querySelectorAll('blockquote');
-            blockquotes.forEach(bq => {
-                bq.style.marginLeft = '7cm';
-                bq.style.textIndent = '0';
-                bq.style.fontStyle = 'italic';
-                bq.style.paddingLeft = '15px';
-                bq.style.borderLeft = '3px solid #ccc';
+            tempDiv.querySelectorAll('blockquote').forEach(bq => {
+                bq.style.marginLeft = '7cm'; bq.style.textIndent = '0'; bq.style.fontStyle = 'italic';
+                bq.style.paddingLeft = '15px'; bq.style.borderLeft = '3px solid #ccc';
             });
-            
             return tempDiv.innerHTML;
         }
 
         function showCopyNotification(message, type = 'success') {
-            const existingNotification = document.querySelector('.copy-notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-            
+            const existing = document.querySelector('.copy-notification');
+            if (existing) existing.remove();
             const notification = document.createElement('div');
             notification.className = 'copy-notification';
-            notification.innerHTML = `
-                <div class="copy-notification-content ${type}">
-                    <span>${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()">&times;</button>
-                </div>
-            `;
-            
+            notification.innerHTML = `<div class="copy-notification-content ${type}"><span>${message}</span><button onclick="this.parentElement.parentElement.remove()">&times;</button></div>`;
             document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 4000);
+            setTimeout(() => { if (notification.parentNode) notification.remove(); }, 4000);
         }
         
         editor.on('init', () => {
@@ -341,16 +311,11 @@ ${rtfBody}
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
                     toolbarMicButton: editor.getContainer().querySelector('[aria-label="Ditar texto"]'),
-                    onResult: (transcript) => { 
-                        editor.execCommand('mceInsertContent', false, transcript); 
-                    } 
+                    onResult: (transcript) => { editor.execCommand('mceInsertContent', false, transcript); } 
                 });
-                
                 const closeBtn = document.getElementById('dictation-close-btn');
                 if (closeBtn) {
-                    closeBtn.addEventListener('click', () => { 
-                        SpeechDictation.stop(); 
-                    }); 
+                    closeBtn.addEventListener('click', () => { SpeechDictation.stop(); }); 
                 }
             }
         });
