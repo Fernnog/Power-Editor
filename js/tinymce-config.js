@@ -284,31 +284,37 @@ const TINYMCE_CONFIG = {
 
             if (startNode.nodeType !== Node.TEXT_NODE) return;
 
+            // Pega o texto do nó atual, da posição 0 até o cursor.
+            // O espaço/enter digitado está no final, então ele serve como delimitador.
             const textBeforeCursor = startNode.nodeValue.substring(0, startOffset);
 
-            // **NOVA LÓGICA**
-            // 1. Clona e ordena as regras da mais longa para a mais curta para evitar correspondências parciais.
+            // Clona e ordena as regras da mais longa para a mais curta.
             const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
 
-            // 2. Itera sobre as regras ordenadas.
             for (const rule of sortedRules) {
-                // Constrói o gatilho completo, que é a regra + um espaço.
-                // Usamos um espaço não-separável (\u00A0) para compatibilidade com o editor.
-                const trigger = rule.find + '\u00A0';
+                // Constrói o gatilho que estamos procurando: a palavra da regra + um espaço.
+                // O espaço pode ser normal ou um "non-breaking space" (\u00A0), então verificamos ambos.
+                const triggerNormalSpace = rule.find + ' ';
+                const triggerNbsp = rule.find + '\u00A0';
+
+                let triggerFound = null;
+                if (textBeforeCursor.endsWith(triggerNormalSpace)) {
+                    triggerFound = triggerNormalSpace;
+                } else if (textBeforeCursor.endsWith(triggerNbsp)) {
+                    triggerFound = triggerNbsp;
+                }
                 
-                // 3. Verifica se o texto antes do cursor TERMINA com o gatilho.
-                if (textBeforeCursor.endsWith(trigger)) {
-                    
-                    // 4. Se encontrou, define o range exato para apagar (o gatilho completo).
+                if (triggerFound) {
+                    // Se encontrou, define o range exato para apagar (o gatilho completo).
                     const replaceRng = document.createRange();
-                    replaceRng.setStart(startNode, startOffset - trigger.length);
+                    replaceRng.setStart(startNode, startOffset - triggerFound.length);
                     replaceRng.setEnd(startNode, startOffset);
 
                     editor.selection.setRng(replaceRng);
-                    editor.selection.setContent(rule.replace + '\u00A0'); // Substitui e adiciona um novo espaço
+                    // Substitui e adiciona um novo espaço para que o usuário possa continuar digitando.
+                    editor.selection.setContent(rule.replace + '\u00A0'); 
 
-                    // 5. Interrompe o loop, pois a primeira regra (a mais longa) já foi aplicada.
-                    return; 
+                    return; // Interrompe o loop, pois a regra foi aplicada.
                 }
             }
         });
