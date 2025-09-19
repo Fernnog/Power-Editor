@@ -192,73 +192,33 @@ const TINYMCE_CONFIG = {
         
         // Funções auxiliares (internas ao setup)
         function createRTFFile(htmlContent) {
-            // Função auxiliar para escapar caracteres especiais do texto para o formato RTF
-            const escapeRtf = (str) => {
-                return str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}')
-                          .replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
-            };
-
-            // Função recursiva para processar cada nó do HTML
+            const escapeRtf = (str) => str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}').replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
             const processNode = (node) => {
                 let rtf = '';
-                // Processa os filhos do nó atual
                 node.childNodes.forEach(child => {
-                    if (child.nodeType === Node.TEXT_NODE) {
-                        rtf += escapeRtf(child.textContent);
-                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (child.nodeType === Node.TEXT_NODE) rtf += escapeRtf(child.textContent);
+                    else if (child.nodeType === Node.ELEMENT_NODE) {
                         const tagName = child.tagName.toLowerCase();
                         switch (tagName) {
-                            case 'strong':
-                            case 'b':
-                                rtf += `{\\b ${processNode(child)}}`;
-                                break;
-                            case 'em':
-                            case 'i':
-                                rtf += `{\\i ${processNode(child)}}`;
-                                break;
-                            case 'u':
-                                rtf += `{\\ul ${processNode(child)}}`;
-                                break;
+                            case 'strong': case 'b': rtf += `{\\b ${processNode(child)}}`; break;
+                            case 'em': case 'i': rtf += `{\\i ${processNode(child)}}`; break;
+                            case 'u': rtf += `{\\ul ${processNode(child)}}`; break;
                             case 'p':
-                                // Verifica se o parágrafo tem recuo de primeira linha
-                                if (child.style.textIndent) {
-                                    rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`;
-                                } else {
-                                    rtf += `\\pard\\fi0\\li0 ${processNode(child)}\\par\n`;
-                                }
+                                if (child.style.textIndent) rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`;
+                                else rtf += `\\pard\\fi0\\li0 ${processNode(child)}\\par\n`;
                                 break;
-                            case 'blockquote':
-                                // Define o estilo de citação (recuo esquerdo grande, sem recuo de primeira linha, itálico)
-                                rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`;
-                                break;
-                            case 'br':
-                                 rtf += '\\line ';
-                                 break;
-                            default:
-                                // Para outras tags (como as de listas), processa o conteúdo interno
-                                rtf += processNode(child);
-                                break;
+                            case 'blockquote': rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`; break;
+                            case 'br': rtf += '\\line '; break;
+                            default: rtf += processNode(child); break;
                         }
                     }
                 });
                 return rtf;
             };
-
-            // 1. Cria um elemento temporário para parsear o HTML
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
-
-            // 2. Processa a árvore de nós a partir do div temporário
             const rtfBody = processNode(tempDiv);
-
-            // 3. Monta o documento RTF final com o cabeçalho correto
-            const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0
-{\\fonttbl{\\f0 Arial;}}
-\\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32
-${rtfBody}
-}`;
-
-            // 4. Cria e dispara o download do arquivo
+            const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32\n${rtfBody}}`;
             const blob = new Blob([rtfDocument], { type: 'application/rtf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -273,64 +233,29 @@ ${rtfBody}
         function convertForGoogleDocs(htmlContent) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
-            
-            const paragraphs = tempDiv.querySelectorAll('p');
-            paragraphs.forEach(p => {
-                const textIndent = p.style.textIndent || '';
-                
-                if (textIndent === '3cm' || textIndent.includes('3cm')) {
-                    p.style.textIndent = '';
-                    p.style.marginLeft = '';
-                    p.style.paddingLeft = '';
-                    
+            tempDiv.querySelectorAll('p').forEach(p => {
+                if ((p.style.textIndent || '').includes('3cm')) {
+                    p.style.textIndent = ''; p.style.marginLeft = ''; p.style.paddingLeft = '';
                     const originalContent = p.innerHTML.trim();
-                    
-                    const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                    
-                    if (originalContent) {
-                        p.innerHTML = indentSpaces + originalContent;
-                    }
-                    
-                    p.style.textIndent = '3cm';
-                    p.style.marginLeft = '0';
-                    p.style.paddingLeft = '0';
+                    if (originalContent) p.innerHTML = '&nbsp;'.repeat(24) + originalContent;
+                    p.style.textIndent = '3cm'; p.style.marginLeft = '0'; p.style.paddingLeft = '0';
                 }
             });
-            
-            const blockquotes = tempDiv.querySelectorAll('blockquote');
-            blockquotes.forEach(bq => {
-                bq.style.marginLeft = '7cm';
-                bq.style.textIndent = '0';
-                bq.style.fontStyle = 'italic';
-                bq.style.paddingLeft = '15px';
-                bq.style.borderLeft = '3px solid #ccc';
+            tempDiv.querySelectorAll('blockquote').forEach(bq => {
+                bq.style.marginLeft = '7cm'; bq.style.textIndent = '0'; bq.style.fontStyle = 'italic';
+                bq.style.paddingLeft = '15px'; bq.style.borderLeft = '3px solid #ccc';
             });
-            
             return tempDiv.innerHTML;
         }
 
         function showCopyNotification(message, type = 'success') {
             const existingNotification = document.querySelector('.copy-notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-            
+            if (existingNotification) existingNotification.remove();
             const notification = document.createElement('div');
             notification.className = 'copy-notification';
-            notification.innerHTML = `
-                <div class="copy-notification-content ${type}">
-                    <span>${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()">&times;</button>
-                </div>
-            `;
-            
+            notification.innerHTML = `<div class="copy-notification-content ${type}"><span>${message}</span><button onclick="this.parentElement.parentElement.remove()">&times;</button></div>`;
             document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 4000);
+            setTimeout(() => { if (notification.parentNode) notification.remove(); }, 4000);
         }
         
         editor.on('init', () => {
@@ -341,74 +266,50 @@ ${rtfBody}
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
                     toolbarMicButton: editor.getContainer().querySelector('[aria-label="Ditar texto"]'),
-                    onResult: (transcript) => { 
-                        editor.execCommand('mceInsertContent', false, transcript); 
-                    } 
+                    onResult: (transcript) => { editor.execCommand('mceInsertContent', false, transcript); } 
                 });
-                
                 const closeBtn = document.getElementById('dictation-close-btn');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => { 
-                        SpeechDictation.stop(); 
-                    }); 
-                }
+                if (closeBtn) closeBtn.addEventListener('click', () => { SpeechDictation.stop(); });
             }
         });
 
-        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA COM MARCADORES DE DIAGNÓSTICO ---
+        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA (VERSÃO FINAL E ROBUSTA) ---
         editor.on('keyup', function(e) {
-            // Log 1: Verifica se o evento está sendo disparado
-            console.log(`[1/6] KeyUp event fired. KeyCode: ${e.keyCode}`);
-
-            if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço (32) ou Enter (13)
-            
-            // Log 2: Confirma que a tecla correta foi pressionada
-            console.log('[2/6] Valid key pressed (Space or Enter).');
-            
-            if (!appState.replacements || appState.replacements.length === 0) {
-                console.warn('[X] Nenhuma regra de substituição encontrada no appState. Abortando.');
-                return;
-            }
-            // Log 3: Confirma que as regras foram carregadas
-            console.log(`[3/6] Encontradas ${appState.replacements.length} regras de substituição para verificar.`);
+            if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço ou Enter
+            if (!appState.replacements || appState.replacements.length === 0) return;
 
             const rng = editor.selection.getRng();
             const startNode = rng.startContainer;
             const startOffset = rng.startOffset;
 
-            if (startNode.nodeType !== Node.TEXT_NODE) {
-                console.warn('[X] O cursor não está em um nó de texto. Abortando.');
-                return;
-            }
-            
+            if (startNode.nodeType !== Node.TEXT_NODE) return;
+
             const textBeforeCursor = startNode.nodeValue.substring(0, startOffset);
-            // Log 4: Mostra o texto que está sendo analisado
-            console.log(`[4/6] Analisando o texto antes do cursor: "${textBeforeCursor}"`);
-            
-            const lastSpaceIndex = textBeforeCursor.lastIndexOf(' ');
-            const word = textBeforeCursor.substring(lastSpaceIndex + 1);
 
-            if (!word) {
-                console.log('[X] Nenhuma palavra para analisar (string vazia).');
-                return;
-            }
-            // Log 5: Mostra a palavra exata que foi extraída
-            console.log(`[5/6] Extraída a última palavra: "${word}"`);
+            // **NOVA LÓGICA**
+            // 1. Clona e ordena as regras da mais longa para a mais curta para evitar correspondências parciais.
+            const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
 
-            const rule = appState.replacements.find(r => r.find === word);
-
-            if (rule) {
-                // Log 6: Sucesso! A regra foi encontrada e a substituição será tentada.
-                console.log(`[6/6] SUCESSO: Regra encontrada para "${word}". Substituindo por "${rule.replace}".`);
-
-                const replaceRng = document.createRange();
-                replaceRng.setStart(startNode, lastSpaceIndex + 1);
-                replaceRng.setEnd(startNode, startOffset);
+            // 2. Itera sobre as regras ordenadas.
+            for (const rule of sortedRules) {
+                // Constrói o gatilho completo, que é a regra + um espaço.
+                // Usamos um espaço não-separável (\u00A0) para compatibilidade com o editor.
+                const trigger = rule.find + '\u00A0';
                 
-                editor.selection.setRng(replaceRng);
-                editor.selection.setContent(rule.replace + ' ');
-            } else {
-                console.log(`[X] Nenhuma regra correspondente encontrada para a palavra "${word}".`);
+                // 3. Verifica se o texto antes do cursor TERMINA com o gatilho.
+                if (textBeforeCursor.endsWith(trigger)) {
+                    
+                    // 4. Se encontrou, define o range exato para apagar (o gatilho completo).
+                    const replaceRng = document.createRange();
+                    replaceRng.setStart(startNode, startOffset - trigger.length);
+                    replaceRng.setEnd(startNode, startOffset);
+
+                    editor.selection.setRng(replaceRng);
+                    editor.selection.setContent(rule.replace + '\u00A0'); // Substitui e adiciona um novo espaço
+
+                    // 5. Interrompe o loop, pois a primeira regra (a mais longa) já foi aplicada.
+                    return; 
+                }
             }
         });
     }
