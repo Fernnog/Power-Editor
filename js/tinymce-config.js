@@ -3,7 +3,6 @@ const TINYMCE_CONFIG = {
     
     plugins: 'lists autoresize pagebreak visualblocks wordcount',
     
-    // CORREÇÃO: 'customReplaceButton' foi adicionado à lista para garantir sua visibilidade.
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
     menubar: false,
@@ -180,7 +179,7 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // BOTÃO DE APAGAR DOCUMENTO
+        // BOTÃO DE APAGAR DOCUMENTO (CORRIGIDO)
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
@@ -193,13 +192,16 @@ const TINYMCE_CONFIG = {
         
         // Funções auxiliares (internas ao setup)
         function createRTFFile(htmlContent) {
+            // Função auxiliar para escapar caracteres especiais do texto para o formato RTF
             const escapeRtf = (str) => {
                 return str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}')
                           .replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
             };
 
+            // Função recursiva para processar cada nó do HTML
             const processNode = (node) => {
                 let rtf = '';
+                // Processa os filhos do nó atual
                 node.childNodes.forEach(child => {
                     if (child.nodeType === Node.TEXT_NODE) {
                         rtf += escapeRtf(child.textContent);
@@ -218,6 +220,7 @@ const TINYMCE_CONFIG = {
                                 rtf += `{\\ul ${processNode(child)}}`;
                                 break;
                             case 'p':
+                                // Verifica se o parágrafo tem recuo de primeira linha
                                 if (child.style.textIndent) {
                                     rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`;
                                 } else {
@@ -225,12 +228,14 @@ const TINYMCE_CONFIG = {
                                 }
                                 break;
                             case 'blockquote':
+                                // Define o estilo de citação (recuo esquerdo grande, sem recuo de primeira linha, itálico)
                                 rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`;
                                 break;
                             case 'br':
                                  rtf += '\\line ';
                                  break;
                             default:
+                                // Para outras tags (como as de listas), processa o conteúdo interno
                                 rtf += processNode(child);
                                 break;
                         }
@@ -239,14 +244,21 @@ const TINYMCE_CONFIG = {
                 return rtf;
             };
 
+            // 1. Cria um elemento temporário para parsear o HTML
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
+
+            // 2. Processa a árvore de nós a partir do div temporário
             const rtfBody = processNode(tempDiv);
+
+            // 3. Monta o documento RTF final com o cabeçalho correto
             const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0
 {\\fonttbl{\\f0 Arial;}}
 \\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32
 ${rtfBody}
 }`;
+
+            // 4. Cria e dispara o download do arquivo
             const blob = new Blob([rtfDocument], { type: 'application/rtf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -272,6 +284,7 @@ ${rtfBody}
                     p.style.paddingLeft = '';
                     
                     const originalContent = p.innerHTML.trim();
+                    
                     const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                     
                     if (originalContent) {
@@ -320,7 +333,6 @@ ${rtfBody}
             }, 4000);
         }
         
-        // Listener para inicialização do editor (usado pelo Ditado)
         editor.on('init', () => {
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
@@ -343,50 +355,60 @@ ${rtfBody}
             }
         });
 
-        // CORREÇÃO: Lógica de substituição automática precisa e eficiente.
+        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA COM MARCADORES DE DIAGNÓSTICO ---
         editor.on('keyup', function(e) {
-            // Aciona a lógica apenas quando a barra de espaço (código 32) ou Enter (código 13) é pressionada
-            if (e.keyCode !== 32 && e.keyCode !== 13) {
-                return;
-            }
+            // Log 1: Verifica se o evento está sendo disparado
+            console.log(`[1/6] KeyUp event fired. KeyCode: ${e.keyCode}`);
+
+            if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço (32) ou Enter (13)
+            
+            // Log 2: Confirma que a tecla correta foi pressionada
+            console.log('[2/6] Valid key pressed (Space or Enter).');
+            
             if (!appState.replacements || appState.replacements.length === 0) {
+                console.warn('[X] Nenhuma regra de substituição encontrada no appState. Abortando.');
                 return;
             }
-    
+            // Log 3: Confirma que as regras foram carregadas
+            console.log(`[3/6] Encontradas ${appState.replacements.length} regras de substituição para verificar.`);
+
             const rng = editor.selection.getRng();
             const startNode = rng.startContainer;
             const startOffset = rng.startOffset;
-    
-            // Garante que estamos trabalhando com um nó de texto
+
             if (startNode.nodeType !== Node.TEXT_NODE) {
+                console.warn('[X] O cursor não está em um nó de texto. Abortando.');
                 return;
             }
             
-            // Pega o texto do nó atual, da posição 0 até o cursor
             const textBeforeCursor = startNode.nodeValue.substring(0, startOffset);
+            // Log 4: Mostra o texto que está sendo analisado
+            console.log(`[4/6] Analisando o texto antes do cursor: "${textBeforeCursor}"`);
             
-            // Encontra a última palavra digitada (texto após o último espaço)
             const lastSpaceIndex = textBeforeCursor.lastIndexOf(' ');
             const word = textBeforeCursor.substring(lastSpaceIndex + 1);
-    
+
             if (!word) {
+                console.log('[X] Nenhuma palavra para analisar (string vazia).');
                 return;
             }
-    
+            // Log 5: Mostra a palavra exata que foi extraída
+            console.log(`[5/6] Extraída a última palavra: "${word}"`);
+
             const rule = appState.replacements.find(r => r.find === word);
-    
+
             if (rule) {
-                // Cria um "range" (seleção) que cobre exatamente a palavra a ser substituída
+                // Log 6: Sucesso! A regra foi encontrada e a substituição será tentada.
+                console.log(`[6/6] SUCESSO: Regra encontrada para "${word}". Substituindo por "${rule.replace}".`);
+
                 const replaceRng = document.createRange();
                 replaceRng.setStart(startNode, lastSpaceIndex + 1);
                 replaceRng.setEnd(startNode, startOffset);
                 
-                // Define a seleção do editor para este range
                 editor.selection.setRng(replaceRng);
-                
-                // Usa o comando nativo do TinyMCE para substituir a seleção pelo novo conteúdo.
-                // Adicionamos um espaço no final para que o usuário possa continuar digitando.
                 editor.selection.setContent(rule.replace + ' ');
+            } else {
+                console.log(`[X] Nenhuma regra correspondente encontrada para a palavra "${word}".`);
             }
         });
     }
