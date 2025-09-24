@@ -1,3 +1,5 @@
+// js/script.js
+
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
@@ -236,7 +238,45 @@ function renderModels(modelsToRender) {
 }
 let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
-function filterModels() { const query = searchBox.value.toLowerCase().trim(); const activeContentArea = document.getElementById('active-content-area'); activeContentArea.style.borderColor = appState.tabs.find(t=>t.id === appState.activeTabId)?.color || '#ccc'; if (query) { activeContentArea.style.borderColor = '#aaa'; } if (!query) { if (appState.activeTabId === FAVORITES_TAB_ID) { return appState.models.filter(m => m.isFavorite); } else { return appState.models.filter(m => m.tabId === appState.activeTabId); } } const models = appState.models; if (query.includes(' ou ')) { const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.some(term => modelText.includes(term)); }); } else if (query.includes(' e ')) { const terms = query.split(' e ').map(t => t.trim()).filter(Boolean); return models.filter(model => { const modelText = (model.name + ' ' + model.content).toLowerCase(); return terms.every(term => modelText.includes(term)); }); } else { return models.filter(model => model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query) ); } }
+
+function filterModels() {
+    const query = searchBox.value.toLowerCase().trim();
+    const activeContentArea = document.getElementById('active-content-area');
+    activeContentArea.style.borderColor = appState.tabs.find(t => t.id === appState.activeTabId)?.color || '#ccc';
+
+    let filteredModels = [];
+    
+    if (!query) {
+        if (appState.activeTabId === FAVORITES_TAB_ID) {
+            filteredModels = appState.models.filter(m => m.isFavorite);
+        } else {
+            filteredModels = appState.models.filter(m => m.tabId === appState.activeTabId);
+        }
+    } else {
+        activeContentArea.style.borderColor = '#aaa';
+        const models = appState.models;
+        if (query.includes(' ou ')) {
+            const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
+            filteredModels = models.filter(model => {
+                const modelText = (model.name + ' ' + model.content).toLowerCase();
+                return terms.some(term => modelText.includes(term));
+            });
+        } else if (query.includes(' e ')) {
+            const terms = query.split(' e ').map(t => t.trim()).filter(Boolean);
+            filteredModels = models.filter(model => {
+                const modelText = (model.name + ' ' + model.content).toLowerCase();
+                return terms.every(term => modelText.includes(term));
+            });
+        } else {
+            filteredModels = models.filter(model =>
+                model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query)
+            );
+        }
+    }
+
+    // Ponto central da melhoria: ordena a lista filtrada alfabeticamente
+    return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
+}
 
 // --- MANIPULAÇÃO DE DADOS (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
