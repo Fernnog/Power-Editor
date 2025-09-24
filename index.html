@@ -104,12 +104,12 @@
     <script src="js/speech.js"></script>
     <script src="js/editor-actions.js"></script>
     <script src="js/backup-manager.js"></script>
-    <script src="js/ModalManager.js"></script>
+    <script src="js/ModalManager.js"></script> <!-- ModalManager ANTES de script.js -->
+    <script src="js/NotificationService.js"></script> <!-- NotificationService ANTES de script.js -->
     <script src="js/gemini-service.js"></script>
-    <!-- O novo arquivo de ícones deve ser carregado ANTES dos scripts que o utilizam -->
     <script src="js/ui-icons.js"></script> 
-    <!-- O serviço de notificação deve ser carregado ANTES dos scripts que o utilizam -->
-    <script src="js/NotificationService.js"></script>
+    
+    <!-- O SCRIPT PRINCIPAL E O DE CONFIGURAÇÃO DO EDITOR VÊM POR ÚLTIMO -->
     <script src="js/script.js"></script>
     <script src="js/tinymce-config.js"></script> 
 </body>
