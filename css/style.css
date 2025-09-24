@@ -573,3 +573,102 @@ blockquote p {
 .tox-tbtn[aria-label="Apagar todo o conteúdo"] .tox-icon svg {
     fill: white !important; /* Garante que o ícone seja branco */
 }
+
+/* --- ADIÇÕES PARA AS NOVAS FUNCIONALIDADES --- */
+
+/* Estilos para o formulário de variáveis dinâmicas no modal */
+.variable-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.variable-row label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+}
+
+.variable-row input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Estilos para o sistema de notificações "Toast" */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 320px;
+}
+
+.toast {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 5px solid #333;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.4s ease-in-out;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-message { 
+    flex-grow: 1;
+    word-break: break-word;
+}
+.toast-close-btn { 
+    background: none; 
+    border: none; 
+    font-size: 20px; 
+    cursor: pointer; 
+    color: #888;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.toast.success { border-left-color: #28a745; }
+.toast.error { border-left-color: #dc3545; }
+.toast.info { border-left-color: #17a2b8; }
+.toast.confirm { border-left-color: #FBBF24; }
+
+.toast-confirm-buttons { 
+    margin-top: 10px; 
+    display: flex; 
+    gap: 8px; 
+}
+.toast-confirm-buttons button { 
+    flex: 1; 
+    padding: 6px; 
+    border-radius: 4px; 
+    border: 1px solid; 
+    cursor: pointer; 
+    font-weight: bold;
+}
+.toast-confirm-btn { 
+    background-color: var(--primary-color); 
+    color: white; 
+    border-color: var(--primary-color-dark); 
+}
+.toast-cancel-btn { 
+    background-color: #6c757d; 
+    color: white; 
+    border-color: #5a6268; 
+}
