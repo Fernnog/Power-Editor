@@ -50,10 +50,35 @@ function insertModelContent(content, tabId) {
         searchBox.value = '';
         render();
     }
-    // Usa a API do TinyMCE para inserir conteúdo
-    if (tinymce.activeEditor) {
-        tinymce.activeEditor.execCommand('mceInsertContent', false, content);
-        tinymce.activeEditor.focus();
+
+    const variableRegex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
+    const matches = [...content.matchAll(variableRegex)];
+    const uniqueVariables = [...new Set(matches.map(match => match[1]))];
+
+    if (uniqueVariables.length > 0) {
+        ModalManager.show({
+            type: 'variableForm',
+            title: 'Preencha as Informações do Modelo',
+            initialData: { variables: uniqueVariables },
+            saveButtonText: 'Inserir Texto',
+            onSave: (data) => {
+                let processedContent = content;
+                for (const key in data) {
+                    const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+                    processedContent = processedContent.replace(placeholder, data[key]);
+                }
+                if (tinymce.activeEditor) {
+                    tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
+                    tinymce.activeEditor.focus();
+                }
+            }
+        });
+    } else {
+        // Comportamento original se não houver variáveis
+        if (tinymce.activeEditor) {
+            tinymce.activeEditor.execCommand('mceInsertContent', false, content);
+            tinymce.activeEditor.focus();
+        }
     }
 }
 
@@ -278,18 +303,163 @@ function filterModels() {
     return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// --- MANIPULAÇÃO DE DADOS (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
+// --- MANIPULAÇÃO DE DADOS (COM ALERT/CONFIRM SUBSTITUÍDOS) ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
-function deleteTab(tabId) { const tabToDelete = appState.tabs.find(t => t.id === tabId); if (!confirm(`Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`)) return; const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID); const destinationOptions = regularTabs.filter(t => t.id !== tabId); const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) { alert("Seleção inválida. A exclusão foi cancelada."); return; } modifyStateAndBackup(() => { const destinationTabId = destinationOptions[choiceIndex].id; appState.models.forEach(model => { if (model.tabId === tabId) { model.tabId = destinationTabId; } }); appState.tabs = appState.tabs.filter(t => t.id !== tabId); appState.activeTabId = destinationTabId; render(); }); }
-function addNewModelFromEditor() { const content = tinymce.activeEditor.getContent(); if (!content) { alert('O editor está vazio. Escreva algo para salvar como modelo.'); return; } let targetTabId = appState.activeTabId; if (targetTabId === FAVORITES_TAB_ID) { targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id; if (!targetTabId) { alert("Crie uma aba regular primeiro para poder adicionar modelos."); return; } } ModalManager.show({ type: 'modelEditor', title: 'Salvar Novo Modelo', initialData: { name: '' }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false }; appState.models.push(newModel); searchBox.value = ''; render(); }); } }); }
-function editModel(modelId) { const model = appState.models.find(m => m.id === modelId); ModalManager.show({ type: 'modelEditor', title: 'Editar Modelo', initialData: { name: model.name, content: model.content }, onSave: (data) => { if (!data.name) { alert('O nome do modelo não pode ser vazio.'); return; } modifyStateAndBackup(() => { model.name = data.name; model.content = data.content; render(); }); } }); }
-function deleteModel(modelId) { const model = appState.models.find(m => m.id === modelId); if (confirm(`Tem certeza que deseja excluir o modelo "${model.name}"?`)) { modifyStateAndBackup(() => { appState.models = appState.models.filter(m => m.id !== modelId); render(); }); } }
+function deleteTab(tabId) {
+    const tabToDelete = appState.tabs.find(t => t.id === tabId);
+    NotificationService.showConfirm({
+        message: `Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`,
+        onConfirm: () => {
+            const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID);
+            const destinationOptions = regularTabs.filter(t => t.id !== tabId);
+            const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
+            const choice = prompt(promptMessage);
+            const choiceIndex = parseInt(choice, 10) - 1;
+            if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) {
+                NotificationService.show("Seleção inválida. A exclusão foi cancelada.", "error");
+                return;
+            }
+            modifyStateAndBackup(() => {
+                const destinationTabId = destinationOptions[choiceIndex].id;
+                appState.models.forEach(model => {
+                    if (model.tabId === tabId) { model.tabId = destinationTabId; }
+                });
+                appState.tabs = appState.tabs.filter(t => t.id !== tabId);
+                appState.activeTabId = destinationTabId;
+                render();
+            });
+            NotificationService.show(`Aba "${tabToDelete.name}" excluída.`, 'success');
+        }
+    });
+}
+function addNewModelFromEditor() {
+    const content = tinymce.activeEditor.getContent();
+    if (!content) {
+        NotificationService.show('O editor está vazio. Escreva algo para salvar como modelo.', 'error');
+        return;
+    }
+    let targetTabId = appState.activeTabId;
+    if (targetTabId === FAVORITES_TAB_ID) {
+        targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id;
+        if (!targetTabId) {
+            NotificationService.show("Crie uma aba regular primeiro para poder adicionar modelos.", "error");
+            return;
+        }
+    }
+    ModalManager.show({
+        type: 'modelEditor',
+        title: 'Salvar Novo Modelo',
+        initialData: { name: '' },
+        onSave: (data) => {
+            if (!data.name) {
+                NotificationService.show('O nome do modelo não pode ser vazio.', 'error');
+                return;
+            }
+            modifyStateAndBackup(() => {
+                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false };
+                appState.models.push(newModel);
+                searchBox.value = '';
+                render();
+            });
+            NotificationService.show('Novo modelo salvo com sucesso!', 'success');
+        }
+    });
+}
+function editModel(modelId) {
+    const model = appState.models.find(m => m.id === modelId);
+    ModalManager.show({
+        type: 'modelEditor',
+        title: 'Editar Modelo',
+        initialData: { name: model.name, content: model.content },
+        onSave: (data) => {
+            if (!data.name) {
+                NotificationService.show('O nome do modelo não pode ser vazio.', 'error');
+                return;
+            }
+            modifyStateAndBackup(() => {
+                model.name = data.name;
+                model.content = data.content;
+                render();
+            });
+            NotificationService.show('Modelo atualizado!', 'success');
+        }
+    });
+}
+function deleteModel(modelId) {
+    const model = appState.models.find(m => m.id === modelId);
+    NotificationService.showConfirm({
+        message: `Tem certeza que deseja excluir o modelo "${model.name}"?`,
+        onConfirm: () => {
+            modifyStateAndBackup(() => {
+                appState.models = appState.models.filter(m => m.id !== modelId);
+                render();
+            });
+            NotificationService.show('Modelo excluído!', 'success');
+        }
+    });
+}
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
-function moveModelToAnotherTab(modelId) { const model = appState.models.find(m => m.id === modelId); const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId); if (destinationOptions.length === 0) { alert("Não há outras abas para mover este modelo."); return; } const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n'); const choice = prompt(promptMessage); const choiceIndex = parseInt(choice, 10) - 1; if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) { modifyStateAndBackup(() => { model.tabId = destinationOptions[choiceIndex].id; render(); }); } else if(choice) { alert("Seleção inválida."); } }
+function moveModelToAnotherTab(modelId) {
+    const model = appState.models.find(m => m.id === modelId);
+    const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId);
+    if (destinationOptions.length === 0) {
+        NotificationService.show("Não há outras abas para mover este modelo.", 'info');
+        return;
+    }
+    const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
+    const choice = prompt(promptMessage);
+    const choiceIndex = parseInt(choice, 10) - 1;
+    if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
+        modifyStateAndBackup(() => {
+            model.tabId = destinationOptions[choiceIndex].id;
+            render();
+        });
+        NotificationService.show(`Modelo movido para "${destinationOptions[choiceIndex].name}".`, 'success');
+    } else if (choice) {
+        NotificationService.show("Seleção inválida.", 'error');
+    }
+}
 function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
-function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { if (!confirm("Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?")) { importFileInput.value = ''; return; } try { const importedState = JSON.parse(e.target.result); if (importedState.models && importedState.tabs && importedState.activeTabId) { appState = importedState; 
-    
-    const filename = file.name; const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/); if (match) { const [, year, month, day, hours, minutes] = match; const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes); if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); } } saveStateToStorage(); render(); alert('Modelos importados com sucesso!'); BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null); } else { throw new Error('Formato de arquivo inválido.'); } } catch (error) { alert('Erro ao importar o arquivo. Verifique se é um JSON válido.'); } finally { importFileInput.value = ''; } }; reader.readAsText(file); }
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        NotificationService.showConfirm({
+            message: "Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?",
+            onConfirm: () => {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState.models && importedState.tabs && importedState.activeTabId) {
+                        appState = importedState;
+
+                        const filename = file.name;
+                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                        if (match) {
+                            const [, year, month, day, hours, minutes] = match;
+                            const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
+                            if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
+                        }
+                        saveStateToStorage();
+                        render();
+                        NotificationService.show('Modelos importados com sucesso!', 'success');
+                        BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
+                    } else {
+                        throw new Error('Formato de arquivo inválido.');
+                    }
+                } catch (error) {
+                    NotificationService.show('Erro ao importar o arquivo. Verifique se é um JSON válido.', 'error');
+                } finally {
+                    importFileInput.value = '';
+                }
+            },
+            onCancel: () => {
+                importFileInput.value = '';
+            }
+        });
+    };
+    reader.readAsText(file);
+}
 
 // --- INICIALIZAÇÃO DA APLICAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
