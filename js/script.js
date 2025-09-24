@@ -30,7 +30,6 @@ const tabActionsContainer = document.getElementById('tab-actions-container');
 function modifyStateAndBackup(modificationFn) {
     modificationFn();
     saveStateToStorage();
-    // A lógica de debounced backup foi movida para o BackupManager
     BackupManager.schedule(appState);
 }
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
@@ -38,12 +37,11 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 // --- FUNÇÕES DE PERSISTÊNCIA ---
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
 function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } 
-    // A chamada para atualizar a UI do backup agora é feita pelo BackupManager
     BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
     if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; } 
 }
 
-// --- FUNÇÕES DO EDITOR (ATUALIZADA) ---
+// --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
 function insertModelContent(content, tabId) {
     if (searchBox.value && tabId && appState.activeTabId !== tabId) {
         appState.activeTabId = tabId;
@@ -65,7 +63,7 @@ function insertModelContent(content, tabId) {
                 let processedContent = content;
                 for (const key in data) {
                     const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-                    processedContent = processedContent.replace(placeholder, data[key]);
+                    processedContent = processedContent.replace(placeholder, data[key] || '');
                 }
                 if (tinymce.activeEditor) {
                     tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
@@ -74,7 +72,6 @@ function insertModelContent(content, tabId) {
             }
         });
     } else {
-        // Comportamento original se não houver variáveis
         if (tinymce.activeEditor) {
             tinymce.activeEditor.execCommand('mceInsertContent', false, content);
             tinymce.activeEditor.focus();
@@ -82,7 +79,7 @@ function insertModelContent(content, tabId) {
     }
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO (SEM ALTERAÇÕES NA LÓGICA INTERNA) ---
+// --- FUNÇÕES DE RENDERIZAÇÃO (SEM ALTERAÇÕES) ---
 function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
@@ -299,12 +296,12 @@ function filterModels() {
         }
     }
 
-    // Ponto central da melhoria: ordena a lista filtrada alfabeticamente
     return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// --- MANIPULAÇÃO DE DADOS (COM ALERT/CONFIRM SUBSTITUÍDOS) ---
+// --- MANIPULAÇÃO DE DADOS (COM alert/confirm SUBSTITUÍDOS) ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
+
 function deleteTab(tabId) {
     const tabToDelete = appState.tabs.find(t => t.id === tabId);
     NotificationService.showConfirm({
@@ -328,10 +325,10 @@ function deleteTab(tabId) {
                 appState.activeTabId = destinationTabId;
                 render();
             });
-            NotificationService.show(`Aba "${tabToDelete.name}" excluída.`, 'success');
         }
     });
 }
+
 function addNewModelFromEditor() {
     const content = tinymce.activeEditor.getContent();
     if (!content) {
@@ -365,6 +362,7 @@ function addNewModelFromEditor() {
         }
     });
 }
+
 function editModel(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     ModalManager.show({
@@ -385,6 +383,7 @@ function editModel(modelId) {
         }
     });
 }
+
 function deleteModel(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     NotificationService.showConfirm({
@@ -394,16 +393,18 @@ function deleteModel(modelId) {
                 appState.models = appState.models.filter(m => m.id !== modelId);
                 render();
             });
-            NotificationService.show('Modelo excluído!', 'success');
+            NotificationService.show('Modelo excluído com sucesso!', 'success');
         }
     });
 }
+
 function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
+
 function moveModelToAnotherTab(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId);
     if (destinationOptions.length === 0) {
-        NotificationService.show("Não há outras abas para mover este modelo.", 'info');
+        NotificationService.show("Não há outras abas para mover este modelo.", "info");
         return;
     }
     const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
@@ -414,12 +415,25 @@ function moveModelToAnotherTab(modelId) {
             model.tabId = destinationOptions[choiceIndex].id;
             render();
         });
-        NotificationService.show(`Modelo movido para "${destinationOptions[choiceIndex].name}".`, 'success');
-    } else if (choice) {
-        NotificationService.show("Seleção inválida.", 'error');
+        NotificationService.show(`Modelo movido para a aba "${destinationOptions[choiceIndex].name}".`, 'success');
+    } else if(choice) {
+        NotificationService.show("Seleção inválida.", "error");
     }
 }
-function exportModels() { const dataStr = JSON.stringify(appState, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const a = document.createElement('a'); a.href = url; a.download = 'modelos_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+
+function exportModels() {
+    const dataStr = JSON.stringify(appState, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'modelos_backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -432,7 +446,6 @@ function handleImportFile(event) {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
                         appState = importedState;
-
                         const filename = file.name;
                         const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
                         if (match) {
@@ -463,23 +476,18 @@ function handleImportFile(event) {
 
 // --- INICIALIZAÇÃO DA APLICAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
-    // Inicializa o BackupManager primeiro, passando o elemento da UI
     const backupStatusEl = document.getElementById('backup-status-text');
     BackupManager.init({ statusElement: backupStatusEl });
 
     loadStateFromStorage(); 
     render(); 
 
-    // --- INICIALIZAÇÃO DO TINYMCE (REFATORADO) ---
-    // A configuração agora é carregada a partir da variável TINYMCE_CONFIG
-    // definida no arquivo js/tinymce-config.js.
     if (typeof TINYMCE_CONFIG !== 'undefined') {
         tinymce.init(TINYMCE_CONFIG);
     } else {
-        console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada. Verifique se o arquivo js/tinymce-config.js está sendo carregado corretamente ANTES de script.js.');
+        console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada.');
     }
 
-    // --- EVENT LISTENERS DA SIDEBAR (PERMANECEM IGUAIS) ---
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
