@@ -10,7 +10,7 @@ const ModalManager = (() => {
     let currentConfig = null;
 
     /**
-     * Constrói o HTML para o editor de modelos (Criar/Editar).
+     * Constrói o HTML para o editor de modelos (Criar/Editar), incluindo o ícone de ajuda.
      * @param {object} data - Dados iniciais { name, content }.
      */
     function _buildModelEditorContent(data = {}) {
@@ -18,7 +18,10 @@ const ModalManager = (() => {
             <label for="modal-input-name">Nome do Modelo:</label>
             <input type="text" id="modal-input-name" placeholder="Digite o nome aqui..." value="${data.name || ''}">
             
-            <label for="modal-input-content">Conteúdo do Modelo:</label>
+            <label for="modal-input-content">
+                Conteúdo do Modelo:
+                <span id="variable-info-icon" title="Clique para saber como usar variáveis dinâmicas">i</span>
+            </label>
             <div class="modal-toolbar">
                 <button onclick="document.execCommand('bold')"><b>B</b></button>
                 <button onclick="document.execCommand('italic')"><i>I</i></button>
@@ -69,7 +72,14 @@ const ModalManager = (() => {
             <form id="variable-form">${formFieldsHtml}</form>
         `;
     }
-
+    
+    /**
+     * Constrói o conteúdo HTML para um modal informativo.
+     * @param {object} data - Dados iniciais { content }.
+     */
+    function _buildInfoContent(data = {}) {
+        modalDynamicContent.innerHTML = `<div class="info-modal-content">${data.content || ''}</div>`;
+    }
 
     /**
      * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
@@ -79,7 +89,6 @@ const ModalManager = (() => {
         if (currentConfig.type === 'replacementManager') {
             const listContainer = modalDynamicContent.querySelector('#replacement-list-container');
             
-            // Adicionar nova regra
             modalDynamicContent.querySelector('#add-new-rule-btn').addEventListener('click', () => {
                 const newRow = document.createElement('div');
                 newRow.className = 'replacement-row';
@@ -93,14 +102,12 @@ const ModalManager = (() => {
                 newRow.querySelector('.find-input').focus();
             });
 
-            // Remover regra (delegação de evento)
             modalDynamicContent.addEventListener('click', (e) => {
                 if (e.target.classList.contains('delete-rule-btn')) {
                     e.target.parentElement.remove();
                 }
             });
 
-            // Filtrar/Buscar regra
             modalDynamicContent.querySelector('#replacement-search-input').addEventListener('input', (e) => {
                 const query = e.target.value.toLowerCase();
                 listContainer.querySelectorAll('.replacement-row').forEach(row => {
@@ -110,18 +117,50 @@ const ModalManager = (() => {
                 });
             });
         }
+        
+        // Evento para o Ícone de Informação no Editor de Modelo
+        if (currentConfig.type === 'modelEditor') {
+            const infoIcon = modalDynamicContent.querySelector('#variable-info-icon');
+            if (infoIcon) {
+                infoIcon.addEventListener('click', () => {
+                    ModalManager.show({
+                        type: 'info',
+                        title: 'Guia Rápido: Variáveis Dinâmicas',
+                        initialData: {
+                            content: `
+                                <h4>Para que servem?</h4>
+                                <p>As variáveis permitem criar campos em seus modelos que serão preenchidos no momento do uso. Isso automatiza a inserção de informações como nomes, documentos ou datas.</p>
+                                
+                                <h4>Como usar:</h4>
+                                <p>Para definir uma variável, envolva um nome descritivo com chaves duplas, como abaixo:</p>
+                                <pre><code>{{nome_da_variavel}}</code></pre>
+                                
+                                <h4>Exemplo Prático:</h4>
+                                <pre><code>Despacho referente ao processo de {{nome_do_cliente}}, inscrito sob o CPF {{cpf_do_cliente}}.</code></pre>
+                                
+                                <h4>Regras de Nomenclatura (Variáveis Permitidas):</h4>
+                                <ul>
+                                    <li>Use apenas letras (a-z), números (0-9) e o caractere de sublinhado ( _ ).</li>
+                                    <li>Não use espaços, acentos ou caracteres especiais (ç, !, @, #, etc.).</li>
+                                    <li>O nome da variável não diferencia maiúsculas de minúsculas.</li>
+                                </ul>
+                            `
+                        }
+                    });
+                });
+            }
+        }
     }
     
     /**
      * Coleta os dados do formulário de substituição.
-     * @returns {Array} Lista de objetos { find, replace }.
      */
     function _getReplacementData() {
         const replacements = [];
         modalDynamicContent.querySelectorAll('.replacement-row').forEach(row => {
             const find = row.querySelector('.find-input').value.trim();
-            const replace = row.querySelector('.replace-input').value; // Não usar trim() no "replace" para permitir espaços
-            if (find) { // Salva a regra apenas se o campo "Localizar" estiver preenchido
+            const replace = row.querySelector('.replace-input').value;
+            if (find) {
                 replacements.push({ find, replace });
             }
         });
@@ -137,12 +176,14 @@ const ModalManager = (() => {
             content: modalDynamicContent.querySelector('#modal-input-content').innerHTML
         };
     }
-
+    
     /**
      * Coleta os dados do formulário de variáveis.
      */
     function _getVariableFormData() {
-        const formData = new FormData(modalDynamicContent.querySelector('#variable-form'));
+        const form = modalDynamicContent.querySelector('#variable-form');
+        if (!form) return {};
+        const formData = new FormData(form);
         const data = {};
         for (let [key, value] of formData.entries()) {
             data[key] = value;
@@ -150,17 +191,22 @@ const ModalManager = (() => {
         return data;
     }
 
-
     /**
      * Função principal para exibir o modal com uma configuração específica.
-     * @param {object} config - Objeto de configuração do modal.
      */
     function show(config) {
         currentConfig = config;
         modalTitleEl.textContent = config.title;
-        modalBtnSave.textContent = config.saveButtonText || 'Salvar e Fechar';
 
-        // Constrói o conteúdo com base no tipo
+        if (config.type === 'info') {
+            modalBtnSave.style.display = 'none';
+            modalBtnCancel.textContent = 'Entendi';
+        } else {
+            modalBtnSave.style.display = 'inline-block';
+            modalBtnCancel.textContent = 'Cancelar';
+            modalBtnSave.textContent = config.saveButtonText || 'Salvar e Fechar';
+        }
+
         switch (config.type) {
             case 'modelEditor':
                 _buildModelEditorContent(config.initialData);
@@ -171,13 +217,16 @@ const ModalManager = (() => {
             case 'variableForm':
                 _buildVariableFormContent(config.initialData);
                 break;
+            case 'info':
+                _buildInfoContent(config.initialData);
+                break;
             default:
                 console.error('Tipo de modal desconhecido:', config.type);
                 return;
         }
 
         modalContainer.classList.add('visible');
-        _attachDynamicEventListeners(); // Adiciona os eventos ao conteúdo recém-criado
+        _attachDynamicEventListeners();
         const firstInput = modalDynamicContent.querySelector('input[type="text"]');
         if (firstInput) {
             firstInput.focus();
@@ -189,7 +238,7 @@ const ModalManager = (() => {
      */
     function hide() {
         modalContainer.classList.remove('visible');
-        modalDynamicContent.innerHTML = ''; // Limpa o conteúdo para a próxima abertura
+        modalDynamicContent.innerHTML = '';
         currentConfig = null;
     }
 
