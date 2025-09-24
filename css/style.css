@@ -574,9 +574,9 @@ blockquote p {
     fill: white !important; /* Garante que o ícone seja branco */
 }
 
-/* --- ADIÇÕES PARA AS NOVAS FUNCIONALIDADES --- */
+/* --- NOVOS ESTILOS ADICIONADOS PARA AS FUNCIONALIDADES --- */
 
-/* Estilos para o formulário de variáveis dinâmicas no modal */
+/* Estilos para o formulário de variáveis dinâmicas */
 .variable-row {
     display: flex;
     flex-direction: column;
@@ -630,45 +630,77 @@ blockquote p {
     transform: translateX(0);
 }
 
-.toast-message { 
-    flex-grow: 1;
-    word-break: break-word;
-}
-.toast-close-btn { 
-    background: none; 
-    border: none; 
-    font-size: 20px; 
-    cursor: pointer; 
-    color: #888;
-    padding: 0 5px;
-    line-height: 1;
-}
+.toast-message { flex-grow: 1; }
+.toast-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; padding: 0 5px; }
 
 .toast.success { border-left-color: #28a745; }
 .toast.error { border-left-color: #dc3545; }
 .toast.info { border-left-color: #17a2b8; }
-.toast.confirm { border-left-color: #FBBF24; }
+.toast.confirm { border-left-color: #ffc107; }
 
-.toast-confirm-buttons { 
-    margin-top: 10px; 
-    display: flex; 
-    gap: 8px; 
-}
-.toast-confirm-buttons button { 
-    flex: 1; 
-    padding: 6px; 
-    border-radius: 4px; 
-    border: 1px solid; 
-    cursor: pointer; 
+.toast-confirm-buttons { margin-top: 10px; display: flex; gap: 8px; }
+.toast-confirm-buttons button { flex: 1; padding: 6px; border-radius: 4px; border: 1px solid; cursor: pointer; }
+.toast-confirm-btn { background-color: var(--primary-color); color: white; border-color: var(--primary-color-dark); }
+.toast-cancel-btn { background-color: #6c757d; color: white; border-color: #5a6268; }
+
+/* Estilo para o ícone de informação 'i' */
+#variable-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: #3B82F6;
+    color: white;
+    border-radius: 50%;
     font-weight: bold;
+    font-family: serif;
+    font-style: italic;
+    font-size: 15px;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    user-select: none;
+    vertical-align: middle;
 }
-.toast-confirm-btn { 
-    background-color: var(--primary-color); 
-    color: white; 
-    border-color: var(--primary-color-dark); 
+
+#variable-info-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 }
-.toast-cancel-btn { 
-    background-color: #6c757d; 
-    color: white; 
-    border-color: #5a6268; 
+
+/* Estilos para o conteúdo do modal de ajuda */
+.info-modal-content h4 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.info-modal-content p, .info-modal-content li {
+    line-height: 1.6;
+    margin-bottom: 1.2em;
+    color: #555;
+}
+
+.info-modal-content ul {
+    padding-left: 20px;
+    margin-top: -10px;
+}
+
+.info-modal-content pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-top: 5px;
+}
+
+.info-modal-content code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: #e83e8c;
+    font-size: 0.95em;
 }
