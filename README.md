@@ -21,42 +21,41 @@ A filosofia é "performance em primeiro lugar", utilizando tecnologias web nativ
 
 A aplicação evoluiu para uma ferramenta de produtividade robusta, com as seguintes funcionalidades:
 
-#### Identidade Visual Renovada
--   A interface foi atualizada para incorporar uma nova paleta de cores da marca, aplicada em elementos-chave como o card de status de backup e botões de ação críticos, criando uma experiência de usuário mais coesa e moderna.
+#### Identidade Visual e Experiência do Usuário
+-   **Interface Moderna:** A interface incorpora uma paleta de cores coesa e elementos de design modernos para uma experiência de usuário agradável.
+-   **(NOVO) Notificações "Toast" Não-Bloqueantes:** Todas as mensagens de feedback (sucesso, erro, confirmação) foram migradas dos `alert()` e `confirm()` nativos do navegador para um sistema de notificações "toast". Elas aparecem discretamente no canto da tela, não interrompem o fluxo de trabalho e possuem cores distintas para indicar o status da operação.
 
 #### Área de Edição Avançada
 -   **Barra de Ferramentas Otimizada:** Ações essenciais estão diretamente na barra de ferramentas do editor para acesso rápido.
-    -   **"Apagar todo o conteúdo":** Um novo botão, destacado com uma cor fúcsia para indicar uma ação destrutiva, permite limpar o editor com uma confirmação de segurança.
--   **Formatação de Texto e Parágrafo:** Suporte completo para **Negrito**, *Itálico*, <u>Sublinhado</u>, listas numeradas, listas com marcadores, citações (blockquote) e alinhamento de texto.
--   **Controle de Estilo:** Ajuste de espaçamento entre linhas e recuo de primeira linha.
+-   **Formatação de Texto e Parágrafo:** Suporte completo para **Negrito**, *Itálico*, <u>Sublinhado</u>, listas, citações e alinhamento.
 -   **Ferramentas de Produtividade:**
     -   **Ditado por Voz:** Utilize o microfone para transcrever sua fala diretamente no editor.
-    -   **Correção Inteligente com IA:** Selecione qualquer trecho de texto e clique no botão **A✓** para enviá-lo à API do Google (Gemini). A IA corrige erros de gramática, ortografia e pontuação, substituindo automaticamente o texto original pela versão aprimorada.
-    -   **(NOVO) Gerenciador de Substituições Automáticas:** Acesse um novo botão na barra de ferramentas para criar e gerenciar uma lista de regras de substituição. Por exemplo, defina que ao digitar `*id` seguido de espaço, o texto seja automaticamente substituído por `(#id: ;fl.)`. Essa funcionalidade é ideal para automatizar jargões, siglas, correções comuns ou trechos de código, aumentando drasticamente a velocidade de digitação.
+    -   **Correção Inteligente com IA (Gemini):** Selecione um texto e, com um clique, envie-o para a API do Google para corrigir erros de gramática, ortografia e pontuação.
+    -   **Gerenciador de Substituições Automáticas:** Crie regras personalizadas (ex: `*id` se transforma em `(#id: ;fl.)`) para automatizar a digitação de termos recorrentes.
 
 #### Gerenciador de Modelos Inteligente (Sidebar)
--   **Card de Status de Backup:** Um card de destaque no topo da barra lateral fornece feedback visual imediato sobre a data e hora do último backup realizado (automático ou importado), aumentando a confiança do usuário.
--   **Organização por Abas:**
-    -   **Gestão Completa:** Crie, renomeie, exclua e personalize as cores de suas abas.
-    -   **Aba de Favoritos:** Uma aba especial dedicada para agrupar seus modelos mais utilizados.
--   **Gerenciamento de Modelos (CRUD):**
-    -   **Criar, Ler, Atualizar e Excluir** modelos de texto de forma intuitiva.
-    -   **Mover:** Realoque modelos facilmente entre diferentes abas.
+-   **(NOVO) Sistema de Variáveis Dinâmicas:**
+    -   **Criação de Modelos Inteligentes:** Agora é possível criar modelos com placeholders usando a sintaxe `{{nome_da_variavel}}`.
+    -   **Preenchimento Guiado:** Ao usar um modelo com variáveis, uma janela pop-up (modal) é exibida, solicitando que você preencha um formulário com os valores para cada variável.
+    -   **Inserção Automatizada:** Após o preenchimento, o texto é inserido no editor com todas as variáveis já substituídas, eliminando a necessidade de "caçar" e substituir informações manualmente.
+    -   **Ajuda Contextual:** Um ícone de informação "i" está disponível na tela de criação/edição de modelos para explicar como usar o recurso de variáveis.
+-   **Card de Status de Backup:** Feedback visual imediato sobre a data e hora do último backup.
+-   **Organização por Abas:** Crie, renomeie, personalize as cores e exclua abas para organizar seus modelos. Inclui uma aba especial de "Favoritos".
+-   **Gerenciamento Completo de Modelos (CRUD):** Crie, edite, exclua e mova modelos entre abas de forma intuitiva.
 -   **Busca Rápida e Avançada:** Filtre sua lista de modelos instantaneamente com suporte a operadores lógicos `E` e `OU`.
 
 #### Persistência e Segurança de Dados
--   **Salvamento Automático no Navegador:** Todo o seu trabalho, incluindo modelos, abas e as novas regras de substituição, é salvo automaticamente no `LocalStorage`.
--   **Backup e Restauração Manual:** Exporte e importe todos os seus dados (modelos, abas e regras) em um único arquivo `JSON`.
--   **Backup Automático por Inatividade:** Para segurança extra, a aplicação inicia o download de um arquivo de backup `JSON` atualizado após um breve período de inatividade e atualiza o card de status visual para confirmar a operação.
+-   **Salvamento Automático no Navegador:** Todo o seu trabalho, incluindo modelos, abas e regras de substituição, é salvo automaticamente no `LocalStorage`.
+-   **Backup e Restauração:** Exporte e importe todos os seus dados em um único arquivo `JSON`.
+-   **Backup Automático por Inatividade:** Para segurança extra, a aplicação inicia o download de um arquivo de backup após um breve período de inatividade.
 
 ## 4. Como Executar
 
-Por ser uma aplicação majoritariamente client-side, a execução é simples. No entanto, a nova funcionalidade de correção com IA requer uma pequena configuração.
+Por ser uma aplicação majoritariamente client-side, a execução é simples. No entanto, a funcionalidade de correção com IA requer uma pequena configuração.
 
 1.  **Clone ou faça o download deste repositório.**
 
 2.  **Configure sua Chave de API (Obrigatório para a função de IA):**
-    A funcionalidade de correção de texto precisa de uma chave de API do Google AI Studio para funcionar.
     *   Navegue até a pasta `js/`.
     *   Crie um **novo arquivo** e nomeie-o exatamente como **`config.js`**.
     *   Abra este novo arquivo e cole o seguinte código dentro dele:
@@ -67,41 +66,41 @@ Por ser uma aplicação majoritariamente client-side, a execução é simples. N
         };
         ```
     *   Substitua `"SUA_CHAVE_API_VAI_AQUI"` pela sua chave de API real.
-    *   **Nota de Segurança:** Este arquivo `config.js` **não deve ser compartilhado ou enviado para repositórios públicos (como o GitHub)**. Ele foi projetado para ser um arquivo de configuração estritamente local.
+    *   **Nota de Segurança:** Este arquivo `config.js` **não deve ser compartilhado ou enviado para repositórios públicos**.
 
-3.  **Abra o arquivo `index.html` em qualquer navegador moderno** (Chrome, Firefox, Edge, etc.). A aplicação estará pronta para uso. A funcionalidade de IA só funcionará se o passo 2 for concluído corretamente.
+3.  **Abra o arquivo `index.html` em qualquer navegador moderno** (Chrome, Firefox, Edge, etc.). A aplicação estará pronta para uso.
 
 ## 5. Estrutura de Arquivos
 
--   `index.html`: Define a estrutura da página, incluindo o novo card de status do backup na sidebar.
--   `css/style.css`: Contém todas as regras de estilização, incluindo o estilo do card de backup, a cor customizada para o botão 'Apagar' e os **novos estilos para o modal do gerenciador de substituições**.
--   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), a manipulação do DOM e os eventos principais. Agora também **persiste as regras de substituição**.
--   `js/editor-actions.js`: Módulo de suporte para ações do editor. (Nota: A função 'formatDocument' foi removida, simplificando este módulo).
--   `js/speech.js`: Módulo para a API de Reconhecimento de Voz.
+-   `index.html`: Define a estrutura da página, incluindo o **novo container `#toast-container`** para as notificações.
+-   `css/style.css`: Contém todas as regras de estilização, incluindo os **novos estilos para o sistema de notificações "toast", o formulário de variáveis e o ícone de ajuda**.
+-   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`) e os eventos principais. Agora contém a **lógica para detectar variáveis nos modelos e a substituição das chamadas `alert`/`confirm` pelo novo serviço de notificação**.
+-   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE, agora **utilizando o serviço de notificação para feedback ao usuário**.
+-   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais, agora **aprimorado para suportar o novo formulário de variáveis e o modal de informações (`info`)**.
+-   `js/NotificationService.js`: **(Novo)** Módulo dedicado que encapsula toda a lógica para criar e gerenciar notificações "toast" (sucesso, erro, confirmação).
 -   `js/backup-manager.js`: Módulo de suporte para a lógica de backup.
--   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais, agora **aprimorado para suportar diferentes tipos de conteúdo dinâmico**, como o editor de modelos e o novo gerenciador de substituições.
--   `js/gemini-service.js`: Módulo dedicado que encapsula a lógica de comunicação com a API do Google AI (Gemini).
--   `js/tinymce-config.js`: Módulo que centraliza toda a configuração do editor TinyMCE, incluindo a adição de botões customizados como 'Apagar Doc' e o **novo botão e lógica para o Gerenciador de Substituições Automáticas**.
--   `js/ui-icons.js`: Arquivo central para todas as constantes de ícones SVG, incluindo o **novo ícone de substituição (`ICON_REPLACE`)**.
--   `js/config.js`: **(Novo/Local)** Arquivo de configuração local **(não incluído no repositório)** para armazenar a chave de API do Google. É necessário criar este arquivo manualmente.
+-   `js/speech.js`: Módulo para a API de Reconhecimento de Voz.
+-   `js/gemini-service.js`: Módulo para comunicação com a API do Google AI (Gemini).
+-   `js/ui-icons.js`: Arquivo central para constantes de ícones SVG.
+-   `js/config.js`: **(Local)** Arquivo de configuração para armazenar a chave de API (deve ser criado manualmente).
 -   `README.md`: Este arquivo.
 
 ## 6. Roadmap de Desenvolvimento
 
-Com a base atual sólida, o plano de evolução inclui:
+### Recém-Implementado
+-   ✅ **Sistema de Notificações "Toast":** Substituição completa dos `alert()` e `confirm()` nativos.
+-   ✅ **Variáveis Dinâmicas nos Modelos:** Implementação da sintaxe `{{variavel}}`, formulário de preenchimento e ajuda contextual.
 
-#### Curto Prazo (Quick Wins & UX)
--   [ ] **Melhorar Feedback de Ações (Toast Notifications):** Substituir os `alert()` e `confirm()` nativos por notificações "toast" não-bloqueantes para uma UX mais moderna.
+### Curto Prazo (Quick Wins & UX)
+-   [ ] **(NOVO) Memória de Variáveis:** Salvar os valores preenchidos no `LocalStorage` para pré-preencher o formulário na próxima vez que o mesmo modelo for usado.
 -   [ ] **Melhorar Gestão da Chave de API (UX):** Em vez de usar um arquivo `config.js`, criar um modal de "Configurações" onde o usuário possa inserir e salvar sua chave de API no `LocalStorage`.
 -   [ ] **Otimizar Busca:** Adicionar "debounce" à função de busca para otimizar a performance em listas de modelos muito grandes.
--   [ ] **(NOVO) Regras de Substituição Sensíveis ao Contexto:** Adicionar uma opção "Diferenciar maiúsculas/minúsculas" a cada regra no gerenciador para um controle mais preciso.
 
-#### Médio Prazo (Arquitetura e Funcionalidades)
+### Médio Prazo (Arquitetura e Funcionalidades)
+-   [ ] **(NOVO) Variáveis Predefinidas/Globais:** Permitir que o usuário defina variáveis globais (ex: `{{data_atual}}`) em uma área de configurações.
 -   [ ] **Expandir Funcionalidades de IA:** Adicionar novas ferramentas como "Mudar Tom do Texto" (formal, informal) ou "Expandir Ideia".
--   [ ] **Variáveis Dinâmicas:** Introduzir um sistema de placeholders nos modelos (ex: `{{nome_do_cliente}}`). Ao inserir um modelo, o sistema solicitaria ao usuário que preenchesse os valores.
--   [ ] **(NOVO) Refatorar Lógica de Substituição:** Mover a lógica de substituição automática de `tinymce-config.js` para um módulo dedicado (`replacement-service.js`) para melhorar a organização do código.
+-   [ ] **(NOVO) Refatorar `ModalManager`:** Migrar a lógica de construção de conteúdo do modal para um padrão de "builders" ou "strategy" para melhorar a manutenibilidade e escalabilidade do código.
 
-#### Longo Prazo (Visão Futura)
--   [ ] **Backend-for-Frontend (BFF) para Segurança da API:** Implementar um pequeno servidor intermediário que guardaria a chave de API de forma segura.
+### Longo Prazo (Visão Futura)
 -   [ ] **Perfis de Formatação:** Permitir que os usuários criem, salvem e apliquem diferentes conjuntos de regras de estilo com um clique.
--   [ ] **Histórico de Versões:** Implementar um sistema que salva "snapshots" do documento no `LocalStorage` periodicamente.
+-   [ ] **Histórico de Versões:** Implementar um sistema que salva "snapshots" do documento no `LocalStorage` periodicamente, permitindo reverter para versões anteriores.
