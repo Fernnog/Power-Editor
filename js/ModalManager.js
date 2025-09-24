@@ -85,7 +85,6 @@ const ModalManager = (() => {
      * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
      */
     function _attachDynamicEventListeners() {
-        // Eventos para o Gerenciador de Substituições
         if (currentConfig.type === 'replacementManager') {
             const listContainer = modalDynamicContent.querySelector('#replacement-list-container');
             
@@ -118,7 +117,6 @@ const ModalManager = (() => {
             });
         }
         
-        // Evento para o Ícone de Informação no Editor de Modelo
         if (currentConfig.type === 'modelEditor') {
             const infoIcon = modalDynamicContent.querySelector('#variable-info-icon');
             if (infoIcon) {
@@ -152,9 +150,6 @@ const ModalManager = (() => {
         }
     }
     
-    /**
-     * Coleta os dados do formulário de substituição.
-     */
     function _getReplacementData() {
         const replacements = [];
         modalDynamicContent.querySelectorAll('.replacement-row').forEach(row => {
@@ -167,9 +162,6 @@ const ModalManager = (() => {
         return replacements;
     }
     
-    /**
-     * Coleta os dados do formulário de edição de modelo.
-     */
     function _getModelEditorData() {
         return {
             name: modalDynamicContent.querySelector('#modal-input-name').value.trim(),
@@ -177,9 +169,6 @@ const ModalManager = (() => {
         };
     }
     
-    /**
-     * Coleta os dados do formulário de variáveis.
-     */
     function _getVariableFormData() {
         const form = modalDynamicContent.querySelector('#variable-form');
         if (!form) return {};
@@ -191,9 +180,6 @@ const ModalManager = (() => {
         return data;
     }
 
-    /**
-     * Função principal para exibir o modal com uma configuração específica.
-     */
     function show(config) {
         currentConfig = config;
         modalTitleEl.textContent = config.title;
@@ -233,18 +219,12 @@ const ModalManager = (() => {
         }
     }
 
-    /**
-     * Oculta o modal e limpa o estado.
-     */
     function hide() {
         modalContainer.classList.remove('visible');
         modalDynamicContent.innerHTML = '';
         currentConfig = null;
     }
 
-    /**
-     * Handler do botão Salvar. Coleta os dados e chama o callback.
-     */
     function onSaveClick() {
         if (!currentConfig || typeof currentConfig.onSave !== 'function') return hide();
 
@@ -267,14 +247,12 @@ const ModalManager = (() => {
         hide();
     }
 
-    // Adiciona os listeners de eventos uma única vez
     modalBtnSave.addEventListener('click', onSaveClick);
     modalBtnCancel.addEventListener('click', hide);
     modalContainer.addEventListener('click', (e) => {
         if (e.target === modalContainer) hide();
     });
 
-    // Expõe a API pública
     return {
         show,
         hide
