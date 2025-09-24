@@ -63,7 +63,7 @@ const TINYMCE_CONFIG = {
                 if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                     SpeechDictation.start();
                 } else {
-                    alert('O reconhecimento de voz não é suportado neste navegador.');
+                    NotificationService.show('O reconhecimento de voz não é suportado neste navegador.', 'error');
                 }
             }
         });
@@ -74,13 +74,13 @@ const TINYMCE_CONFIG = {
             tooltip: 'Corrigir Texto com IA',
             onAction: async function(api) {
                 if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
-                    alert("Erro de configuração: A chave de API não foi encontrada. Verifique o arquivo js/config.js");
+                    NotificationService.show("Erro: A chave de API não foi encontrada. Verifique o arquivo js/config.js.", 'error', 6000);
                     return;
                 }
                 
                 const selectedText = editor.selection.getContent({ format: 'text' });
                 if (!selectedText) {
-                    alert("Por favor, selecione o texto que deseja corrigir.");
+                    NotificationService.show("Por favor, selecione o texto que deseja corrigir.", 'info');
                     return;
                 }
                 
@@ -100,7 +100,7 @@ const TINYMCE_CONFIG = {
                 } catch (error) {
                     console.error("Erro na correção de texto:", error);
                     editor.formatter.remove('ia_processing_marker');
-                    alert('Ocorreu um erro ao corrigir o texto. Veja o console para detalhes.');
+                    NotificationService.show('Ocorreu um erro ao corrigir o texto. Veja o console para detalhes.', 'error');
                 } finally {
                     api.setEnabled(true);
                     api.setIcon('custom-ai-brain');
@@ -121,6 +121,7 @@ const TINYMCE_CONFIG = {
                         modifyStateAndBackup(() => {
                             appState.replacements = data.replacements;
                         });
+                        NotificationService.show('Regras de substituição salvas!', 'success');
                     }
                 });
             }
@@ -157,11 +158,11 @@ const TINYMCE_CONFIG = {
                         selection.removeAllRanges();
                     }
                     
-                    showCopyNotification('Texto copiado e otimizado para Google Docs!');
+                    NotificationService.show('Texto copiado e otimizado para Google Docs!', 'success');
                     
                 } catch (error) {
                     console.error('Erro ao copiar conteúdo formatado:', error);
-                    showCopyNotification('Erro ao copiar. Tente usar Ctrl+C manual.', 'error');
+                    NotificationService.show('Erro ao copiar. Tente usar Ctrl+C manual.', 'error');
                 }
             }
         });
@@ -176,19 +177,23 @@ const TINYMCE_CONFIG = {
                     createRTFFile(editorContent);
                 } catch (error) {
                     console.error('Erro ao gerar arquivo RTF:', error);
-                    alert('Ocorreu um erro ao tentar salvar o documento.');
+                    NotificationService.show('Ocorreu um erro ao tentar salvar o documento.', 'error');
                 }
             }
         });
         
-        // BOTÃO DE APAGAR DOCUMENTO (CORRIGIDO)
+        // BOTÃO DE APAGAR DOCUMENTO (AGORA COM NOTIFICAÇÃO DE CONFIRMAÇÃO)
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
             onAction: function() {
-                if (confirm('Tem certeza que deseja apagar todo o conteúdo do editor? Esta ação não pode ser desfeita.')) {
-                    editor.setContent('');
-                }
+                NotificationService.showConfirm({
+                    message: 'Tem certeza que deseja apagar todo o conteúdo do editor? Esta ação não pode ser desfeita.',
+                    onConfirm: () => {
+                        editor.setContent('');
+                        NotificationService.show('Conteúdo do editor apagado.', 'info');
+                    }
+                });
             }
         });
         
@@ -250,16 +255,6 @@ const TINYMCE_CONFIG = {
             return tempDiv.innerHTML;
         }
 
-        function showCopyNotification(message, type = 'success') {
-            const existingNotification = document.querySelector('.copy-notification');
-            if (existingNotification) existingNotification.remove();
-            const notification = document.createElement('div');
-            notification.className = 'copy-notification';
-            notification.innerHTML = `<div class="copy-notification-content ${type}"><span>${message}</span><button onclick="this.parentElement.parentElement.remove()">&times;</button></div>`;
-            document.body.appendChild(notification);
-            setTimeout(() => { if (notification.parentNode) notification.remove(); }, 4000);
-        }
-        
         editor.on('init', () => {
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
@@ -287,15 +282,12 @@ const TINYMCE_CONFIG = {
             if (startNode.nodeType !== Node.TEXT_NODE) return;
 
             // Pega o texto do nó atual, da posição 0 até o cursor.
-            // O espaço/enter digitado está no final, então ele serve como delimitador.
             const textBeforeCursor = startNode.nodeValue.substring(0, startOffset);
-
+            
             // Clona e ordena as regras da mais longa para a mais curta.
             const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
 
             for (const rule of sortedRules) {
-                // Constrói o gatilho que estamos procurando: a palavra da regra + um espaço.
-                // O espaço pode ser normal ou um "non-breaking space" (\u00A0), então verificamos ambos.
                 const triggerNormalSpace = rule.find + ' ';
                 const triggerNbsp = rule.find + '\u00A0';
 
@@ -307,16 +299,14 @@ const TINYMCE_CONFIG = {
                 }
                 
                 if (triggerFound) {
-                    // Se encontrou, define o range exato para apagar (o gatilho completo).
                     const replaceRng = document.createRange();
                     replaceRng.setStart(startNode, startOffset - triggerFound.length);
                     replaceRng.setEnd(startNode, startOffset);
 
                     editor.selection.setRng(replaceRng);
-                    // Substitui e adiciona um novo espaço para que o usuário possa continuar digitando.
                     editor.selection.setContent(rule.replace + '\u00A0'); 
 
-                    return; // Interrompe o loop, pois a regra foi aplicada.
+                    return;
                 }
             }
         });
