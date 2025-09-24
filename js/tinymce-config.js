@@ -1,7 +1,9 @@
+// js/tinymce-config.js
+
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    plugins: 'lists autoresize pagebreak visualblocks wordcount',
+    plugins: 'lists pagebreak visualblocks wordcount',
     
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
