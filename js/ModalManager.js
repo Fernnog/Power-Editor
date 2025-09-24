@@ -51,6 +51,27 @@ const ModalManager = (() => {
     }
 
     /**
+     * Constrói o HTML para o formulário de variáveis dinâmicas.
+     * @param {object} data - Dados iniciais { variables }.
+     */
+    function _buildVariableFormContent(data = {}) {
+        const toTitleCase = str => str.replace(/_/g, ' ').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1));
+
+        let formFieldsHtml = (data.variables || []).map(variable => `
+            <div class="variable-row">
+                <label for="var-${variable}">${toTitleCase(variable)}:</label>
+                <input type="text" id="var-${variable}" name="${variable}" required>
+            </div>
+        `).join('');
+
+        modalDynamicContent.innerHTML = `
+            <p class="modal-description">Por favor, preencha os campos abaixo. Eles serão usados para completar o seu modelo.</p>
+            <form id="variable-form">${formFieldsHtml}</form>
+        `;
+    }
+
+
+    /**
      * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
      */
     function _attachDynamicEventListeners() {
@@ -117,6 +138,18 @@ const ModalManager = (() => {
         };
     }
 
+    /**
+     * Coleta os dados do formulário de variáveis.
+     */
+    function _getVariableFormData() {
+        const formData = new FormData(modalDynamicContent.querySelector('#variable-form'));
+        const data = {};
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        return data;
+    }
+
 
     /**
      * Função principal para exibir o modal com uma configuração específica.
@@ -134,6 +167,9 @@ const ModalManager = (() => {
                 break;
             case 'replacementManager':
                 _buildReplacementManagerContent(config.initialData);
+                break;
+            case 'variableForm':
+                _buildVariableFormContent(config.initialData);
                 break;
             default:
                 console.error('Tipo de modal desconhecido:', config.type);
@@ -172,6 +208,9 @@ const ModalManager = (() => {
                  dataToSave = {
                     replacements: _getReplacementData()
                 };
+                break;
+            case 'variableForm':
+                dataToSave = _getVariableFormData();
                 break;
         }
         
