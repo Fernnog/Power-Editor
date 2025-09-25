@@ -129,7 +129,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado (USA O NOVO MÓDULO)
+        // Botão de Copiar Formatado (USA O NOVO MÓDULO E ARIA-LABEL ATUALIZADO)
         editor.ui.registry.addButton('customCopyFormatted', {
             icon: 'custom-copy-formatted',
             tooltip: 'Copiar como Markdown',
@@ -149,7 +149,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download (USA O NOVO MÓDULO)
+        // Botão de Download (USA O NOVO MÓDULO E ARIA-LABEL ATUALIZADO)
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
             tooltip: 'Salvar como documento Markdown (.md)',
