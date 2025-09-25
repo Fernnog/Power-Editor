@@ -49,7 +49,7 @@ function insertModelContent(content, tabId) {
         render();
     }
 
-    const variableRegex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
+    const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...content.matchAll(variableRegex)];
     const uniqueVariables = [...new Set(matches.map(match => match[1]))];
 
@@ -62,7 +62,7 @@ function insertModelContent(content, tabId) {
             onSave: (data) => {
                 let processedContent = content;
                 for (const key in data) {
-                    const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+                    const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*}}`, 'g');
                     processedContent = processedContent.replace(placeholder, data[key] || '');
                 }
                 if (tinymce.activeEditor) {
