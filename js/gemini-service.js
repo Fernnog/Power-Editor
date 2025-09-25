@@ -1,7 +1,8 @@
 const GeminiService = (() => {
-    // CORREÇÃO: O nome do modelo foi atualizado para "gemini-1.5-flash-latest",
-    // conforme sua sugestão, para usar o modelo mais rápido e compatível.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=';
+    // CORREÇÃO FINAL: O nome do modelo foi ajustado para "gemini-pro", que é a versão
+    // estável e universalmente compatível com as chaves de API do Google AI Studio.
+    // Isso corrige o erro 404 (Not Found).
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
