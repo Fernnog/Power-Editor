@@ -700,4 +700,14 @@ blockquote p {
 }
 
 .info-modal-content code {
- 
+
+/* --- Correção de Estilo dos Ícones --- */
+/* Garante que APENAS os nossos ícones customizados sejam renderizados como contornos */
+.tox-tbtn[aria-label="Ditar texto"] svg,
+.tox-tbtn[aria-label="Corrigir Texto com IA"] svg,
+.tox-tbtn[aria-label="Gerenciar Substituições"] svg,
+.tox-tbtn[aria-label="Copiar como Markdown"] svg, /* ATUALIZADO */
+.tox-tbtn[aria-label="Salvar como documento Markdown (.md)"] svg { /* ATUALIZADO */
+    fill: none !important;
+    stroke: currentColor; /* Usa a cor do tema para consistência */
+}
