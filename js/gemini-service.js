@@ -1,10 +1,7 @@
-// js/gemini-service.js
-
 const GeminiService = (() => {
-    // CORREÇÃO: Revertendo o nome do modelo para 'gemini-1.5-pro-latest'.
-    // A análise dos arquivos antigos confirmou que esta era a versão que funcionava
-    // antes das alterações recentes. O erro 404 era causado pelo uso de um nome de modelo incorreto.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=';
+    // CORREÇÃO: O nome do modelo foi atualizado para "gemini-1.5-flash-latest",
+    // conforme sua sugestão, para usar o modelo mais rápido e compatível.
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
@@ -49,10 +46,7 @@ const GeminiService = (() => {
 
         } catch (error) {
             console.error("Falha ao corrigir o texto:", error);
-            
-            // MELHORIA: O alert() foi substituído pelo NotificationService para uma UX consistente.
-            NotificationService.show(`Não foi possível conectar ao serviço de correção. Detalhes: ${error.message}`, 'error', 6000);
-            
+            alert(`Não foi possível conectar ao serviço de correção.\n\nDetalhes: ${error.message}`);
             return textToCorrect; // Retorna o texto original em caso de erro
         }
     }
