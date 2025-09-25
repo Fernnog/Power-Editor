@@ -207,11 +207,21 @@ function renderModels(modelsToRender) {
         headerDiv.className = 'model-header';
         const nameSpan = document.createElement('span');
         nameSpan.className = 'model-name';
+        
         const colorIndicator = document.createElement('span');
         colorIndicator.className = 'model-color-indicator';
         const parentTab = appState.tabs.find(t => t.id === model.tabId);
         colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
         nameSpan.appendChild(colorIndicator);
+        
+        if (model.content && model.content.includes('{{')) {
+            const variableIndicator = document.createElement('span');
+            variableIndicator.className = 'model-variable-indicator';
+            variableIndicator.title = 'Este modelo contém variáveis dinâmicas';
+            variableIndicator.textContent = '🤖';
+            nameSpan.appendChild(variableIndicator);
+        }
+
         const textNode = document.createTextNode(" " + model.name);
         nameSpan.appendChild(textNode);
         headerDiv.appendChild(nameSpan);
@@ -258,6 +268,7 @@ function renderModels(modelsToRender) {
         modelList.appendChild(li);
     });
 }
+
 let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
 
