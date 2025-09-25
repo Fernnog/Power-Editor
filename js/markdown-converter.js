@@ -1,14 +1,25 @@
 // js/markdown-converter.js
 
 const MarkdownConverter = (() => {
-    // Inicializa o serviço de conversão de HTML para Markdown uma única vez.
-    const turndownService = new TurndownService({ 
-        headingStyle: 'atx', 
-        codeBlockStyle: 'fenced' 
+    // Inicializa o serviço de conversão com opções para um Markdown mais limpo.
+    const turndownService = new TurndownService({
+        headingStyle: 'atx',      // Usa '#' para cabeçalhos
+        codeBlockStyle: 'fenced', // Usa '```' para blocos de código
+        bulletListMarker: '-',    // Usa '-' para listas não ordenadas
+        emDelimiter: '*'          // Usa '*' para itálico
     });
 
-    // ADICIONADAS: Regras explícitas para garantir a conversão de negrito e itálico.
-    // Isso captura tanto <strong> quanto <b>, e <em> quanto <i>.
+    // REGRA 1: Manter a estrutura de parágrafos com quebras de linha duplas.
+    // Esta regra garante consistência na separação entre parágrafos.
+    turndownService.addRule('paragraph', {
+        filter: 'p',
+        replacement: function (content) {
+            // Garante que haja duas quebras de linha após cada parágrafo para a renderização correta do Markdown.
+            return content + '\n\n';
+        }
+    });
+
+    // REGRA 2: Converter explicitamente negrito (<strong> e <b>).
     turndownService.addRule('strong', {
         filter: ['strong', 'b'],
         replacement: function (content) {
@@ -16,12 +27,25 @@ const MarkdownConverter = (() => {
         }
     });
 
+    // REGRA 3: Converter explicitamente itálico (<em> e <i>).
     turndownService.addRule('emphasis', {
         filter: ['em', 'i'],
         replacement: function (content) {
             return '*' + content + '*';
         }
     });
+
+    // REGRA 4: Lidar com o sublinhado (<u>).
+    // Markdown não possui um padrão universal para sublinhado, então a melhor prática é manter o texto sem a formatação.
+    turndownService.addRule('underline', {
+        filter: 'u',
+        replacement: function (content) {
+            return content;
+        }
+    });
+    
+    // NOTA: As regras para listas (ul, ol, li) e citações (blockquote) são bem gerenciadas
+    // pelas configurações padrão do Turndown e não precisam de regras customizadas explícitas.
 
     /**
      * Converte uma string HTML para o formato Markdown.
@@ -33,7 +57,18 @@ const MarkdownConverter = (() => {
             console.error('A biblioteca Turndown não está disponível.');
             return htmlContent; // Retorna o original em caso de erro
         }
-        return turndownService.turndown(htmlContent);
+        
+        // --- DIAGNÓSTICO SOLICITADO ---
+        console.log("%c--- DEBUG: Conversão para Markdown ---", "color: #17a2b8; font-weight: bold;");
+        console.log("1. HTML CAPTURADO DO EDITOR:", htmlContent);
+        
+        const markdownContent = turndownService.turndown(htmlContent);
+
+        console.log("2. RESULTADO DA CONVERSÃO:", markdownContent);
+        console.log("--------------------------------------");
+        // ------------------------------------
+
+        return markdownContent.trim(); // .trim() para remover espaços em branco extras no final.
     }
 
     /**
