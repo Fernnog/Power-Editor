@@ -532,9 +532,10 @@ blockquote p {
 .tox-tbtn[aria-label="Corrigir Texto com IA"] svg,
 .tox-tbtn[aria-label="Gerenciar Substituições"] svg,
 .tox-tbtn[aria-label="Copiar como Markdown"] svg,
-.tox-tbtn[aria-label="Salvar como documento Markdown (.md)"] svg {
-    fill: none !important;
-    stroke: currentColor; /* Usa a cor do tema para consistência */
+.tox-tbtn[aria-label="Salvar como documento Markdown (.md)"] svg,
+.tox-tbtn[aria-label="Colar do Markdown"] svg { /* ADICIONADA ESTA LINHA */
+    fill: none !important;
+    stroke: currentColor; /* Usa a cor do tema para consistência */
 }
 
 /* --- NOVOS ESTILOS --- */
