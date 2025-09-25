@@ -207,27 +207,37 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // --- LÓGICA APRIMORADA PARA COLAR MARKDOWN ---
-        // Agora com uma verificação mais robusta para decidir se o conteúdo colado é Markdown.
+        // --- LÓGICA DE COLAGEM DE MARKDOWN (REFINADA COM DIAGNÓSTICO) ---
         editor.on('paste_preprocess', function (plugin, args) {
-            const pastedText = args.content;
+            const originalContent = args.content;
+            
+            // --- DIAGNÓSTICO ADICIONADO ---
+            console.groupCollapsed('%c[PASTE DEBUG] Analisando conteúdo colado...', 'color: #fbbd2d; font-weight: bold;');
+            console.log('Conteúdo Original Recebido:', originalContent);
+            // ------------------------------------
 
-            // Critérios para detectar Markdown:
-            // 1. O texto contém alguns caracteres comuns de Markdown (* _ # ` [ ] ( ) ~ -).
-            // 2. O texto *NÃO* contém tags HTML típicas (<tag>). Isso evita converter HTML já formatado.
-            // 3. O texto não é excessivamente curto, para evitar falsos positivos em palavras simples.
-            const isLikelyMarkdown = (
-                /[*_#`[\]()~-]/.test(pastedText) &&
-                !/<[a-z][\s\S]*>/i.test(pastedText) &&
-                pastedText.length > 10 // Um limite mínimo para evitar conversões indesejadas
-            );
+            // --- LÓGICA DE DETECÇÃO REFINADA ---
+            // Removemos as tags <p> que o TinyMCE pode adicionar automaticamente para analisar o conteúdo "real".
+            const sanitizedContent = originalContent.trim().replace(/^<p>/i, '').replace(/<\/p>$/i, '').trim();
+            
+            const hasMarkdownSyntax = /[*_#`[\]()~-]/.test(sanitizedContent);
+            const hasNoInnerHtml = !/<[a-z][\s\S]*>/i.test(sanitizedContent);
 
-            if (isLikelyMarkdown) {
-                // Converte o texto Markdown colado para HTML usando o módulo
-                const htmlContent = MarkdownConverter.markdownToHtml(pastedText);
-                // Substitui o conteúdo da área de transferência pelo HTML convertido
+            console.log('Conteúdo Sanitizado:', sanitizedContent);
+            console.log('1. Contém sintaxe MD?', hasMarkdownSyntax);
+            console.log('2. Não contém HTML interno?', hasNoInnerHtml);
+            
+            if (hasMarkdownSyntax && hasNoInnerHtml) {
+                console.log('%cDECISÃO: Conversão de Markdown para HTML ativada.', 'color: #34d399; font-weight: bold;');
+                console.groupEnd();
+                
+                // Usamos o conteúdo sanitizado para a conversão para evitar problemas com as tags <p> extras.
+                const htmlContent = MarkdownConverter.markdownToHtml(sanitizedContent);
                 args.content = htmlContent;
                 NotificationService.show('Conteúdo Markdown colado e formatado!', 'info', 2500);
+            } else {
+                console.log('%cDECISÃO: Mantendo conteúdo original (não parece ser Markdown).', 'color: #f87171;');
+                console.groupEnd();
             }
         });
 
