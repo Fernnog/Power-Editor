@@ -5,7 +5,7 @@ const TINYMCE_CONFIG = {
     
     plugins: 'lists pagebreak visualblocks wordcount',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton | customPasteMarkdown customCopyFormatted customOdtButton | customDeleteButton',
     
     menubar: false,
     statusbar: true,
@@ -30,6 +30,7 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
         editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
+        editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN); // NOVO ÍCONE REGISTRADO
 
         // --- Definição dos Botões ---
 
@@ -133,6 +134,27 @@ const TINYMCE_CONFIG = {
             }
         });
 
+        // NOVO BOTÃO: Colar do Markdown
+        editor.ui.registry.addButton('customPasteMarkdown', {
+            icon: 'custom-paste-markdown',
+            tooltip: 'Colar do Markdown',
+            onAction: async function() {
+                try {
+                    const textFromClipboard = await navigator.clipboard.readText();
+                    if (textFromClipboard) {
+                        const htmlContent = MarkdownConverter.markdownToHtml(textFromClipboard);
+                        editor.execCommand('mceInsertContent', false, htmlContent);
+                        NotificationService.show('Conteúdo Markdown colado e formatado!', 'success');
+                    } else {
+                         NotificationService.show('A área de transferência está vazia.', 'info');
+                    }
+                } catch (error) {
+                    console.error('Falha ao ler da área de transferência:', error);
+                    NotificationService.show('Não foi possível ler o conteúdo. Verifique as permissões do navegador.', 'error');
+                }
+            }
+        });
+
         // Botão de Copiar Formatado
         editor.ui.registry.addButton('customCopyFormatted', {
             icon: 'custom-copy-formatted',
@@ -207,25 +229,26 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // --- LÓGICA APRIMORADA PARA COLAR MARKDOWN ---
-        // Agora com uma verificação mais robusta para decidir se o conteúdo colado é Markdown.
+        // --- LÓGICA DE DETECÇÃO AUTOMÁTICA DE MARKDOWN (CORRIGIDA) ---
         editor.on('paste_preprocess', function (plugin, args) {
-            const pastedText = args.content;
+            // Para contornar a limpeza do TinyMCE, extraímos o texto puro
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = args.content;
+            const plainText = tempDiv.textContent || "";
 
-            // Critérios para detectar Markdown:
-            // 1. O texto contém alguns caracteres comuns de Markdown (* _ # ` [ ] ( ) ~ -).
-            // 2. O texto *NÃO* contém tags HTML típicas (<tag>). Isso evita converter HTML já formatado.
-            // 3. O texto não é excessivamente curto, para evitar falsos positivos em palavras simples.
+            // Critérios de detecção aplicados no texto puro
             const isLikelyMarkdown = (
-                /[*_#`[\]()~-]/.test(pastedText) &&
-                !/<[a-z][\s\S]*>/i.test(pastedText) &&
-                pastedText.length > 10 // Um limite mínimo para evitar conversões indesejadas
+                /[*_#`[\]()~-]/.test(plainText) && // Contém caracteres de Markdown
+                plainText.length > 5 && // Não é muito curto
+                // Evita converter trechos de código ou URLs que contenham os caracteres
+                !/https?:\/\//.test(plainText)
             );
 
             if (isLikelyMarkdown) {
-                // Converte o texto Markdown colado para HTML usando o módulo
-                const htmlContent = MarkdownConverter.markdownToHtml(pastedText);
-                // Substitui o conteúdo da área de transferência pelo HTML convertido
+                // Convertemos o texto PURO, não o conteúdo já processado pelo TinyMCE
+                const htmlContent = MarkdownConverter.markdownToHtml(plainText);
+                
+                // Substituímos o conteúdo a ser colado pelo nosso HTML convertido
                 args.content = htmlContent;
                 NotificationService.show('Conteúdo Markdown colado e formatado!', 'info', 2500);
             }
