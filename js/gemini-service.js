@@ -5,7 +5,7 @@ const GeminiService = (() => {
     // Os erros 404 persistentes em todos os outros modelos sugerem que o problema pode não ser
     // o nome do modelo, mas sim a configuração da chave de API (permissões, região ou faturamento).
     // Esta URL representa a configuração padrão que DEVERIA funcionar.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=';
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
