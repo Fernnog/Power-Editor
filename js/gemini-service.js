@@ -1,7 +1,7 @@
 // js/gemini-service.js
 
 const GeminiService = (() => {
-   const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-latest:generateContent?key=';
+   const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
