@@ -1,10 +1,10 @@
 // js/gemini-service.js
 
 const GeminiService = (() => {
-    // CORREÇÃO FINAL: O problema não era a versão da API (v1 vs v1beta), mas o nome do modelo.
-    // O modelo 'gemini-pro' foi descontinuado ou não está disponível para esta chave/região.
-    // A solução é usar o modelo estável e recomendado mais recente: 'gemini-1.5-pro-latest'.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=';
+    // CORREÇÃO DEFINITIVA (3ª TENTATIVA): O erro de acesso indica que a chave de API
+    // não tem permissão para o modelo 'gemini-1.5-pro'. A solução é usar o modelo
+    // estável, versionado e universalmente acessível: 'gemini-1.0-pro'.
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
