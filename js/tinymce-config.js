@@ -38,7 +38,7 @@ const TINYMCE_CONFIG = {
                 const blockElement = editor.dom.getParents(node, (e) => e.nodeName === 'P' || /^H[1-6]$/.test(e.nodeName), editor.getBody());
                 
                 if (blockElement.length > 0) {
-                    const element = blockElement[0];
+                    const element = blockElement;
                     if (element.style.textIndent) {
                         element.style.textIndent = '';
                     } else {
@@ -129,7 +129,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado (USA O NOVO MÓDULO E ARIA-LABEL ATUALIZADO)
+        // Botão de Copiar Formatado (USA O NOVO MÓDULO CORRIGIDO)
         editor.ui.registry.addButton('customCopyFormatted', {
             icon: 'custom-copy-formatted',
             tooltip: 'Copiar como Markdown',
@@ -149,7 +149,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download (USA O NOVO MÓDULO E ARIA-LABEL ATUALIZADO)
+        // Botão de Download (USA O NOVO MÓDULO CORRIGIDO)
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
             tooltip: 'Salvar como documento Markdown (.md)',
@@ -203,15 +203,15 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // --- LÓGICA PARA COLAR MARKDOWN (USA O NOVO MÓDULO) ---
+        // --- LÓGICA APRIMORADA PARA COLAR MARKDOWN ---
         editor.on('paste_preprocess', function (plugin, args) {
             const pastedText = args.content;
-            // Verifica se o texto colado parece ser Markdown (contém caracteres especiais de MD)
-            // e não contém tags HTML, para evitar dupla conversão.
-            const isLikelyMarkdown = /[*_#`[\]()~]/.test(pastedText) && !/<[a-z][\s\S]*>/i.test(pastedText);
+            // Verifica se o texto colado parece ser Markdown (contém caracteres como *, _, #, etc.)
+            // e, crucialmente, NÃO contém tags HTML, para evitar a conversão de HTML já formatado.
+            const isLikelyMarkdown = /[*_#`[\]()~-]/.test(pastedText) && !/<[a-z][\s\S]*>/i.test(pastedText);
 
             if (isLikelyMarkdown) {
-                // Converte o texto Markdown colado para HTML usando o novo módulo
+                // Converte o texto Markdown colado para HTML usando o módulo corrigido
                 const htmlContent = MarkdownConverter.markdownToHtml(pastedText);
                 // Substitui o conteúdo da área de transferência pelo HTML convertido
                 args.content = htmlContent;
