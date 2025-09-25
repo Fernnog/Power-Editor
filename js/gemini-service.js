@@ -1,10 +1,10 @@
 // js/gemini-service.js
 
 const GeminiService = (() => {
-    // CORREÇÃO DEFINITIVA: O endpoint da API foi atualizado de 'v1beta' para 'v1'.
-    // O log de erro indica que o modelo 'gemini-pro' não é mais servido na versão beta.
-    // A migração para a versão estável 'v1' resolve o erro 404.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=';
+    // CORREÇÃO FINAL: O problema não era a versão da API (v1 vs v1beta), mas o nome do modelo.
+    // O modelo 'gemini-pro' foi descontinuado ou não está disponível para esta chave/região.
+    // A solução é usar o modelo estável e recomendado mais recente: 'gemini-1.5-pro-latest'.
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
