@@ -1,7 +1,8 @@
 const GeminiService = (() => {
-    // O nome do modelo foi atualizado de "gemini-pro" para "gemini-1.5-pro-latest",
-    // que é a versão mais recente e recomendada para esta tarefa.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=';
+    // CORRIGIDO: O nome do modelo foi revertido de "gemini-1.5-pro-latest" para "gemini-pro".
+    // O modelo "gemini-pro" é a versão estável e correta para o endpoint da API 'generativelanguage',
+    // o que resolve o erro 404 ("Model not found") reportado no log.
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
