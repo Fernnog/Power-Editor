@@ -1,7 +1,8 @@
+// js/gemini-service.js
+
 const GeminiService = (() => {
-    // CORRIGIDO: O nome do modelo foi revertido de "gemini-1.5-pro-latest" para "gemini-pro".
-    // O modelo "gemini-pro" é a versão estável e correta para o endpoint da API 'generativelanguage',
-    // o que resolve o erro 404 ("Model not found") reportado no log.
+    // PRIORIDADE 1: A URL foi confirmada para usar o modelo 'gemini-pro', que é a versão estável
+    // correta para o endpoint da API 'v1beta', resolvendo o erro 404 ("Model not found") reportado no log.
     const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=';
 
     /**
@@ -47,7 +48,11 @@ const GeminiService = (() => {
 
         } catch (error) {
             console.error("Falha ao corrigir o texto:", error);
-            alert(`Não foi possível conectar ao serviço de correção.\n\nDetalhes: ${error.message}`);
+            
+            // PRIORIDADE 2: O alert() foi substituído pelo NotificationService para uma UX
+            // não-bloqueante e consistente com o resto da aplicação.
+            NotificationService.show(`Falha na correção: ${error.message}`, 'error', 6000);
+            
             return textToCorrect; // Retorna o texto original em caso de erro
         }
     }
