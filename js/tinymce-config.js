@@ -3,7 +3,9 @@
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    plugins: 'lists pagebreak visualblocks wordcount paste', // Plugin 'paste' é necessário para paste_preprocess
+    // CORRIGIDO: O plugin 'paste' foi removido, pois é um recurso central do editor
+    // e não precisa mais ser carregado separadamente. Isso corrige o erro 404.
+    plugins: 'lists pagebreak visualblocks wordcount',
     
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
@@ -127,7 +129,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado (MODIFICADO PARA MARKDOWN)
+        // Botão de Copiar Formatado (USA O NOVO MÓDULO)
         editor.ui.registry.addButton('customCopyFormatted', {
             icon: 'custom-copy-formatted',
             tooltip: 'Copiar como Markdown',
@@ -147,7 +149,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download (MODIFICADO PARA MARKDOWN)
+        // Botão de Download (USA O NOVO MÓDULO)
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
             tooltip: 'Salvar como documento Markdown (.md)',
@@ -201,7 +203,7 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // --- NOVA LÓGICA PARA COLAR MARKDOWN ---
+        // --- LÓGICA PARA COLAR MARKDOWN (USA O NOVO MÓDULO) ---
         editor.on('paste_preprocess', function (plugin, args) {
             const pastedText = args.content;
             // Verifica se o texto colado parece ser Markdown (contém caracteres especiais de MD)
