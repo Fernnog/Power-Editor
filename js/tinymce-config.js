@@ -3,14 +3,19 @@
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    // CORRIGIDO: O plugin 'paste' foi removido, pois é um recurso central do editor
-    // e não precisa mais ser carregado separadamente. Isso corrige o erro 404.
     plugins: 'lists pagebreak visualblocks wordcount',
     
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
     menubar: false,
     statusbar: true,
+    
+    // ADICIONADO: Força o uso de tags semânticas em vez de estilos CSS para nova formatação
+    formats: {
+        bold: { inline: 'strong' },
+        italic: { inline: 'em' },
+        underline: { inline: 'u', exact: true },
+    },
     
     content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
     
@@ -38,7 +43,7 @@ const TINYMCE_CONFIG = {
                 const blockElement = editor.dom.getParents(node, (e) => e.nodeName === 'P' || /^H[1-6]$/.test(e.nodeName), editor.getBody());
                 
                 if (blockElement.length > 0) {
-                    const element = blockElement;
+                    const element = blockElement[0];
                     if (element.style.textIndent) {
                         element.style.textIndent = '';
                     } else {
@@ -129,7 +134,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado (USA O NOVO MÓDULO CORRIGIDO)
+        // Botão de Copiar Formatado
         editor.ui.registry.addButton('customCopyFormatted', {
             icon: 'custom-copy-formatted',
             tooltip: 'Copiar como Markdown',
@@ -149,7 +154,7 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Download (USA O NOVO MÓDULO CORRIGIDO)
+        // Botão de Download
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
             tooltip: 'Salvar como documento Markdown (.md)',
@@ -203,25 +208,21 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // --- LÓGICA APRIMORADA PARA COLAR MARKDOWN ---
+        // LÓGICA PARA COLAR MARKDOWN
         editor.on('paste_preprocess', function (plugin, args) {
             const pastedText = args.content;
-            // Verifica se o texto colado parece ser Markdown (contém caracteres como *, _, #, etc.)
-            // e, crucialmente, NÃO contém tags HTML, para evitar a conversão de HTML já formatado.
             const isLikelyMarkdown = /[*_#`[\]()~-]/.test(pastedText) && !/<[a-z][\s\S]*>/i.test(pastedText);
 
             if (isLikelyMarkdown) {
-                // Converte o texto Markdown colado para HTML usando o módulo corrigido
                 const htmlContent = MarkdownConverter.markdownToHtml(pastedText);
-                // Substitui o conteúdo da área de transferência pelo HTML convertido
                 args.content = htmlContent;
                 NotificationService.show('Conteúdo Markdown colado e formatado!', 'info', 2500);
             }
         });
 
-        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
+        // LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA
         editor.on('keyup', function(e) {
-            if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço ou Enter
+            if (e.keyCode !== 32 && e.keyCode !== 13) return;
             if (!appState.replacements || appState.replacements.length === 0) return;
 
             const rng = editor.selection.getRng();
