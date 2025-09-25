@@ -526,19 +526,19 @@ blockquote p {
     padding: 4px 2px;
 }
 
-/* --- Correção de Estilo dos Ícones (ATUALIZADO) --- */
-/* Garante que APENAS os nossos ícones customizados sejam renderizados como contornos */
-.tox-tbtn[aria-label="Ditar texto"] svg,
-.tox-tbtn[aria-label="Corrigir Texto com IA"] svg,
-.tox-tbtn[aria-label="Gerenciar Substituições"] svg,
-.tox-tbtn[aria-label="Copiar como Markdown"] svg,
-.tox-tbtn[aria-label="Salvar como documento Markdown (.md)"] svg,
-.tox-tbtn[aria-label="Colar do Markdown"] svg { /* ADICIONADA ESTA LINHA */
-    fill: none !important;
-    stroke: currentColor; /* Usa a cor do tema para consistência */
+/* --- CORREÇÃO DE ESTILO DOS ÍCONES (SELETOR MAIS ESPECÍFICO) --- */
+/* Garante que TODOS os nossos ícones customizados sejam renderizados como contornos */
+.tox-tbtn[aria-label="Ditar texto"] .tox-icon svg,
+.tox-tbtn[aria-label="Corrigir Texto com IA"] .tox-icon svg,
+.tox-tbtn[aria-label="Gerenciar Substituições"] .tox-icon svg,
+.tox-tbtn[aria-label="Copiar como Markdown"] .tox-icon svg,
+.tox-tbtn[aria-label="Salvar como documento Markdown (.md)"] .tox-icon svg,
+.tox-tbtn[aria-label="Colar do Markdown"] .tox-icon svg,
+.tox-tbtn[aria-label="Apagar todo o conteúdo"] .tox-icon svg {
+    fill: none !important;
+    stroke: currentColor;
 }
 
-/* --- NOVOS ESTILOS --- */
 /* --- ESTILOS PARA O NOVO CARD DE STATUS DO BACKUP --- */
 #backup-status-card {
     background-color: var(--primary-color);
@@ -562,18 +562,9 @@ blockquote p {
     font-weight: 500;
 }
 
-/* --- ESTILO PARA O BOTÃO CUSTOMIZADO DE APAGAR NO TINYMCE (USANDO ARIA-LABEL) --- */
-.tox-tbtn[aria-label="Apagar todo o conteúdo"] {
-    background-color: #d9006c; /* Tom de fúcsia */
-}
+/* --- REGRAS ESPECIAIS PARA O BOTÃO DE APAGAR REMOVIDAS --- */
+/* As regras antigas que definiam um fundo fúcsia foram removidas para manter a consistência. */
 
-.tox-tbtn[aria-label="Apagar todo o conteúdo"]:hover {
-    background-color: #a10050; /* Tom mais escuro no hover */
-}
-
-.tox-tbtn[aria-label="Apagar todo o conteúdo"] .tox-icon svg {
-    fill: white !important; /* Garante que o ícone seja branco */
-}
 
 /* --- NOVOS ESTILOS ADICIONADOS PARA AS FUNCIONALIDADES --- */
 
