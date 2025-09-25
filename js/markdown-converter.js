@@ -7,6 +7,22 @@ const MarkdownConverter = (() => {
         codeBlockStyle: 'fenced' 
     });
 
+    // ADICIONADAS: Regras explícitas para garantir a conversão de negrito e itálico.
+    // Isso captura tanto <strong> quanto <b>, e <em> quanto <i>.
+    turndownService.addRule('strong', {
+        filter: ['strong', 'b'],
+        replacement: function (content) {
+            return '**' + content + '**';
+        }
+    });
+
+    turndownService.addRule('emphasis', {
+        filter: ['em', 'i'],
+        replacement: function (content) {
+            return '*' + content + '*';
+        }
+    });
+
     /**
      * Converte uma string HTML para o formato Markdown.
      * @param {string} htmlContent - O conteúdo HTML a ser convertido.
