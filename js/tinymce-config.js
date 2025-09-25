@@ -3,7 +3,7 @@
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
-    plugins: 'lists pagebreak visualblocks wordcount',
+    plugins: 'lists pagebreak visualblocks wordcount paste', // Plugin 'paste' é necessário para paste_preprocess
     
     toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customCopyFormatted customOdtButton | customDeleteButton',
     
@@ -127,62 +127,51 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Copiar Formatado
+        // Botão de Copiar Formatado (MODIFICADO PARA MARKDOWN)
         editor.ui.registry.addButton('customCopyFormatted', {
             icon: 'custom-copy-formatted',
-            tooltip: 'Copiar Formatado (compatível com Google Docs)',
+            tooltip: 'Copiar como Markdown',
             onAction: async function() {
                 try {
-                    const originalContent = editor.getContent();
-                    const optimizedContent = convertForGoogleDocs(originalContent);
+                    const htmlContent = editor.getContent();
+                    const markdownContent = MarkdownConverter.htmlToMarkdown(htmlContent);
                     
-                    if (navigator.clipboard && window.ClipboardItem) {
-                        const blob = new Blob([optimizedContent], { type: 'text/html' });
-                        const clipboardItem = new ClipboardItem({ 'text/html': blob });
-                        await navigator.clipboard.write([clipboardItem]);
-                    } else {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = optimizedContent;
-                        tempDiv.style.position = 'absolute';
-                        tempDiv.style.left = '-9999px';
-                        document.body.appendChild(tempDiv);
-                        
-                        const range = document.createRange();
-                        range.selectNode(tempDiv);
-                        const selection = window.getSelection();
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                        
-                        document.execCommand('copy');
-                        document.body.removeChild(tempDiv);
-                        selection.removeAllRanges();
-                    }
+                    await navigator.clipboard.writeText(markdownContent);
                     
-                    NotificationService.show('Texto copiado e otimizado para Google Docs!', 'success');
+                    NotificationService.show('Texto copiado para a área de transferência em formato Markdown!', 'success');
                     
                 } catch (error) {
-                    console.error('Erro ao copiar conteúdo formatado:', error);
-                    NotificationService.show('Erro ao copiar. Tente usar Ctrl+C manual.', 'error');
+                    console.error('Erro ao copiar como Markdown:', error);
+                    NotificationService.show('Ocorreu um erro ao tentar copiar o texto.', 'error');
                 }
             }
         });
 
-        // Botão de Download
+        // Botão de Download (MODIFICADO PARA MARKDOWN)
         editor.ui.registry.addButton('customOdtButton', {
             icon: 'custom-download-doc',
-            tooltip: 'Salvar como documento (.rtf)',
+            tooltip: 'Salvar como documento Markdown (.md)',
             onAction: function() {
                 const editorContent = editor.getContent();
                 try {
-                    createRTFFile(editorContent);
+                    const markdownContent = MarkdownConverter.htmlToMarkdown(editorContent);
+                    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'documento.md';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
                 } catch (error) {
-                    console.error('Erro ao gerar arquivo RTF:', error);
+                    console.error('Erro ao gerar arquivo Markdown:', error);
                     NotificationService.show('Ocorreu um erro ao tentar salvar o documento.', 'error');
                 }
             }
         });
         
-        // BOTÃO DE APAGAR DOCUMENTO (AGORA COM NOTIFICAÇÃO DE CONFIRMAÇÃO)
+        // BOTÃO DE APAGAR DOCUMENTO
         editor.ui.registry.addButton('customDeleteButton', {
             icon: 'custom-delete-doc',
             tooltip: 'Apagar todo o conteúdo',
@@ -196,64 +185,6 @@ const TINYMCE_CONFIG = {
                 });
             }
         });
-        
-        // Funções auxiliares (internas ao setup)
-        function createRTFFile(htmlContent) {
-            const escapeRtf = (str) => str.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}').replace(/[\u0080-\uFFFF]/g, (c) => `\\uc1\\u${c.charCodeAt(0)}*`);
-            const processNode = (node) => {
-                let rtf = '';
-                node.childNodes.forEach(child => {
-                    if (child.nodeType === Node.TEXT_NODE) rtf += escapeRtf(child.textContent);
-                    else if (child.nodeType === Node.ELEMENT_NODE) {
-                        const tagName = child.tagName.toLowerCase();
-                        switch (tagName) {
-                            case 'strong': case 'b': rtf += `{\\b ${processNode(child)}}`; break;
-                            case 'em': case 'i': rtf += `{\\i ${processNode(child)}}`; break;
-                            case 'u': rtf += `{\\ul ${processNode(child)}}`; break;
-                            case 'p':
-                                if (child.style.textIndent) rtf += `\\pard\\fi5250\\li0 ${processNode(child)}\\par\n`;
-                                else rtf += `\\pard\\fi0\\li0 ${processNode(child)}\\par\n`;
-                                break;
-                            case 'blockquote': rtf += `\\pard\\li10500\\fi0 {\\i ${processNode(child)}}\\par\n`; break;
-                            case 'br': rtf += '\\line '; break;
-                            default: rtf += processNode(child); break;
-                        }
-                    }
-                });
-                return rtf;
-            };
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlContent;
-            const rtfBody = processNode(tempDiv);
-            const rtfDocument = `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\pard\\sa200\\sl276\\slmult1\\qj\\f0\\fs32\n${rtfBody}}`;
-            const blob = new Blob([rtfDocument], { type: 'application/rtf' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'documento.rtf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function convertForGoogleDocs(htmlContent) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlContent;
-            tempDiv.querySelectorAll('p').forEach(p => {
-                if ((p.style.textIndent || '').includes('3cm')) {
-                    p.style.textIndent = ''; p.style.marginLeft = ''; p.style.paddingLeft = '';
-                    const originalContent = p.innerHTML.trim();
-                    if (originalContent) p.innerHTML = '&nbsp;'.repeat(24) + originalContent;
-                    p.style.textIndent = '3cm'; p.style.marginLeft = '0'; p.style.paddingLeft = '0';
-                }
-            });
-            tempDiv.querySelectorAll('blockquote').forEach(bq => {
-                bq.style.marginLeft = '7cm'; bq.style.textIndent = '0'; bq.style.fontStyle = 'italic';
-                bq.style.paddingLeft = '15px'; bq.style.borderLeft = '3px solid #ccc';
-            });
-            return tempDiv.innerHTML;
-        }
 
         editor.on('init', () => {
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
@@ -269,8 +200,24 @@ const TINYMCE_CONFIG = {
                 if (closeBtn) closeBtn.addEventListener('click', () => { SpeechDictation.stop(); });
             }
         });
+        
+        // --- NOVA LÓGICA PARA COLAR MARKDOWN ---
+        editor.on('paste_preprocess', function (plugin, args) {
+            const pastedText = args.content;
+            // Verifica se o texto colado parece ser Markdown (contém caracteres especiais de MD)
+            // e não contém tags HTML, para evitar dupla conversão.
+            const isLikelyMarkdown = /[*_#`[\]()~]/.test(pastedText) && !/<[a-z][\s\S]*>/i.test(pastedText);
 
-        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA (VERSÃO FINAL E ROBUSTA) ---
+            if (isLikelyMarkdown) {
+                // Converte o texto Markdown colado para HTML usando o novo módulo
+                const htmlContent = MarkdownConverter.markdownToHtml(pastedText);
+                // Substitui o conteúdo da área de transferência pelo HTML convertido
+                args.content = htmlContent;
+                NotificationService.show('Conteúdo Markdown colado e formatado!', 'info', 2500);
+            }
+        });
+
+        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
         editor.on('keyup', function(e) {
             if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço ou Enter
             if (!appState.replacements || appState.replacements.length === 0) return;
@@ -280,11 +227,9 @@ const TINYMCE_CONFIG = {
             const startOffset = rng.startOffset;
 
             if (startNode.nodeType !== Node.TEXT_NODE) return;
-
-            // Pega o texto do nó atual, da posição 0 até o cursor.
+            
             const textBeforeCursor = startNode.nodeValue.substring(0, startOffset);
             
-            // Clona e ordena as regras da mais longa para a mais curta.
             const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
 
             for (const rule of sortedRules) {
