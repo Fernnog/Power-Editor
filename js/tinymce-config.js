@@ -10,7 +10,6 @@ const TINYMCE_CONFIG = {
     menubar: false,
     statusbar: true,
     
-    // ADICIONADO: Força o uso de tags semânticas em vez de estilos CSS para nova formatação
     formats: {
         bold: { inline: 'strong' },
         italic: { inline: 'em' },
@@ -208,21 +207,33 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // LÓGICA PARA COLAR MARKDOWN
+        // --- LÓGICA APRIMORADA PARA COLAR MARKDOWN ---
+        // Agora com uma verificação mais robusta para decidir se o conteúdo colado é Markdown.
         editor.on('paste_preprocess', function (plugin, args) {
             const pastedText = args.content;
-            const isLikelyMarkdown = /[*_#`[\]()~-]/.test(pastedText) && !/<[a-z][\s\S]*>/i.test(pastedText);
+
+            // Critérios para detectar Markdown:
+            // 1. O texto contém alguns caracteres comuns de Markdown (* _ # ` [ ] ( ) ~ -).
+            // 2. O texto *NÃO* contém tags HTML típicas (<tag>). Isso evita converter HTML já formatado.
+            // 3. O texto não é excessivamente curto, para evitar falsos positivos em palavras simples.
+            const isLikelyMarkdown = (
+                /[*_#`[\]()~-]/.test(pastedText) &&
+                !/<[a-z][\s\S]*>/i.test(pastedText) &&
+                pastedText.length > 10 // Um limite mínimo para evitar conversões indesejadas
+            );
 
             if (isLikelyMarkdown) {
+                // Converte o texto Markdown colado para HTML usando o módulo
                 const htmlContent = MarkdownConverter.markdownToHtml(pastedText);
+                // Substitui o conteúdo da área de transferência pelo HTML convertido
                 args.content = htmlContent;
                 NotificationService.show('Conteúdo Markdown colado e formatado!', 'info', 2500);
             }
         });
 
-        // LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA
+        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
         editor.on('keyup', function(e) {
-            if (e.keyCode !== 32 && e.keyCode !== 13) return;
+            if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço ou Enter
             if (!appState.replacements || appState.replacements.length === 0) return;
 
             const rng = editor.selection.getRng();
