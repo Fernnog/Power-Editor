@@ -768,7 +768,7 @@ blockquote p {
     display: flex; 
     position: absolute;
     bottom: 30px;
-    right: 15px;
+    right: 10px;
     width: 56px;
     height: 56px;
     background-color: var(--primary-color);
