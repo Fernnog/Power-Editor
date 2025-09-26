@@ -5,7 +5,8 @@ const TINYMCE_CONFIG = {
     
     plugins: 'lists pagebreak visualblocks wordcount',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton | customPasteMarkdown customCopyFormatted customOdtButton | customDeleteButton',
+    // ALTERAÇÃO APLICADA AQUI: Adicionado 'customSettingsButton'
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton customSettingsButton | customPasteMarkdown customCopyFormatted customOdtButton | customDeleteButton',
     
     menubar: false,
     statusbar: true,
@@ -30,7 +31,7 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
         editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
-        editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN); // NOVO ÍCONE REGISTRADO
+        editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN);
 
         // --- Definição dos Botões ---
 
@@ -96,14 +97,10 @@ const TINYMCE_CONFIG = {
                 try {
                     api.setEnabled(false);
                     api.setIcon('custom-spinner');
-
                     editor.formatter.apply('ia_processing_marker');
-                    
                     const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
-                    
                     editor.formatter.remove('ia_processing_marker');
                     editor.selection.setContent(correctedText);
-                    
                 } catch (error) {
                     console.error("Erro na correção de texto:", error);
                     editor.formatter.remove('ia_processing_marker');
@@ -133,8 +130,28 @@ const TINYMCE_CONFIG = {
                 });
             }
         });
+        
+        // NOVO BOTÃO: Configurações Globais
+        editor.ui.registry.addButton('customSettingsButton', {
+            icon: 'settings', // Ícone de engrenagem padrão do TinyMCE
+            tooltip: 'Configurações (Variáveis Globais)',
+            onAction: function () {
+                // Esta chamada prepara a UI para a lógica que será implementada em ModalManager.js
+                ModalManager.show({
+                    type: 'globalVarManager',
+                    title: 'Gerenciar Variáveis Globais',
+                    initialData: { globalVars: appState.globalVariables || [] },
+                    onSave: (data) => {
+                        modifyStateAndBackup(() => {
+                            appState.globalVariables = data.globalVars;
+                        });
+                        NotificationService.show('Variáveis globais salvas com sucesso!', 'success');
+                    }
+                });
+            }
+        });
 
-        // NOVO BOTÃO: Colar do Markdown
+        // Botão: Colar do Markdown
         editor.ui.registry.addButton('customPasteMarkdown', {
             icon: 'custom-paste-markdown',
             tooltip: 'Colar do Markdown',
@@ -163,11 +180,8 @@ const TINYMCE_CONFIG = {
                 try {
                     const htmlContent = editor.getContent();
                     const markdownContent = MarkdownConverter.htmlToMarkdown(htmlContent);
-                    
                     await navigator.clipboard.writeText(markdownContent);
-                    
                     NotificationService.show('Texto copiado para a área de transferência em formato Markdown!', 'success');
-                    
                 } catch (error) {
                     console.error('Erro ao copiar como Markdown:', error);
                     NotificationService.show('Ocorreu um erro ao tentar copiar o texto.', 'error');
@@ -229,65 +243,46 @@ const TINYMCE_CONFIG = {
             }
         });
         
-        // --- LÓGICA DE DETECÇÃO AUTOMÁTICA DE MARKDOWN (CORRIGIDA) ---
         editor.on('paste_preprocess', function (plugin, args) {
-            // Para contornar a limpeza do TinyMCE, extraímos o texto puro
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = args.content;
             const plainText = tempDiv.textContent || "";
-
-            // Critérios de detecção aplicados no texto puro
             const isLikelyMarkdown = (
-                /[*_#`[\]()~-]/.test(plainText) && // Contém caracteres de Markdown
-                plainText.length > 5 && // Não é muito curto
-                // Evita converter trechos de código ou URLs que contenham os caracteres
+                /[*_#`[\]()~-]/.test(plainText) &&
+                plainText.length > 5 &&
                 !/https?:\/\//.test(plainText)
             );
-
             if (isLikelyMarkdown) {
-                // Convertemos o texto PURO, não o conteúdo já processado pelo TinyMCE
                 const htmlContent = MarkdownConverter.markdownToHtml(plainText);
-                
-                // Substituímos o conteúdo a ser colado pelo nosso HTML convertido
                 args.content = htmlContent;
                 NotificationService.show('Conteúdo Markdown colado e formatado!', 'info', 2500);
             }
         });
 
-        // --- LÓGICA DE SUBSTITUIÇÃO AUTOMÁTICA ---
         editor.on('keyup', function(e) {
-            if (e.keyCode !== 32 && e.keyCode !== 13) return; // Só continua para Espaço ou Enter
+            if (e.keyCode !== 32 && e.keyCode !== 13) return;
             if (!appState.replacements || appState.replacements.length === 0) return;
-
             const rng = editor.selection.getRng();
             const startNode = rng.startContainer;
             const startOffset = rng.startOffset;
-
             if (startNode.nodeType !== Node.TEXT_NODE) return;
-            
             const textBeforeCursor = startNode.nodeValue.substring(0, startOffset);
-            
             const sortedRules = [...appState.replacements].sort((a, b) => b.find.length - a.find.length);
-
             for (const rule of sortedRules) {
                 const triggerNormalSpace = rule.find + ' ';
                 const triggerNbsp = rule.find + '\u00A0';
-
                 let triggerFound = null;
                 if (textBeforeCursor.endsWith(triggerNormalSpace)) {
                     triggerFound = triggerNormalSpace;
                 } else if (textBeforeCursor.endsWith(triggerNbsp)) {
                     triggerFound = triggerNbsp;
                 }
-                
                 if (triggerFound) {
                     const replaceRng = document.createRange();
                     replaceRng.setStart(startNode, startOffset - triggerFound.length);
                     replaceRng.setEnd(startNode, startOffset);
-
                     editor.selection.setRng(replaceRng);
                     editor.selection.setContent(rule.replace + '\u00A0'); 
-
                     return;
                 }
             }
