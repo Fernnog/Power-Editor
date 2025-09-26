@@ -3,6 +3,7 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
+const RAPIDOS_TAB_ID = 'rapidos-tab-id'; // ID para a nova aba de modelos rápidos
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
 
 let colorIndex = 0;
@@ -36,7 +37,7 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 
 // --- FUNÇÕES DE PERSISTÊNCIA ---
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
-function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } 
+function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: RAPIDOS_TAB_ID, name: 'Rápidos ⚡', color: '#FBBF24' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } if (!appState.tabs.find(t => t.id === RAPIDOS_TAB_ID)) { const favIndex = appState.tabs.findIndex(t => t.id === FAVORITES_TAB_ID); const newTab = { id: RAPIDOS_TAB_ID, name: 'Rápidos ⚡', color: '#FBBF24' }; if (favIndex !== -1) { appState.tabs.splice(favIndex + 1, 0, newTab); } else { appState.tabs.unshift(newTab); } } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } 
     BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
     if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; } 
 }
@@ -84,12 +85,12 @@ function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
 
-    if (!activeTab || activeTab.id === FAVORITES_TAB_ID) {
+    if (!activeTab || activeTab.id === FAVORITES_TAB_ID || activeTab.id === RAPIDOS_TAB_ID) {
         tabActionsContainer.classList.remove('visible');
         return;
     }
 
-    const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
+    const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== RAPIDOS_TAB_ID).length;
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'tab-action-btn';
@@ -184,7 +185,7 @@ function renderTabs() {
             activeTabColor = tabColor;
         }
 
-        tabEl.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
+        tabEl.textContent = tab.name;
         
         tabEl.addEventListener('click', () => {
             appState.activeTabId = tab.id;
@@ -318,7 +319,7 @@ function deleteTab(tabId) {
     NotificationService.showConfirm({
         message: `Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`,
         onConfirm: () => {
-            const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID);
+            const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== RAPIDOS_TAB_ID);
             const destinationOptions = regularTabs.filter(t => t.id !== tabId);
             const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
             const choice = prompt(promptMessage);
@@ -348,7 +349,7 @@ function addNewModelFromEditor() {
     }
     let targetTabId = appState.activeTabId;
     if (targetTabId === FAVORITES_TAB_ID) {
-        targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id;
+        targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID && t.id !== RAPIDOS_TAB_ID)?.id;
         if (!targetTabId) {
             NotificationService.show("Crie uma aba regular primeiro para poder adicionar modelos.", "error");
             return;
@@ -499,12 +500,8 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada.');
     }
 
-    // --- INÍCIO DA ALTERAÇÃO ---
     // Inicializa o módulo da Paleta de Comandos
-    if (window.CommandPalette) {
-        CommandPalette.init();
-    }
-    // --- FIM DA ALTERAÇÃO ---
+    CommandPalette.init();
 
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
