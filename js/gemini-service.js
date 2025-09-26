@@ -1,9 +1,8 @@
 const GeminiService = (() => {
-    // CORREÇÃO DEFINITIVA: Retornando ao modelo "gemini-pro".
-    // Após os testes, concluímos que os modelos da família 1.5 não estão disponíveis
-    // para esta chave de API. O "gemini-pro" é o modelo estável, padrão e universalmente
-    // compatível com as chaves do Google AI Studio, incluindo o nível gratuito.
-    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=';
+    // CORREÇÃO DEFINITIVA: Utilizando o nome de modelo versionado "gemini-1.0-pro".
+    // Esta é a referência explícita e mais compatível para o modelo, resolvendo
+    // o erro de acesso (404) encontrado com os aliases "latest" e "gemini-pro".
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=';
 
     /**
      * Envia um texto para a API do Gemini e retorna a correção.
