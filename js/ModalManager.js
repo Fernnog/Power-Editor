@@ -1,3 +1,5 @@
+// js/ModalManager.js
+
 const ModalManager = (() => {
     // Referências aos elementos do DOM do modal principal
     const modalContainer = document.getElementById('modal-container');
@@ -54,22 +56,62 @@ const ModalManager = (() => {
     }
 
     /**
-     * Constrói o HTML para o formulário de variáveis dinâmicas.
-     * @param {object} data - Dados iniciais { variables }.
+     * CONSTRUÇÃO DO FORMULÁRIO DE VARIÁVEIS, AGORA COM MEMÓRIA E CHECKBOX DE CONTROLE.
+     * @param {object} data - Dados iniciais { variables, modelId }.
      */
     function _buildVariableFormContent(data = {}) {
+        // Busca os dados salvos na memória para este modelo específico.
+        const savedValues = (appState.variableMemory && appState.variableMemory[data.modelId]) || {};
+        const hasSavedValues = Object.keys(savedValues).length > 0;
+
         const toTitleCase = str => str.replace(/_/g, ' ').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1));
 
-        let formFieldsHtml = (data.variables || []).map(variable => `
+        let formFieldsHtml = (data.variables || []).map(variable => {
+            // Usa o valor salvo na memória, se existir; caso contrário, usa uma string vazia.
+            const prefilledValue = savedValues[variable] || '';
+            return `
             <div class="variable-row">
                 <label for="var-${variable}">${toTitleCase(variable)}:</label>
-                <input type="text" id="var-${variable}" name="${variable}" required>
+                <input type="text" id="var-${variable}" name="${variable}" value="${prefilledValue}" required>
             </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Adiciona o checkbox para controlar o salvamento dos dados.
+        // Ele vem marcado por padrão para incentivar o uso da funcionalidade.
+        const rememberCheckboxHtml = `
+            <div class="modal-remember-choice">
+                <input type="checkbox" id="modal-remember-vars" checked>
+                <label for="modal-remember-vars">Lembrar valores para o próximo uso deste modelo</label>
+            </div>
+        `;
 
         modalDynamicContent.innerHTML = `
             <p class="modal-description">Por favor, preencha os campos abaixo. Eles serão usados para completar o seu modelo.</p>
             <form id="variable-form">${formFieldsHtml}</form>
+            ${rememberCheckboxHtml}
+        `;
+    }
+
+    /**
+     * NOVO: Constrói o conteúdo HTML para o gerenciador de Variáveis Globais.
+     * @param {object} data - Dados iniciais { globalVariables }.
+     */
+    function _buildGlobalVarManagerContent(data = {}) {
+        let globalVarRowsHtml = (data.globalVariables || []).map(item => `
+            <div class="global-var-row">
+                <input type="text" class="var-name-input" placeholder="nome_da_variavel" value="${item.find || ''}">
+                <span class="arrow">→</span>
+                <input type="text" class="var-value-input" placeholder="Valor de substituição" value="${item.replace || ''}">
+                <button type="button" class="delete-rule-btn">&times;</button>
+            </div>
+        `).join('');
+
+        modalDynamicContent.innerHTML = `
+            <p class="modal-description">Gerencie suas variáveis globais. Use <code>{{nome_da_variavel}}</code> em qualquer modelo para substituí-la automaticamente.</p>
+            <input type="text" id="global-var-search-input" placeholder="Buscar por uma variável...">
+            <div id="global-var-list-container">${globalVarRowsHtml}</div>
+            <button id="add-new-var-btn" class="control-btn btn-secondary" style="width: 100%; margin-top: 10px;">Adicionar Nova Variável</button>
         `;
     }
     
@@ -85,20 +127,31 @@ const ModalManager = (() => {
      * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
      */
     function _attachDynamicEventListeners() {
-        if (currentConfig.type === 'replacementManager') {
-            const listContainer = modalDynamicContent.querySelector('#replacement-list-container');
+        // Lógica genérica para gerenciadores de lista (Substituições e Variáveis Globais)
+        if (currentConfig.type === 'replacementManager' || currentConfig.type === 'globalVarManager') {
+            const isReplacement = currentConfig.type === 'replacementManager';
+            const containerId = isReplacement ? '#replacement-list-container' : '#global-var-list-container';
+            const rowClass = isReplacement ? 'replacement-row' : 'global-var-row';
+            const findInputClass = isReplacement ? 'find-input' : 'var-name-input';
+            const replaceInputClass = isReplacement ? 'replace-input' : 'var-value-input';
+            const findPlaceholder = isReplacement ? 'Localizar...' : 'nome_da_variavel';
+            const replacePlaceholder = isReplacement ? 'Substituir por...' : 'Valor de substituição';
+            const addBtnId = isReplacement ? '#add-new-rule-btn' : '#add-new-var-btn';
+            const searchInputId = isReplacement ? '#replacement-search-input' : '#global-var-search-input';
+
+            const listContainer = modalDynamicContent.querySelector(containerId);
             
-            modalDynamicContent.querySelector('#add-new-rule-btn').addEventListener('click', () => {
+            modalDynamicContent.querySelector(addBtnId).addEventListener('click', () => {
                 const newRow = document.createElement('div');
-                newRow.className = 'replacement-row';
+                newRow.className = rowClass;
                 newRow.innerHTML = `
-                    <input type="text" class="find-input" placeholder="Localizar...">
+                    <input type="text" class="${findInputClass}" placeholder="${findPlaceholder}">
                     <span class="arrow">→</span>
-                    <input type="text" class="replace-input" placeholder="Substituir por...">
+                    <input type="text" class="${replaceInputClass}" placeholder="${replacePlaceholder}">
                     <button type="button" class="delete-rule-btn">&times;</button>
                 `;
                 listContainer.appendChild(newRow);
-                newRow.querySelector('.find-input').focus();
+                newRow.querySelector(`.${findInputClass}`).focus();
             });
 
             modalDynamicContent.addEventListener('click', (e) => {
@@ -107,11 +160,11 @@ const ModalManager = (() => {
                 }
             });
 
-            modalDynamicContent.querySelector('#replacement-search-input').addEventListener('input', (e) => {
+            modalDynamicContent.querySelector(searchInputId).addEventListener('input', (e) => {
                 const query = e.target.value.toLowerCase();
-                listContainer.querySelectorAll('.replacement-row').forEach(row => {
-                    const findValue = row.querySelector('.find-input').value.toLowerCase();
-                    const replaceValue = row.querySelector('.replace-input').value.toLowerCase();
+                listContainer.querySelectorAll(`.${rowClass}`).forEach(row => {
+                    const findValue = row.querySelector(`.${findInputClass}`).value.toLowerCase();
+                    const replaceValue = row.querySelector(`.${replaceInputClass}`).value.toLowerCase();
                     row.style.display = (findValue.includes(query) || replaceValue.includes(query)) ? 'flex' : 'none';
                 });
             });
@@ -161,6 +214,19 @@ const ModalManager = (() => {
         });
         return replacements;
     }
+
+    // NOVO: Coleta os dados do gerenciador de variáveis globais
+    function _getGlobalVarData() {
+        const globalVariables = [];
+        modalDynamicContent.querySelectorAll('.global-var-row').forEach(row => {
+            const find = row.querySelector('.var-name-input').value.trim().replace(/[{}]/g, ''); // Garante que não tenha chaves
+            const replace = row.querySelector('.var-value-input').value;
+            if (find) {
+                globalVariables.push({ find, replace });
+            }
+        });
+        return globalVariables;
+    }
     
     function _getModelEditorData() {
         return {
@@ -169,15 +235,25 @@ const ModalManager = (() => {
         };
     }
     
+    /**
+     * MODIFICADO: Coleta os dados do formulário de variáveis e o estado do checkbox.
+     * Retorna um objeto composto para que a lógica de negócio decida o que fazer.
+     */
     function _getVariableFormData() {
         const form = modalDynamicContent.querySelector('#variable-form');
+        const rememberCheckbox = modalDynamicContent.querySelector('#modal-remember-vars');
         if (!form) return {};
+
         const formData = new FormData(form);
-        const data = {};
+        const values = {};
         for (let [key, value] of formData.entries()) {
-            data[key] = value;
+            values[key] = value;
         }
-        return data;
+
+        return {
+            values: values,
+            shouldRemember: rememberCheckbox ? rememberCheckbox.checked : false
+        };
     }
 
     function show(config) {
@@ -202,6 +278,9 @@ const ModalManager = (() => {
                 break;
             case 'variableForm':
                 _buildVariableFormContent(config.initialData);
+                break;
+            case 'globalVarManager': // NOVO TIPO DE MODAL
+                _buildGlobalVarManagerContent(config.initialData);
                 break;
             case 'info':
                 _buildInfoContent(config.initialData);
@@ -239,7 +318,12 @@ const ModalManager = (() => {
                 };
                 break;
             case 'variableForm':
-                dataToSave = _getVariableFormData();
+                dataToSave = _getVariableFormData(); // Retorna o objeto composto { values, shouldRemember }
+                break;
+            case 'globalVarManager': // NOVO
+                 dataToSave = {
+                    globalVariables: _getGlobalVarData()
+                };
                 break;
         }
         
