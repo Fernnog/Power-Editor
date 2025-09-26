@@ -1,9 +1,8 @@
 // js/CommandPalette.js
-console.log('[Marcador] Arquivo CommandPalette.js carregado.'); // MARCADOR 1
 
 const CommandPalette = (() => {
     // Referências aos elementos do DOM
-    let overlayEl, searchInputEl, resultsEl;
+    let overlayEl, searchInputEl, resultsEl, fabEl;
 
     // Constantes e Estado
     const RAPIDOS_TAB_ID = 'rapidos-tab-id';
@@ -15,21 +14,24 @@ const CommandPalette = (() => {
      * Inicializa o módulo, captura os elementos do DOM e anexa os listeners principais.
      */
     function init() {
-        console.log('[Marcador] CommandPalette.init() foi chamado.'); // MARCADOR 2
-
         overlayEl = document.getElementById('command-palette-overlay');
         searchInputEl = document.getElementById('command-palette-search');
         resultsEl = document.getElementById('command-palette-results');
+        fabEl = document.getElementById('open-palette-fab');
 
-        if (!overlayEl || !searchInputEl || !resultsEl) {
+        if (!overlayEl || !searchInputEl || !resultsEl || !fabEl) {
             console.error('Elementos da Paleta de Comandos não encontrados no DOM. A funcionalidade não será ativada.');
             return;
         }
 
+        // Insere o ícone de raio no botão flutuante (FAB)
+        fabEl.innerHTML = ICON_LIGHTNING;
+
         // Listener global para o atalho de teclado
         document.addEventListener('keydown', handleGlobalKeyDown);
 
-        // Listeners para a própria paleta
+        // Listeners para a própria paleta e o FAB
+        fabEl.addEventListener('click', open);
         overlayEl.addEventListener('click', (e) => {
             if (e.target === overlayEl) close();
         });
@@ -66,11 +68,10 @@ const CommandPalette = (() => {
     }
 
     /**
-     * Manipula o atalho global e o 'Escape' para fechar.
+     * Manipula o atalho global (Ctrl+.) e o 'Escape' para fechar.
      */
     function handleGlobalKeyDown(event) {
         if ((event.ctrlKey || event.metaKey) && event.key === '.') {
-            console.log('[Marcador] Atalho Ctrl+. detectado!'); // MARCADOR 4
             event.preventDefault();
             open();
         }
@@ -121,7 +122,7 @@ const CommandPalette = (() => {
     function filterAndRenderResults(query) {
         const lowerCaseQuery = query.toLowerCase();
         
-        // Acessa o estado global da aplicação
+        // Acessa o estado global da aplicação para buscar os modelos corretos
         currentResults = appState.models.filter(model => {
             return model.tabId === RAPIDOS_TAB_ID && model.name.toLowerCase().includes(lowerCaseQuery);
         });
@@ -172,22 +173,18 @@ const CommandPalette = (() => {
     }
 
     /**
-     * Ação final: insere o conteúdo do modelo no editor e fecha a paleta.
+     * Ação final: chama a função global para inserir o conteúdo e fecha a paleta.
      */
     function selectResult(model) {
-        if (tinymce.activeEditor && model.content) {
-            tinymce.activeEditor.execCommand('mceInsertContent', false, model.content);
+        if (model) {
+            // Reutiliza a função centralizada que já lida com variáveis dinâmicas
+            insertModelContent(model.content, model.tabId);
         }
         close();
     }
 
-    // Expõe as funções públicas do módulo
+    // Expõe a função de inicialização publicamente
     return {
-        init,
-        open,
-        close
+        init
     };
 })();
-
-// Disponibiliza o módulo globalmente para que script.js possa encontrá-lo
-window.CommandPalette = CommandPalette;
