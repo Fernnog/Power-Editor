@@ -1,11 +1,3 @@
-Com certeza. Com base em todas as evoluções que implementamos e discutimos, atualizei o arquivo `README.md` para refletir o estado atual e futuro do projeto.
-
-Ele agora inclui a nova "Paleta de Comandos", o rebranding da aba "Power", a mudança para ícones, e um roadmap de desenvolvimento completo com as ideias que acabamos de analisar.
-
----
-
-### `README.md` (Versão Atualizada)
-
 # Editor de Documentos - Projeto de Migração e Otimização
 
 Este repositório contém o código-fonte de um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
