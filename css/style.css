@@ -696,3 +696,75 @@ blockquote p {
     font-size: 0.95em;
     color: #c82333;
 }
+
+/* --- ESTILOS DA PALETA DE COMANDOS --- */
+#command-palette-overlay {
+    /* Reutiliza o estilo do modal-overlay, mas garantimos um z-index maior se necessário */
+    z-index: 2000;
+    align-items: flex-start; /* Alinha a paleta no topo */
+    padding-top: 15vh; /* Distância do topo */
+}
+
+#command-palette {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    overflow: hidden;
+    /* Adiciona transição para a animação de entrada/saída */
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+/* Animação de entrada da paleta quando a overlay se torna visível */
+#command-palette-overlay.visible #command-palette {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#command-palette-search {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+#command-palette-results {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cp-result-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cp-result-item:hover, .cp-result-item.selected {
+    background-color: #f0f0f0;
+}
+
+/* Classe auxiliar para acessibilidade (ocultar visualmente) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}```
