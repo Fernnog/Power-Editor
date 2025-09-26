@@ -63,14 +63,16 @@ const CommandPalette = (() => {
     }
 
     /**
-     * Manipula o atalho global (Shift+P) e o 'Escape' para fechar.
+     * Manipula o atalho global e o 'Escape' para fechar.
      */
     function handleGlobalKeyDown(event) {
-        // Novo atalho: Shift + P
-        if (event.shiftKey && (event.key === 'P' || event.key === 'p')) {
+        // --- INÍCIO DA ALTERAÇÃO ---
+        // Novo atalho: Ctrl + . (Ponto) ou Cmd + . (no Mac)
+        if ((event.ctrlKey || event.metaKey) && event.key === '.') {
             event.preventDefault();
             open();
         }
+        // --- FIM DA ALTERAÇÃO ---
 
         // Fechar com a tecla 'Escape'
         if (isOpen && event.key === 'Escape') {
