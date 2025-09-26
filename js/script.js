@@ -151,7 +151,7 @@ function insertModelContent(content, tabId) {
     }
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO (SEM ALTERAÇÕES) ---
+// --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
@@ -256,7 +256,18 @@ function renderTabs() {
             activeTabColor = tabColor;
         }
 
-        tabEl.textContent = tab.name;
+        // MODIFICADO: Lógica para renderizar ícone ou texto
+        if (tab.id === FAVORITES_TAB_ID) {
+            tabEl.innerHTML = ICON_STAR_FILLED;
+            tabEl.title = tab.name;
+            tabEl.classList.add('tab-item-icon-only');
+        } else if (tab.id === POWER_TAB_ID) {
+            tabEl.innerHTML = ICON_LIGHTNING;
+            tabEl.title = tab.name;
+            tabEl.classList.add('tab-item-icon-only');
+        } else {
+            tabEl.textContent = tab.name;
+        }
         
         tabEl.addEventListener('click', () => {
             appState.activeTabId = tab.id;
