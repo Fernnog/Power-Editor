@@ -793,3 +793,30 @@ blockquote p {
     width: 28px;
     height: 28px;
 }
+
+/* --- ESTILOS PARA ABAS DE ÍCONE --- */
+.tab-item-icon-only {
+    width: 42px;  /* Largura fixa */
+    height: 42px; /* Altura fixa */
+    padding: 0;   /* Remove o padding que era para o texto */
+    border-radius: 50%; /* Deixa a aba completamente redonda */
+    justify-content: center; /* Centraliza o ícone SVG horizontalmente */
+}
+
+/* Estiliza o SVG dentro das abas de ícone */
+.tab-item-icon-only svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Garante que o ícone de estrela seja preenchido com a cor do texto */
+.tab-item[data-tab-id="favorites-tab-id"] svg {
+    fill: currentColor;
+    stroke: none; /* Remove o contorno, caso haja */
+}
+
+/* Garante que o ícone de raio seja contornado com a cor do texto */
+.tab-item[data-tab-id="rapidos-tab-id"] svg {
+    stroke: currentColor;
+    fill: none; /* Garante que não haja preenchimento */
+}
