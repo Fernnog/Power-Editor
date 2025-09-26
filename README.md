@@ -1,3 +1,11 @@
+Com certeza. Com base em todas as evoluções que implementamos e discutimos, atualizei o arquivo `README.md` para refletir o estado atual e futuro do projeto.
+
+Ele agora inclui a nova "Paleta de Comandos", o rebranding da aba "Power", a mudança para ícones, e um roadmap de desenvolvimento completo com as ideias que acabamos de analisar.
+
+---
+
+### `README.md` (Versão Atualizada)
+
 # Editor de Documentos - Projeto de Migração e Otimização
 
 Este repositório contém o código-fonte de um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
@@ -23,7 +31,8 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 
 #### Identidade Visual e Experiência do Usuário
 -   **Interface Moderna:** A interface incorpora uma paleta de cores coesa e elementos de design modernos para uma experiência de usuário agradável.
--   **(NOVO) Notificações "Toast" Não-Bloqueantes:** Todas as mensagens de feedback (sucesso, erro, confirmação) foram migradas dos `alert()` e `confirm()` nativos do navegador para um sistema de notificações "toast". Elas aparecem discretamente no canto da tela, não interrompem o fluxo de trabalho e possuem cores distintas para indicar o status da operação.
+-   **Notificações "Toast" Não-Bloqueantes:** Todas as mensagens de feedback (sucesso, erro, confirmação) são exibidas através de um sistema de notificações "toast" que não interrompem o fluxo de trabalho.
+-   **Acesso Rápido com Botão Flutuante (FAB):** Um botão discreto com um ícone de raio (⚡) fica posicionado sobre a área do editor, garantindo acesso rápido à paleta de comandos, especialmente em dispositivos móveis.
 
 #### Área de Edição Avançada
 -   **Barra de Ferramentas Otimizada:** Ações essenciais estão diretamente na barra de ferramentas do editor para acesso rápido.
@@ -34,15 +43,19 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
     -   **Gerenciador de Substituições Automáticas:** Crie regras personalizadas (ex: `*id` se transforma em `(#id: ;fl.)`) para automatizar a digitação de termos recorrentes.
 
 #### Gerenciador de Modelos Inteligente (Sidebar)
--   **(NOVO) Sistema de Variáveis Dinâmicas:**
-    -   **Criação de Modelos Inteligentes:** Agora é possível criar modelos com placeholders usando a sintaxe `{{nome_da_variavel}}`.
+-   **Sistema de Variáveis Dinâmicas:**
+    -   **Criação de Modelos Inteligentes:** Crie modelos com placeholders usando a sintaxe `{{nome_da_variavel}}`.
     -   **Preenchimento Guiado:** Ao usar um modelo com variáveis, uma janela pop-up (modal) é exibida, solicitando que você preencha um formulário com os valores para cada variável.
-    -   **Inserção Automatizada:** Após o preenchimento, o texto é inserido no editor com todas as variáveis já substituídas, eliminando a necessidade de "caçar" e substituir informações manualmente.
-    -   **Ajuda Contextual:** Um ícone de informação "i" está disponível na tela de criação/edição de modelos para explicar como usar o recurso de variáveis.
+    -   **Inserção Automatizada:** O texto é inserido no editor com todas as variáveis já substituídas.
 -   **Card de Status de Backup:** Feedback visual imediato sobre a data e hora do último backup.
--   **Organização por Abas:** Crie, renomeie, personalize as cores e exclua abas para organizar seus modelos. Inclui uma aba especial de "Favoritos".
+-   **Organização por Abas:** Crie, renomeie, personalize com uma paleta de cores expandida e exclua abas para organizar seus modelos. Inclui abas especiais e otimizadas para **Favoritos (⭐)** e **Power (⚡)**, que agora são representadas por ícones para uma interface mais limpa.
 -   **Gerenciamento Completo de Modelos (CRUD):** Crie, edite, exclua e mova modelos entre abas de forma intuitiva.
 -   **Busca Rápida e Avançada:** Filtre sua lista de modelos instantaneamente com suporte a operadores lógicos `E` e `OU`.
+
+#### Paleta de Comandos Rápidos (Power Palette)
+-   **Acesso Instantâneo:** Abra a paleta a qualquer momento com o atalho `Ctrl + .` ou clicando no botão flutuante (FAB).
+-   **Busca de Modelos Otimizada:** Encontre e insira modelos da sua aba **Power** digitando apenas parte do nome, sem precisar usar o mouse ou navegar pela sidebar.
+-   **Navegação por Teclado:** Use as setas para cima/baixo e a tecla `Enter` para selecionar e inserir um modelo, mantendo o fluxo de trabalho focado no teclado.
 
 #### Persistência e Segurança de Dados
 -   **Salvamento Automático no Navegador:** Todo o seu trabalho, incluindo modelos, abas e regras de substituição, é salvo automaticamente no `LocalStorage`.
@@ -72,35 +85,41 @@ Por ser uma aplicação majoritariamente client-side, a execução é simples. N
 
 ## 5. Estrutura de Arquivos
 
--   `index.html`: Define a estrutura da página, incluindo o **novo container `#toast-container`** para as notificações.
--   `css/style.css`: Contém todas as regras de estilização, incluindo os **novos estilos para o sistema de notificações "toast", o formulário de variáveis e o ícone de ajuda**.
--   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`) e os eventos principais. Agora contém a **lógica para detectar variáveis nos modelos e a substituição das chamadas `alert`/`confirm` pelo novo serviço de notificação**.
--   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE, agora **utilizando o serviço de notificação para feedback ao usuário**.
--   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais, agora **aprimorado para suportar o novo formulário de variáveis e o modal de informações (`info`)**.
--   `js/NotificationService.js`: **(Novo)** Módulo dedicado que encapsula toda a lógica para criar e gerenciar notificações "toast" (sucesso, erro, confirmação).
+-   `index.html`: Define a estrutura da página, incluindo os novos containers para a **Paleta de Comandos (`#command-palette-overlay`)** e o **botão flutuante (FAB)**.
+-   `css/style.css`: Contém todas as regras de estilização, incluindo os novos estilos para a **Paleta de Comandos**, o **FAB reposicionado** e as **abas de ícone**.
+-   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`) e os eventos principais. Agora contém a **lógica para renderizar abas especiais como ícones**.
+-   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE.
+-   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais.
+-   `js/NotificationService.js`: Módulo dedicado que encapsula a lógica para notificações "toast".
+-   `js/CommandPalette.js`: **(Novo)** Módulo que controla toda a lógica da Paleta de Comandos, incluindo busca, navegação e seleção.
+-   `js/markdown-converter.js`: **(Novo)** Módulo com funções para converter HTML para Markdown e vice-versa.
 -   `js/backup-manager.js`: Módulo de suporte para a lógica de backup.
 -   `js/speech.js`: Módulo para a API de Reconhecimento de Voz.
 -   `js/gemini-service.js`: Módulo para comunicação com a API do Google AI (Gemini).
 -   `js/ui-icons.js`: Arquivo central para constantes de ícones SVG.
--   `js/config.js`: **(Local)** Arquivo de configuração para armazenar a chave de API (deve ser criado manualmente).
+-   `js/config.js`: **(Local)** Arquivo de configuração para armazenar a chave de API (deve ser criado manually).
 -   `README.md`: Este arquivo.
 
 ## 6. Roadmap de Desenvolvimento
 
 ### Recém-Implementado
--   ✅ **Sistema de Notificações "Toast":** Substituição completa dos `alert()` e `confirm()` nativos.
--   ✅ **Variáveis Dinâmicas nos Modelos:** Implementação da sintaxe `{{variavel}}`, formulário de preenchimento e ajuda contextual.
+-   ✅ Sistema de Notificações "Toast"
+-   ✅ Variáveis Dinâmicas nos Modelos (`{{variavel}}`)
+-   ✅ **Paleta de Comandos Rápidos** (Power Palette) com atalho `Ctrl + .`
+-   ✅ **Rebranding e Otimização de Abas** (Aba "Power" ⚡ e "Favoritos" ⭐ como ícones)
+-   ✅ **Botão de Acesso Rápido (FAB)** reposicionado sobre o editor para melhor UX.
+-   ✅ **Paleta de Cores Expandida** para personalização das abas.
 
 ### Curto Prazo (Quick Wins & UX)
--   [ ] **(NOVO) Memória de Variáveis:** Salvar os valores preenchidos no `LocalStorage` para pré-preencher o formulário na próxima vez que o mesmo modelo for usado.
+-   [ ] **Memória de Variáveis:** Salvar os valores preenchidos no `LocalStorage` para pré-preencher o formulário na próxima vez que o mesmo modelo for usado.
 -   [ ] **Melhorar Gestão da Chave de API (UX):** Em vez de usar um arquivo `config.js`, criar um modal de "Configurações" onde o usuário possa inserir e salvar sua chave de API no `LocalStorage`.
--   [ ] **Otimizar Busca:** Adicionar "debounce" à função de busca para otimizar a performance em listas de modelos muito grandes.
+-   [ ] **Otimizar Busca com "Debounce":** Adicionar um pequeno atraso à função de busca para otimizar a performance em listas de modelos muito grandes, evitando que a filtragem ocorra a cada tecla pressionada.
 
 ### Médio Prazo (Arquitetura e Funcionalidades)
--   [ ] **(NOVO) Variáveis Predefinidas/Globais:** Permitir que o usuário defina variáveis globais (ex: `{{data_atual}}`) em uma área de configurações.
--   [ ] **Expandir Funcionalidades de IA:** Adicionar novas ferramentas como "Mudar Tom do Texto" (formal, informal) ou "Expandir Ideia".
--   [ ] **(NOVO) Refatorar `ModalManager`:** Migrar a lógica de construção de conteúdo do modal para um padrão de "builders" ou "strategy" para melhorar a manutenibilidade e escalabilidade do código.
+-   [ ] **Variáveis Globais e Dinâmicas:** Permitir que o usuário defina variáveis globais (ex: `{{meu_nome}}`) em uma área de configurações, e usar variáveis geradas pelo sistema (ex: `{{data_atual}}`).
+-   [ ] **Expandir Funcionalidades de IA:** Adicionar novas ferramentas como "Ajustar Tom do Texto" (formal, amigável) ou "Expandir Ideia" diretamente na barra de ferramentas.
+-   [ ] **Refatorar `script.js`:** Desmembrar o arquivo principal em módulos menores e mais focados (ex: `stateManager.js`, `uiRenderer.js`) para melhorar a manutenibilidade do código.
 
 ### Longo Prazo (Visão Futura)
--   [ ] **Perfis de Formatação:** Permitir que os usuários criem, salvem e apliquem diferentes conjuntos de regras de estilo com um clique.
+-   [ ] **Reorganização com Arrastar e Soltar (Drag and Drop):** Permitir que o usuário reordene modelos e abas arrastando-os na interface.
 -   [ ] **Histórico de Versões:** Implementar um sistema que salva "snapshots" do documento no `LocalStorage` periodicamente, permitindo reverter para versões anteriores.
