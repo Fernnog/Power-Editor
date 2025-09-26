@@ -3,7 +3,8 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
-const RAPIDOS_TAB_ID = 'rapidos-tab-id'; // NOVA CONSTANTE
+// ADICIONADO: Constante para a aba de modelos rápidos
+const RAPIDOS_TAB_ID = 'rapidos-tab-id'; 
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
 
 let colorIndex = 0;
@@ -37,62 +38,10 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 
 // --- FUNÇÕES DE PERSISTÊNCIA ---
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
-
-function loadStateFromStorage() {
-    const savedState = localStorage.getItem('editorModelosApp');
-    const setDefaultState = () => {
-        const defaultTabId = `tab-${Date.now()}`;
-        colorIndex = 0;
-        appState = {
-            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
-            tabs: [
-                { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
-                { id: defaultTabId, name: 'Geral', color: getNextColor() }
-            ],
-            activeTabId: defaultTabId,
-            replacements: [],
-            lastBackupTimestamp: null
-        };
-    };
-
-    if (savedState) {
-        try {
-            const parsedState = JSON.parse(savedState);
-            if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
-                appState = parsedState;
-                if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
-                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
-                }
-                appState.tabs.forEach(tab => {
-                    if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
-                        tab.color = getNextColor();
-                    }
-                });
-                if (!appState.replacements) {
-                    appState.replacements = [];
-                }
-            } else {
-                throw new Error("Formato de estado inválido.");
-            }
-        } catch (e) {
-            console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
-            setDefaultState();
-        }
-    } else {
-        setDefaultState();
-    }
-
-    // MODIFICAÇÃO: Garante que a aba "Rápidos" exista
-    if (!appState.tabs.find(t => t.id === RAPIDOS_TAB_ID)) {
-        appState.tabs.push({ id: RAPIDOS_TAB_ID, name: 'Rápidos', color: '#FBBF24' });
-    }
-
+function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } if (!appState.tabs.find(t => t.id === RAPIDOS_TAB_ID)) { appState.tabs.push({ id: RAPIDOS_TAB_ID, name: 'Rápidos', color: '#FBBF24' }); } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID && tab.id !== RAPIDOS_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } 
     BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
-    if (!appState.tabs.find(t => t.id === appState.activeTabId)) {
-        appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null;
-    }
+    if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; } 
 }
-
 
 // --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
 function insertModelContent(content, tabId) {
@@ -137,7 +86,8 @@ function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
 
-    if (!activeTab || activeTab.id === FAVORITES_TAB_ID || activeTab.id === RAPIDOS_TAB_ID) { // MODIFICAÇÃO: Bloqueia ações na aba Rápidos
+    // Oculta ações para as abas especiais "Favoritos" e "Rápidos"
+    if (!activeTab || activeTab.id === FAVORITES_TAB_ID || activeTab.id === RAPIDOS_TAB_ID) {
         tabActionsContainer.classList.remove('visible');
         return;
     }
@@ -219,12 +169,33 @@ function render() {
     renderTabActions();
 }
 
+// ATUALIZADO: Função `renderTabs` com lógica de ordenação fixa
 function renderTabs() {
     tabsContainer.innerHTML = '';
     const activeContentArea = document.getElementById('active-content-area');
     let activeTabColor = '#ccc';
 
-    appState.tabs.forEach(tab => {
+    // --- NOVA LÓGICA DE ORDENAÇÃO ---
+    const sortedTabs = [...appState.tabs].sort((a, b) => {
+        const getOrder = (id) => {
+            if (id === FAVORITES_TAB_ID) return 1;
+            if (id === RAPIDOS_TAB_ID) return 2;
+            return 3; // Todas as outras abas
+        };
+
+        const orderA = getOrder(a.id);
+        const orderB = getOrder(b.id);
+
+        if (orderA !== orderB) {
+            return orderA - orderB;
+        }
+        // Se forem do mesmo tipo (ambas "outras"), ordena por nome
+        return a.name.localeCompare(b.name);
+    });
+    // --- FIM DA NOVA LÓGICA ---
+
+    // O loop agora usa a lista ordenada: sortedTabs
+    sortedTabs.forEach(tab => {
         const tabEl = document.createElement('button');
         tabEl.className = 'tab-item';
         tabEl.dataset.tabId = tab.id;
@@ -236,23 +207,23 @@ function renderTabs() {
             tabEl.classList.add('active');
             activeTabColor = tabColor;
         }
-
-        let tabName = tab.name;
-        if (tab.id === FAVORITES_TAB_ID) {
-            tabName += ' ⭐';
-        }
-        tabEl.textContent = tabName;
         
-        // MODIFICAÇÃO: Adiciona ícone de raio ⚡ para a aba "Rápidos"
-        if (tab.id === RAPIDOS_TAB_ID) {
-            const iconSpan = document.createElement('span');
-            iconSpan.innerHTML = ICON_LIGHTNING;
-            iconSpan.style.display = 'inline-flex';
-            iconSpan.style.alignItems = 'center';
-            iconSpan.style.marginRight = '6px';
-            tabEl.prepend(iconSpan);
+        let tabDisplayName = tab.name;
+        if (tab.id === FAVORITES_TAB_ID) {
+            tabDisplayName += ' ⭐';
         }
 
+        tabEl.textContent = tabDisplayName;
+
+        if (tab.id === RAPIDOS_TAB_ID && typeof ICON_LIGHTNING !== 'undefined') {
+            const icon = document.createElement('span');
+            icon.innerHTML = ICON_LIGHTNING;
+            icon.style.display = 'inline-flex';
+            icon.style.alignItems = 'center';
+            icon.style.marginRight = '5px';
+            tabEl.prepend(icon);
+        }
+        
         tabEl.addEventListener('click', () => {
             appState.activeTabId = tab.id;
             searchBox.value = '';
@@ -264,7 +235,6 @@ function renderTabs() {
     
     activeContentArea.style.borderColor = activeTabColor;
 }
-
 
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
@@ -481,6 +451,7 @@ function toggleFavorite(modelId) { const model = appState.models.find(m => m.id 
 
 function moveModelToAnotherTab(modelId) {
     const model = appState.models.find(m => m.id === modelId);
+    // Agora permite mover para a aba "Rápidos"
     const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId);
     if (destinationOptions.length === 0) {
         NotificationService.show("Não há outras abas para mover este modelo.", "info");
@@ -567,14 +538,6 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada.');
     }
 
-    // MODIFICAÇÃO: Inicializa o módulo da Paleta de Comandos
-    if (typeof CommandPalette !== 'undefined') {
-        CommandPalette.init({
-            getModels: () => appState.models.filter(m => m.tabId === RAPIDOS_TAB_ID),
-            onSelect: (content) => insertModelContent(content)
-        });
-    }
-
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
@@ -584,4 +547,24 @@ window.addEventListener('DOMContentLoaded', () => {
     exportBtn.addEventListener('click', exportModels);
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
+
+    // --- NOVA LÓGICA PARA O BOTÃO FLUTUANTE (FAB) ---
+    const openPaletteFab = document.getElementById('open-palette-fab');
+    if (openPaletteFab) {
+        // Garante que o ícone exista antes de tentar usá-lo
+        if (typeof ICON_LIGHTNING !== 'undefined') {
+            openPaletteFab.innerHTML = ICON_LIGHTNING;
+        }
+
+        openPaletteFab.addEventListener('click', () => {
+            // Verifica se o módulo CommandPalette e seu método 'open' existem antes de chamar
+            if (window.CommandPalette && typeof window.CommandPalette.open === 'function') {
+                window.CommandPalette.open();
+            } else {
+                console.error('O Módulo CommandPalette não foi encontrado ou não possui o método open().');
+                NotificationService.show('Erro ao tentar abrir a paleta de comandos.', 'error');
+            }
+        });
+    }
+    // --- FIM DA NOVA LÓGICA DO FAB ---
 });
