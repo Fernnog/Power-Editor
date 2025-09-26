@@ -100,6 +100,16 @@
     <!-- Container para as notificações "toast" -->
     <div id="toast-container"></div>
 
+    <!-- Estrutura da Paleta de Comandos (Inicialmente Oculta) -->
+    <div id="command-palette-overlay" class="cp-overlay">
+        <div id="command-palette-search-box" class="cp-search-box">
+            <input type="text" id="command-palette-search" placeholder="Buscar modelo rápido...">
+            <ul id="command-palette-results" role="listbox">
+                <!-- Os resultados da busca serão inseridos aqui pelo JavaScript -->
+            </ul>
+        </div>
+    </div>
+
     <!-- BOTÃO FLUTUANTE (FAB) PARA ATIVAR A PALETA DE COMANDOS EM DISPOSITIVOS MÓVEIS -->
     <button id="open-palette-fab" class="fab" aria-label="Abrir modelos rápidos">
         <!-- O ícone será inserido pelo JavaScript para mantermos consistência -->
@@ -118,6 +128,7 @@
     <script src="js/gemini-service.js"></script>
     <script src="js/ui-icons.js"></script> 
     <script src="js/markdown-converter.js"></script> <!-- NOVO MÓDULO DE MARKDOWN -->
+    <script src="js/CommandPalette.js"></script> <!-- NOVO SCRIPT DA PALETA DE COMANDOS -->
     
     <!-- O SCRIPT PRINCIPAL E O DE CONFIGURAÇÃO DO EDITOR VÊM POR ÚLTIMO -->
     <script src="js/script.js"></script>
