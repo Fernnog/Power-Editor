@@ -3,11 +3,11 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
-const POWER_TAB_ID = 'rapidos-tab-id'; // MODIFICADO: Nome da constante para clareza (ID interno mantido)
+const POWER_TAB_ID = 'rapidos-tab-id'; // Nome da constante para clareza (ID interno mantido)
 const TAB_COLORS = [
     '#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', 
     '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6',
-    // MODIFICADO: Novas cores adicionadas
+    // Novas cores adicionadas
     '#8B5CF6', '#F97316', '#14B8A6', '#EAB308', '#EF4444', '#6366F1'
 ];
 
@@ -43,7 +43,6 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 // --- FUNÇÕES DE PERSISTÊNCIA ---
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
 
-// MODIFICADO: Função reestruturada para legibilidade e para aplicar as alterações na aba "Power"
 function loadStateFromStorage() {
     const savedState = localStorage.getItem('editorModelosApp');
     
@@ -69,16 +68,14 @@ function loadStateFromStorage() {
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
                 
-                // Garante que a aba Favoritos exista
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
 
-                // Lógica para encontrar e atualizar a antiga aba "Rápidos" ou criá-la com o novo nome "Power"
                 const powerTab = appState.tabs.find(t => t.id === POWER_TAB_ID);
                 if (powerTab) {
                     powerTab.name = 'Power ⚡';
-                    powerTab.color = '#ce2a66'; // Cor fúcsia
+                    powerTab.color = '#ce2a66';
                 } else {
                     const favIndex = appState.tabs.findIndex(t => t.id === FAVORITES_TAB_ID);
                     const newPowerTab = { id: POWER_TAB_ID, name: 'Power ⚡', color: '#ce2a66' };
