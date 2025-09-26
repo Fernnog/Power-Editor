@@ -179,6 +179,10 @@ const ModalManager = (() => {
                         title: 'Guia Rápido: Variáveis Dinâmicas',
                         initialData: {
                             content: `
+                                <h4>✨ Funcionalidade Nova: Memória de Variáveis</h4>
+                                <p>Para agilizar seu trabalho, o sistema agora <strong>lembra os valores</strong> que você preenche nos campos de um modelo. Na próxima vez que usar o mesmo modelo, os campos já virão pré-preenchidos. Você pode controlar esse comportamento com a caixa de seleção "Lembrar valores" que aparece no formulário.</p>
+                                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
                                 <h4>Para que servem?</h4>
                                 <p>As variáveis permitem criar campos em seus modelos que serão preenchidos no momento do uso. Isso automatiza a inserção de informações como nomes, documentos ou datas.</p>
                                 
