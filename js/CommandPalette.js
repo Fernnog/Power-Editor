@@ -1,203 +1,191 @@
 // js/CommandPalette.js
 
 const CommandPalette = (() => {
-    // --- Referências aos Elementos do DOM ---
-    let overlay;
-    let searchInput;
-    let resultsList;
-    let paletteContainer;
+    // Referências aos elementos do DOM
+    let overlayEl, searchInputEl, resultsEl;
 
-    // --- Estado Interno do Módulo ---
+    // Constantes e Estado
+    const RAPIDOS_TAB_ID = 'rapidos-tab-id';
     let isOpen = false;
-    let currentResults = [];
     let selectedIndex = -1;
-    let rapidosTabId = null; // Será configurado no init
+    let currentResults = [];
 
     /**
-     * Inicializa o módulo, busca os elementos do DOM e anexa o listener global.
-     * @param {object} config - Objeto de configuração.
-     * @param {string} config.rapidosTabId - O ID da aba especial de modelos rápidos.
+     * Inicializa o módulo, captura os elementos do DOM e anexa os listeners principais.
      */
-    function init(config) {
-        rapidosTabId = config.rapidosTabId;
+    function init() {
+        overlayEl = document.getElementById('command-palette-overlay');
+        searchInputEl = document.getElementById('command-palette-search');
+        resultsEl = document.getElementById('command-palette-results');
 
-        // Busca os elementos do DOM
-        overlay = document.getElementById('command-palette-overlay');
-        searchInput = document.getElementById('command-palette-search');
-        resultsList = document.getElementById('command-palette-results');
-        paletteContainer = document.getElementById('command-palette');
-
-        if (!overlay || !searchInput || !resultsList || !paletteContainer) {
-            console.error("Elementos da Paleta de Comandos não encontrados no DOM. A funcionalidade não será iniciada.");
+        if (!overlayEl || !searchInputEl || !resultsEl) {
+            console.error('Elementos da Paleta de Comandos não encontrados no DOM. A funcionalidade não será ativada.');
             return;
         }
 
-        // Anexa o listener para o atalho global
-        _attachGlobalListeners();
-    }
+        // Listener global para o atalho de teclado
+        document.addEventListener('keydown', handleGlobalKeyDown);
 
-    /** Anexa listeners globais, como o atalho de teclado. */
-    function _attachGlobalListeners() {
-        document.addEventListener('keydown', (e) => {
-            // Atalho: Ctrl+K (Windows/Linux) ou Cmd+K (Mac)
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                isOpen ? close() : open();
-            }
+        // Listeners para a própria paleta
+        overlayEl.addEventListener('click', (e) => {
+            if (e.target === overlayEl) close();
         });
+        searchInputEl.addEventListener('input', handleSearchInput);
+        searchInputEl.addEventListener('keydown', handleResultNavigation);
     }
 
-    /** Anexa listeners específicos que só devem funcionar quando a paleta está aberta. */
-    function _attachPaletteListeners() {
-        overlay.addEventListener('click', _handleOverlayClick);
-        searchInput.addEventListener('input', _filterAndRender);
-        searchInput.addEventListener('keydown', _handleKeyDown);
-        resultsList.addEventListener('click', _handleResultClick);
-    }
-
-    /** Remove os listeners para evitar execuções desnecessárias quando a paleta está fechada. */
-    function _removePaletteListeners() {
-        overlay.removeEventListener('click', _handleOverlayClick);
-        searchInput.removeEventListener('input', _filterAndRender);
-        searchInput.removeEventListener('keydown', _handleKeyDown);
-        resultsList.removeEventListener('click', _handleResultClick);
-    }
-
-    /** Abre a paleta de comandos. */
+    /**
+     * Abre a paleta de comandos.
+     */
     function open() {
         if (isOpen) return;
         isOpen = true;
-
-        overlay.classList.add('visible');
-        _attachPaletteListeners();
-        _filterAndRender(); // Renderiza a lista inicial (todos os modelos rápidos)
-        searchInput.focus();
+        overlayEl.classList.add('visible');
+        searchInputEl.focus();
+        filterAndRenderResults(''); // Mostra todos os modelos rápidos ao abrir
     }
 
-    /** Fecha a paleta de comandos e limpa seu estado. */
+    /**
+     * Fecha a paleta de comandos e limpa seu estado.
+     */
     function close() {
         if (!isOpen) return;
         isOpen = false;
-
-        overlay.classList.remove('visible');
-        _removePaletteListeners();
-
-        // Limpa o estado para a próxima abertura
-        searchInput.value = '';
-        resultsList.innerHTML = '';
-        currentResults = [];
+        overlayEl.classList.remove('visible');
+        searchInputEl.value = '';
+        resultsEl.innerHTML = '';
         selectedIndex = -1;
-    }
-
-    /** Filtra os modelos da aba "Rápidos" e renderiza os resultados. */
-    function _filterAndRender() {
-        const query = searchInput.value.toLowerCase().trim();
-        
-        // Filtra os modelos que pertencem à aba "Rápidos"
-        const rapidosModels = appState.models.filter(model => model.tabId === rapidosTabId);
-
-        // Filtra por nome se houver uma query
-        currentResults = query
-            ? rapidosModels.filter(model => model.name.toLowerCase().includes(query))
-            : rapidosModels;
-
-        _renderResults();
-    }
-
-    /** Renderiza a lista de resultados no HTML. */
-    function _renderResults() {
-        resultsList.innerHTML = ''; // Limpa a lista anterior
-        selectedIndex = currentResults.length > 0 ? 0 : -1; // Reseta a seleção
-
-        currentResults.forEach((model, index) => {
-            const li = document.createElement('li');
-            li.className = 'cp-result-item';
-            li.textContent = model.name;
-            li.dataset.index = index; // Armazena o índice para o evento de clique
-            resultsList.appendChild(li);
-        });
-
-        _updateSelection();
-    }
-
-    /** Atualiza a classe 'selected' no item da lista para feedback visual. */
-    function _updateSelection() {
-        // Remove a seleção de todos os itens
-        resultsList.querySelectorAll('.cp-result-item').forEach(item => {
-            item.classList.remove('selected');
-        });
-
-        if (selectedIndex > -1) {
-            const selectedItem = resultsList.querySelector(`[data-index="${selectedIndex}"]`);
-            if (selectedItem) {
-                selectedItem.classList.add('selected');
-                // Garante que o item selecionado esteja sempre visível na rolagem
-                selectedItem.scrollIntoView({ block: 'nearest' });
-            }
+        currentResults = [];
+        // Devolve o foco ao editor principal
+        if (tinymce.activeEditor) {
+            tinymce.activeEditor.focus();
         }
     }
 
-    /** Seleciona e insere o modelo no editor. */
-    function _confirmSelection() {
-        if (selectedIndex > -1 && currentResults[selectedIndex]) {
-            const selectedModel = currentResults[selectedIndex];
-            
-            // Reutiliza a função global de inserção que já lida com variáveis dinâmicas
-            if (typeof insertModelContent === 'function') {
-                insertModelContent(selectedModel.content);
-            } else {
-                console.error("A função 'insertModelContent' não foi encontrada.");
-            }
-            
+    /**
+     * Manipula o atalho global (Shift+P) e o 'Escape' para fechar.
+     */
+    function handleGlobalKeyDown(event) {
+        // Novo atalho: Shift + P
+        if (event.shiftKey && (event.key === 'P' || event.key === 'p')) {
+            event.preventDefault();
+            open();
+        }
+
+        // Fechar com a tecla 'Escape'
+        if (isOpen && event.key === 'Escape') {
             close();
         }
     }
 
-    // --- HANDLERS DE EVENTOS ---
+    /**
+     * Chamado sempre que o usuário digita no campo de busca.
+     */
+    function handleSearchInput() {
+        const query = searchInputEl.value;
+        filterAndRenderResults(query);
+    }
 
-    /** Gerencia a navegação por teclado dentro da paleta. */
-    function _handleKeyDown(e) {
+    /**
+     * Manipula a navegação com as setas e a seleção com 'Enter'.
+     */
+    function handleResultNavigation(event) {
         if (currentResults.length === 0) return;
 
-        switch (e.key) {
+        switch (event.key) {
             case 'ArrowDown':
-                e.preventDefault();
+                event.preventDefault();
                 selectedIndex = (selectedIndex + 1) % currentResults.length;
-                _updateSelection();
+                updateSelection();
                 break;
             case 'ArrowUp':
-                e.preventDefault();
+                event.preventDefault();
                 selectedIndex = (selectedIndex - 1 + currentResults.length) % currentResults.length;
-                _updateSelection();
+                updateSelection();
                 break;
             case 'Enter':
-                e.preventDefault();
-                _confirmSelection();
-                break;
-            case 'Escape':
-                close();
+                event.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < currentResults.length) {
+                    selectResult(currentResults[selectedIndex]);
+                }
                 break;
         }
     }
     
-    /** Fecha a paleta se o clique for no overlay (fora da caixa de diálogo). */
-    function _handleOverlayClick(e) {
-        if (e.target === overlay) {
-            close();
-        }
-    }
-    
-    /** Gerencia o clique direto em um item da lista. */
-    function _handleResultClick(e) {
-        const targetItem = e.target.closest('.cp-result-item');
-        if (targetItem) {
-            selectedIndex = parseInt(targetItem.dataset.index, 10);
-            _confirmSelection();
+    /**
+     * Filtra os modelos da aba "Rápidos" e renderiza a lista de resultados.
+     */
+    function filterAndRenderResults(query) {
+        const lowerCaseQuery = query.toLowerCase();
+        
+        // Acessa o estado global da aplicação
+        currentResults = appState.models.filter(model => {
+            return model.tabId === RAPIDOS_TAB_ID && model.name.toLowerCase().includes(lowerCaseQuery);
+        });
+
+        resultsEl.innerHTML = ''; // Limpa resultados anteriores
+        selectedIndex = currentResults.length > 0 ? 0 : -1;
+
+        if (currentResults.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'cp-result-item-empty';
+            li.textContent = query ? 'Nenhum resultado encontrado.' : 'Nenhum modelo na aba Rápidos ⚡.';
+            resultsEl.appendChild(li);
+        } else {
+            currentResults.forEach((model, index) => {
+                const li = document.createElement('li');
+                li.className = 'cp-result-item';
+                li.textContent = model.name;
+                li.dataset.modelId = model.id;
+                li.setAttribute('role', 'option');
+                if (index === selectedIndex) {
+                    li.classList.add('selected');
+                    li.setAttribute('aria-selected', 'true');
+                }
+                
+                // Listener para seleção com clique
+                li.addEventListener('click', () => selectResult(model));
+                
+                resultsEl.appendChild(li);
+            });
         }
     }
 
-    // Expõe apenas a função de inicialização pública
+    /**
+     * Atualiza a classe 'selected' nos itens da lista para feedback visual.
+     */
+    function updateSelection() {
+        resultsEl.querySelectorAll('.cp-result-item').forEach((item, index) => {
+            if (index === selectedIndex) {
+                item.classList.add('selected');
+                item.setAttribute('aria-selected', 'true');
+                // Garante que o item selecionado esteja visível na rolagem
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('selected');
+                item.setAttribute('aria-selected', 'false');
+            }
+        });
+    }
+
+    /**
+     * Ação final: insere o conteúdo do modelo no editor e fecha a paleta.
+     */
+    function selectResult(model) {
+        if (tinymce.activeEditor && model.content) {
+            tinymce.activeEditor.execCommand('mceInsertContent', false, model.content);
+        }
+        close();
+    }
+
+    // Expõe as funções públicas do módulo
     return {
-        init
+        init,
+        open,
+        close
     };
 })();
+
+// Para ser chamado em script.js dentro do DOMContentLoaded
+// Ex: window.CommandPalette = CommandPalette;
+//     CommandPalette.init();
