@@ -697,46 +697,6 @@ blockquote p {
     color: #c82333;
 }
 
-/* --- INÍCIO DA SEÇÃO ATUALIZADA --- */
-
-/* Estilos para o Floating Action Button (FAB) */
-/* Oculta o FAB por padrão para dispositivos com ponteiro fino (mouse) */
-.fab {
-    display: none;
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    width: 56px;
-    height: 56px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    cursor: pointer;
-    z-index: 999;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease-in-out;
-}
-
-.fab:hover {
-    transform: scale(1.05);
-}
-
-.fab svg {
-    width: 28px;
-    height: 28px;
-}
-
-/* Media Query aprimorada: Exibe o FAB para dispositivos com tela de toque */
-@media (pointer: coarse) {
-    .fab {
-        display: flex;
-    }
-}
-/* --- FIM DA SEÇÃO ATUALIZADA --- */
-
 /* --- ESTILOS PARA A PALETA DE COMANDOS --- */
 .cp-overlay {
     position: fixed;
@@ -801,4 +761,33 @@ blockquote p {
     font-size: 16px;
     color: #888;
     text-align: center;
+}
+
+/* --- ESTILOS PARA O BOTÃO FLUTUANTE (FAB) --- */
+.fab {
+    display: flex; 
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 56px;
+    height: 56px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.fab:hover {
+    transform: scale(1.05);
+}
+
+.fab svg {
+    width: 28px;
+    height: 28px;
 }
