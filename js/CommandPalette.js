@@ -68,10 +68,11 @@ const CommandPalette = (() => {
     }
 
     /**
-     * Manipula o atalho global (Ctrl+.) e o 'Escape' para fechar.
+     * Manipula o atalho global (Ctrl+Alt+P) e o 'Escape' para fechar.
      */
     function handleGlobalKeyDown(event) {
-        if ((event.ctrlKey || event.metaKey) && event.key === '.') {
+        // ALTERAÇÃO APLICADA AQUI
+        if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'p') {
             event.preventDefault();
             open();
         }
@@ -179,7 +180,7 @@ const CommandPalette = (() => {
     function selectResult(model) {
         if (model) {
             // Reutiliza a função centralizada que já lida com variáveis dinâmicas
-            insertModelContent(model.content, model.tabId);
+            insertModelContent(model); // Modificado para passar o objeto model
         }
         close();
     }
