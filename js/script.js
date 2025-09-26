@@ -58,6 +58,8 @@ function loadStateFromStorage() {
             ],
             activeTabId: defaultTabId,
             replacements: [],
+            variableMemory: {}, // INICIALIZA A MEMÓRIA DE VARIÁVEIS
+            globalVariables: [], // INICIALIZA AS VARIÁVEIS GLOBAIS
             lastBackupTimestamp: null
         };
     };
@@ -92,9 +94,11 @@ function loadStateFromStorage() {
                     }
                 });
 
-                if (!appState.replacements) {
-                    appState.replacements = [];
-                }
+                // GARANTE COMPATIBILIDADE COM VERSÕES ANTIGAS
+                appState.replacements = parsedState.replacements || [];
+                appState.variableMemory = parsedState.variableMemory || {};
+                appState.globalVariables = parsedState.globalVariables || [];
+
             } else {
                 throw new Error("Formato de estado inválido.");
             }
@@ -114,29 +118,65 @@ function loadStateFromStorage() {
 
 
 // --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
-function insertModelContent(content, tabId) {
-    if (searchBox.value && tabId && appState.activeTabId !== tabId) {
-        appState.activeTabId = tabId;
+function insertModelContent(model) {
+    // Se a busca estiver ativa, muda para a aba do modelo e limpa a busca
+    if (searchBox.value && appState.activeTabId !== model.tabId) {
+        appState.activeTabId = model.tabId;
         searchBox.value = '';
-        render();
+        render(); // Renderiza a UI com a nova aba ativa
     }
 
+    let content = model.content;
+
+    // ETAPA 1: Substituir variáveis dinâmicas (geradas pelo sistema)
+    const now = new Date();
+    content = content.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
+    content = content.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+
+    // ETAPA 2: Substituir variáveis globais (definidas pelo usuário)
+    if (appState.globalVariables && appState.globalVariables.length > 0) {
+        appState.globalVariables.forEach(gVar => {
+            // Cria um RegEx para cada variável global, tratando espaços
+            const globalVarRegex = new RegExp(`{{\\s*${gVar.find}\\s*}}`, 'gi');
+            content = content.replace(globalVarRegex, gVar.replace);
+        });
+    }
+
+    // ETAPA 3: Lógica de formulário para as variáveis restantes
     const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...content.matchAll(variableRegex)];
     const uniqueVariables = [...new Set(matches.map(match => match[1]))];
 
     if (uniqueVariables.length > 0) {
+        // A lógica do checkbox "Lembrar valores" será gerenciada no ModalManager
+        // com base na existência de memória para este model.id
         ModalManager.show({
             type: 'variableForm',
             title: 'Preencha as Informações do Modelo',
-            initialData: { variables: uniqueVariables },
+            initialData: { variables: uniqueVariables, modelId: model.id }, // Passa o ID do modelo
             saveButtonText: 'Inserir Texto',
             onSave: (data) => {
+                // O objeto 'data' agora contém os valores das variáveis e o status do checkbox
+                const remember = data.rememberValues;
+                const valuesToInsert = { ...data };
+                delete valuesToInsert.rememberValues; // Remove a chave do checkbox dos dados de inserção
+
+                modifyStateAndBackup(() => {
+                    if (remember) {
+                        // Salva os valores na memória
+                        appState.variableMemory[model.id] = valuesToInsert;
+                    } else {
+                        // Remove os valores da memória se a caixa for desmarcada
+                        delete appState.variableMemory[model.id];
+                    }
+                });
+
                 let processedContent = content;
-                for (const key in data) {
+                for (const key in valuesToInsert) {
                     const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*}}`, 'g');
-                    processedContent = processedContent.replace(placeholder, data[key] || '');
+                    processedContent = processedContent.replace(placeholder, valuesToInsert[key] || '');
                 }
+
                 if (tinymce.activeEditor) {
                     tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
                     tinymce.activeEditor.focus();
@@ -144,6 +184,7 @@ function insertModelContent(content, tabId) {
             }
         });
     } else {
+        // Se não houver variáveis restantes, insere o conteúdo pré-processado
         if (tinymce.activeEditor) {
             tinymce.activeEditor.execCommand('mceInsertContent', false, content);
             tinymce.activeEditor.focus();
@@ -315,7 +356,7 @@ function renderModels(modelsToRender) {
         addButton.className = 'action-btn';
         addButton.innerHTML = ICON_PLUS;
         addButton.title = 'Inserir modelo';
-        addButton.onclick = () => insertModelContent(model.content, model.tabId);
+        addButton.onclick = () => insertModelContent(model); // ALTERADO: Passa o objeto model inteiro
         
         const editButton = document.createElement('button');
         editButton.className = 'action-btn';
