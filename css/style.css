@@ -697,9 +697,12 @@ blockquote p {
     color: #c82333;
 }
 
+/* --- INÍCIO DA SEÇÃO ATUALIZADA --- */
+
 /* Estilos para o Floating Action Button (FAB) */
+/* Oculta o FAB por padrão para dispositivos com ponteiro fino (mouse) */
 .fab {
-    display: none; /* Oculto por padrão em telas grandes */
+    display: none;
     position: fixed;
     bottom: 25px;
     right: 25px;
@@ -726,9 +729,10 @@ blockquote p {
     height: 28px;
 }
 
-/* Media Query para exibir o FAB apenas em telas menores (tablets e celulares) */
-@media (max-width: 768px) {
+/* Media Query aprimorada: Exibe o FAB para dispositivos com tela de toque */
+@media (pointer: coarse) {
     .fab {
         display: flex;
     }
 }
+/* --- FIM DA SEÇÃO ATUALIZADA --- */
