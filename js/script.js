@@ -3,6 +3,7 @@
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
+const RAPIDOS_TAB_ID = 'rapidos-tab-id'; // NOVA CONSTANTE
 const TAB_COLORS = ['#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6'];
 
 let colorIndex = 0;
@@ -36,10 +37,62 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 
 // --- FUNÇÕES DE PERSISTÊNCIA ---
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
-function loadStateFromStorage() { const savedState = localStorage.getItem('editorModelosApp'); const setDefaultState = () => { const defaultTabId = `tab-${Date.now()}`; colorIndex = 0; appState = { models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })), tabs: [{ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }, { id: defaultTabId, name: 'Geral', color: getNextColor() }], activeTabId: defaultTabId, replacements: [], lastBackupTimestamp: null }; }; if (savedState) { try { const parsedState = JSON.parse(savedState); if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) { appState = parsedState; if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) { appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' }); } appState.tabs.forEach(tab => { if (!tab.color && tab.id !== FAVORITES_TAB_ID) { tab.color = getNextColor(); } }); if (!appState.replacements) { appState.replacements = []; } } else { throw new Error("Formato de estado inválido."); } } catch (e) { console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e); setDefaultState(); } } else { setDefaultState(); } 
+
+function loadStateFromStorage() {
+    const savedState = localStorage.getItem('editorModelosApp');
+    const setDefaultState = () => {
+        const defaultTabId = `tab-${Date.now()}`;
+        colorIndex = 0;
+        appState = {
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
+            tabs: [
+                { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
+                { id: defaultTabId, name: 'Geral', color: getNextColor() }
+            ],
+            activeTabId: defaultTabId,
+            replacements: [],
+            lastBackupTimestamp: null
+        };
+    };
+
+    if (savedState) {
+        try {
+            const parsedState = JSON.parse(savedState);
+            if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
+                appState = parsedState;
+                if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
+                    appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
+                }
+                appState.tabs.forEach(tab => {
+                    if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
+                        tab.color = getNextColor();
+                    }
+                });
+                if (!appState.replacements) {
+                    appState.replacements = [];
+                }
+            } else {
+                throw new Error("Formato de estado inválido.");
+            }
+        } catch (e) {
+            console.error("Falha ao carregar estado do LocalStorage, restaurando para o padrão:", e);
+            setDefaultState();
+        }
+    } else {
+        setDefaultState();
+    }
+
+    // MODIFICAÇÃO: Garante que a aba "Rápidos" exista
+    if (!appState.tabs.find(t => t.id === RAPIDOS_TAB_ID)) {
+        appState.tabs.push({ id: RAPIDOS_TAB_ID, name: 'Rápidos', color: '#FBBF24' });
+    }
+
     BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
-    if (!appState.tabs.find(t => t.id === appState.activeTabId)) { appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null; } 
+    if (!appState.tabs.find(t => t.id === appState.activeTabId)) {
+        appState.activeTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID)?.id || appState.tabs[0]?.id || null;
+    }
 }
+
 
 // --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
 function insertModelContent(content, tabId) {
@@ -79,17 +132,17 @@ function insertModelContent(content, tabId) {
     }
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO (SEM ALTERAÇÕES) ---
+// --- FUNÇÕES DE RENDERIZAÇÃO ---
 function renderTabActions() {
     tabActionsContainer.innerHTML = '';
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
 
-    if (!activeTab || activeTab.id === FAVORITES_TAB_ID) {
+    if (!activeTab || activeTab.id === FAVORITES_TAB_ID || activeTab.id === RAPIDOS_TAB_ID) { // MODIFICAÇÃO: Bloqueia ações na aba Rápidos
         tabActionsContainer.classList.remove('visible');
         return;
     }
 
-    const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID).length;
+    const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== RAPIDOS_TAB_ID).length;
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'tab-action-btn';
@@ -184,8 +237,22 @@ function renderTabs() {
             activeTabColor = tabColor;
         }
 
-        tabEl.textContent = tab.name + (tab.id === FAVORITES_TAB_ID ? ' ⭐' : '');
+        let tabName = tab.name;
+        if (tab.id === FAVORITES_TAB_ID) {
+            tabName += ' ⭐';
+        }
+        tabEl.textContent = tabName;
         
+        // MODIFICAÇÃO: Adiciona ícone de raio ⚡ para a aba "Rápidos"
+        if (tab.id === RAPIDOS_TAB_ID) {
+            const iconSpan = document.createElement('span');
+            iconSpan.innerHTML = ICON_LIGHTNING;
+            iconSpan.style.display = 'inline-flex';
+            iconSpan.style.alignItems = 'center';
+            iconSpan.style.marginRight = '6px';
+            tabEl.prepend(iconSpan);
+        }
+
         tabEl.addEventListener('click', () => {
             appState.activeTabId = tab.id;
             searchBox.value = '';
@@ -197,6 +264,7 @@ function renderTabs() {
     
     activeContentArea.style.borderColor = activeTabColor;
 }
+
 
 function renderModels(modelsToRender) {
     modelList.innerHTML = '';
@@ -310,7 +378,7 @@ function filterModels() {
     return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// --- MANIPULAÇÃO DE DADOS (COM alert/confirm SUBSTITUÍDOS) ---
+// --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 
 function deleteTab(tabId) {
@@ -318,7 +386,7 @@ function deleteTab(tabId) {
     NotificationService.showConfirm({
         message: `Tem certeza que deseja excluir a aba "${tabToDelete.name}"? Os modelos desta aba serão movidos.`,
         onConfirm: () => {
-            const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID);
+            const regularTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== RAPIDOS_TAB_ID);
             const destinationOptions = regularTabs.filter(t => t.id !== tabId);
             const promptMessage = `Para qual aba deseja mover os modelos?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
             const choice = prompt(promptMessage);
@@ -497,6 +565,14 @@ window.addEventListener('DOMContentLoaded', () => {
         tinymce.init(TINYMCE_CONFIG);
     } else {
         console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada.');
+    }
+
+    // MODIFICAÇÃO: Inicializa o módulo da Paleta de Comandos
+    if (typeof CommandPalette !== 'undefined') {
+        CommandPalette.init({
+            getModels: () => appState.models.filter(m => m.tabId === RAPIDOS_TAB_ID),
+            onSelect: (content) => insertModelContent(content)
+        });
     }
 
     searchBox.addEventListener('input', debouncedFilter);
