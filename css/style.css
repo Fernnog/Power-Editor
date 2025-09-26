@@ -767,8 +767,8 @@ blockquote p {
 .fab {
     display: flex; 
     position: absolute;
-    bottom: 25px;
-    right: 25px;
+    bottom: 30px;
+    right: 20px;
     width: 56px;
     height: 56px;
     background-color: var(--primary-color);
