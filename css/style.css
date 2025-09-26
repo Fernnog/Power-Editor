@@ -766,7 +766,7 @@ blockquote p {
 /* --- ESTILOS PARA O BOTÃO FLUTUANTE (FAB) --- */
 .fab {
     display: flex; 
-    position: absolute; /* MODIFICADO: De 'fixed' para 'absolute' */
+    position: absolute;
     bottom: 25px;
     right: 25px;
     width: 56px;
@@ -780,13 +780,13 @@ blockquote p {
     z-index: 999;
     align-items: center;
     justify-content: center;
-    opacity: 0.6; /* ADICIONADO: Melhoria de UX */
-    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out; /* MODIFICADO: Melhoria de UX */
+    opacity: 0.6;
+    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
 
 .fab:hover {
     transform: scale(1.05);
-    opacity: 1; /* ADICIONADO: Melhoria de UX */
+    opacity: 1;
 }
 
 .fab svg {
