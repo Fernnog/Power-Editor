@@ -5,7 +5,7 @@ const CommandPalette = (() => {
     let overlayEl, searchInputEl, resultsEl, fabEl;
 
     // Constantes e Estado
-    const RAPIDOS_TAB_ID = 'rapidos-tab-id';
+    const POWER_TAB_ID = 'rapidos-tab-id'; // MODIFICADO: Nome da constante para clareza
     let isOpen = false;
     let selectedIndex = -1;
     let currentResults = [];
@@ -117,14 +117,14 @@ const CommandPalette = (() => {
     }
     
     /**
-     * Filtra os modelos da aba "Rápidos" e renderiza a lista de resultados.
+     * Filtra os modelos da aba "Power" e renderiza a lista de resultados.
      */
     function filterAndRenderResults(query) {
         const lowerCaseQuery = query.toLowerCase();
         
         // Acessa o estado global da aplicação para buscar os modelos corretos
         currentResults = appState.models.filter(model => {
-            return model.tabId === RAPIDOS_TAB_ID && model.name.toLowerCase().includes(lowerCaseQuery);
+            return model.tabId === POWER_TAB_ID && model.name.toLowerCase().includes(lowerCaseQuery);
         });
 
         resultsEl.innerHTML = ''; // Limpa resultados anteriores
@@ -133,7 +133,8 @@ const CommandPalette = (() => {
         if (currentResults.length === 0) {
             const li = document.createElement('li');
             li.className = 'cp-result-item-empty';
-            li.textContent = query ? 'Nenhum resultado encontrado.' : 'Nenhum modelo na aba Rápidos ⚡.';
+            // MODIFICADO: Mensagem atualizada para "Power"
+            li.textContent = query ? 'Nenhum resultado encontrado.' : 'Nenhum modelo na aba Power ⚡.';
             resultsEl.appendChild(li);
         } else {
             currentResults.forEach((model, index) => {
