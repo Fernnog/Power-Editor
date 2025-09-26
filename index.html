@@ -96,20 +96,14 @@
             <button id="dictation-close-btn">&times;</button>
         </div>
     </div>
-    
-    <!-- NOVO: ESTRUTURA DA PALETA DE COMANDOS -->
-    <div id="command-palette-overlay" class="modal-overlay">
-        <div id="command-palette" role="dialog" aria-modal="true" aria-labelledby="command-palette-label">
-            <label id="command-palette-label" class="sr-only">Buscar modelos rápidos</label>
-            <input type="text" id="command-palette-search" placeholder="Digite para buscar um modelo rápido...">
-            <ul id="command-palette-results" role="listbox">
-                <!-- Os resultados da busca serão inseridos aqui pelo JavaScript -->
-            </ul>
-        </div>
-    </div>
 
     <!-- Container para as notificações "toast" -->
     <div id="toast-container"></div>
+
+    <!-- BOTÃO FLUTUANTE (FAB) PARA ATIVAR A PALETA DE COMANDOS EM DISPOSITIVOS MÓVEIS -->
+    <button id="open-palette-fab" class="fab" aria-label="Abrir modelos rápidos">
+        <!-- O ícone será inserido pelo JavaScript para mantermos consistência -->
+    </button>
     
     <!-- NOVAS BIBLIOTECAS DE MARKDOWN -->
     <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
@@ -119,14 +113,11 @@
     <script src="js/speech.js"></script>
     <script src="js/editor-actions.js"></script>
     <script src="js/backup-manager.js"></script>
-    <script src="js/ModalManager.js"></script>
-    <script src="js/NotificationService.js"></script>
+    <script src="js/ModalManager.js"></script> <!-- ModalManager ANTES de script.js -->
+    <script src="js/NotificationService.js"></script> <!-- NotificationService ANTES de script.js -->
     <script src="js/gemini-service.js"></script>
     <script src="js/ui-icons.js"></script> 
-    <script src="js/markdown-converter.js"></script>
-    
-    <!-- NOVO MÓDULO DA PALETA DE COMANDOS -->
-    <script src="js/CommandPalette.js"></script>
+    <script src="js/markdown-converter.js"></script> <!-- NOVO MÓDULO DE MARKDOWN -->
     
     <!-- O SCRIPT PRINCIPAL E O DE CONFIGURAÇÃO DO EDITOR VÊM POR ÚLTIMO -->
     <script src="js/script.js"></script>
