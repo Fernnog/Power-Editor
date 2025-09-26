@@ -1,4 +1,5 @@
 // js/CommandPalette.js
+console.log('[Marcador] Arquivo CommandPalette.js carregado.'); // MARCADOR 1
 
 const CommandPalette = (() => {
     // Referências aos elementos do DOM
@@ -14,6 +15,8 @@ const CommandPalette = (() => {
      * Inicializa o módulo, captura os elementos do DOM e anexa os listeners principais.
      */
     function init() {
+        console.log('[Marcador] CommandPalette.init() foi chamado.'); // MARCADOR 2
+
         overlayEl = document.getElementById('command-palette-overlay');
         searchInputEl = document.getElementById('command-palette-search');
         resultsEl = document.getElementById('command-palette-results');
@@ -66,13 +69,11 @@ const CommandPalette = (() => {
      * Manipula o atalho global e o 'Escape' para fechar.
      */
     function handleGlobalKeyDown(event) {
-        // --- INÍCIO DA ALTERAÇÃO ---
-        // Novo atalho: Ctrl + . (Ponto) ou Cmd + . (no Mac)
         if ((event.ctrlKey || event.metaKey) && event.key === '.') {
+            console.log('[Marcador] Atalho Ctrl+. detectado!'); // MARCADOR 4
             event.preventDefault();
             open();
         }
-        // --- FIM DA ALTERAÇÃO ---
 
         // Fechar com a tecla 'Escape'
         if (isOpen && event.key === 'Escape') {
@@ -188,6 +189,5 @@ const CommandPalette = (() => {
     };
 })();
 
-// Para ser chamado em script.js dentro do DOMContentLoaded
-// Ex: window.CommandPalette = CommandPalette;
-//     CommandPalette.init();
+// Disponibiliza o módulo globalmente para que script.js possa encontrá-lo
+window.CommandPalette = CommandPalette;
