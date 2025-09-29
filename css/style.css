@@ -179,7 +179,8 @@ body, html {
     flex-grow: 1;
 }
 
-.model-item { background-color: #ffd580; border: 1px solid #daa520; border-radius: 5px; padding: 8px 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; transition: background-color 0.2s; }
+.model-item { background-color: #ffd580; border: 1px solid #daa520; border-radius: 5px; padding: 8px 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; transition: background-color 0.2s; cursor: grab; }
+.model-item:active { cursor: grabbing; }
 .model-item:hover { background-color: #ffc75f; }
 .model-item .model-name { font-weight: bold; font-size: 15px; cursor: default; word-break: break-word; padding-right: 10px; display: flex; align-items: center; gap: 8px; flex-grow: 1; }
 .model-color-indicator { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); flex-shrink: 0; display: inline-block; }
@@ -867,4 +868,79 @@ blockquote p {
 .search-filter-container label {
     cursor: pointer;
     user-select: none; /* Evita seleção de texto no label */
+}
+
+/* --- (NOVO) ESTILOS PARA O CONTADOR DE MODELOS NA ABA --- */
+.tab-item {
+    position: relative; /* Necessário para posicionar o contador */
+    overflow: visible; /* Garante que o contador não seja cortado */
+}
+
+.tab-item-counter {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background-color: #dc3545; /* Vermelho para destaque */
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* --- (NOVO) ESTILOS PARA O MENU DE CONTEXTO (BOTÃO DIREITO) --- */
+.context-menu {
+    position: fixed; /* Posição absoluta na tela */
+    z-index: 1050;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 5px 0;
+    min-width: 150px;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    background-color: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
+
+.context-menu-item:hover {
+    background-color: #f0f0f0;
+}
+
+.context-menu-item.delete {
+    color: #dc3545; /* Vermelho para ação destrutiva */
+}
+
+.context-menu-item svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* --- (NOVO) ESTILOS PARA DRAG AND DROP DE MODELOS --- */
+.model-item.sortable-ghost {
+    background: #e9ecef;
+    border: 2px dashed #adb5bd;
+    opacity: 0.5;
+}
+
+.model-item.sortable-drag {
+    opacity: 0.9;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
