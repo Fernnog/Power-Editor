@@ -820,3 +820,51 @@ blockquote p {
     stroke: currentColor;
     fill: none; /* Garante que não haja preenchimento */
 }
+
+/* Estilo para a aba que está sendo arrastada */
+.tab-item.sortable-drag {
+    opacity: 0.9;
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+/* Estilo para o espaço reservado (placeholder) onde a aba será solta */
+#sortable-tabs-container .tab-item.sortable-ghost {
+    background-color: #e0e0e0;
+    border: 2px dashed #999;
+    color: transparent; /* Esconde o texto do placeholder */
+}
+
+#sortable-tabs-container .tab-item.sortable-ghost svg {
+    display: none; /* Esconde o ícone do placeholder */
+}
+
+/* --- Feedback visual para abas arrastáveis (Melhoria de UX) --- */
+#sortable-tabs-container .tab-item {
+    cursor: grab;
+}
+
+#sortable-tabs-container .tab-item:active {
+    cursor: grabbing;
+}
+
+/* --- Estilo para o container do filtro de busca (Nova Funcionalidade) --- */
+.search-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 4px;
+    font-size: 13px;
+    color: #555;
+}
+
+.search-filter-container input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.search-filter-container label {
+    cursor: pointer;
+    user-select: none; /* Evita seleção de texto no label */
+}
