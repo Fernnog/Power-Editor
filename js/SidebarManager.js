@@ -77,12 +77,8 @@ const SidebarManager = (() => {
                 tabEl.title = tab.name;
                 tabEl.classList.add('tab-item-icon-only');
             } else {
-                // ===============================================================================
-                //  CORREÇÃO AQUI: Usar createTextNode e appendChild para não apagar o contador
-                //  O método anterior (tabEl.textContent = tab.name) substituía todo o conteúdo.
                 const textNode = document.createTextNode(tab.name);
                 tabEl.appendChild(textNode);
-                // ===============================================================================
             }
             
             tabEl.addEventListener('click', () => callbacks.onTabChange(tab.id));
@@ -114,7 +110,7 @@ const SidebarManager = (() => {
         modelsToRender.forEach(model => {
             const li = document.createElement('li');
             li.className = 'model-item';
-            li.dataset.modelId = model.id; // Importante para o Drag and Drop
+            li.dataset.modelId = model.id;
 
             const headerDiv = document.createElement('div');
             headerDiv.className = 'model-header';
@@ -168,9 +164,37 @@ const SidebarManager = (() => {
             animation: 150,
             ghostClass: 'model-item-ghost',
             dragClass: 'model-item-drag',
+            
+            onMove: function (evt) {
+                document.querySelectorAll('.tab-item.drop-target-active').forEach(tab => {
+                    tab.classList.remove('drop-target-active');
+                });
+
+                const dropTarget = document.elementFromPoint(evt.originalEvent.clientX, evt.originalEvent.clientY);
+                if (!dropTarget) return;
+
+                const targetTab = dropTarget.closest('.tab-item');
+                
+                if (targetTab && targetTab.dataset.tabId !== appState.activeTabId) {
+                    targetTab.classList.add('drop-target-active');
+                }
+            },
+
             onEnd: (evt) => {
                 const modelId = evt.item.dataset.modelId;
-                callbacks.onModelReorder(modelId, evt.newIndex);
+                const activeDropTarget = document.querySelector('.tab-item.drop-target-active');
+                
+                if (activeDropTarget) {
+                    const newTabId = activeDropTarget.dataset.tabId;
+                    activeDropTarget.classList.remove('drop-target-active');
+                    callbacks.onModelDropOnTab(modelId, newTabId);
+                } else if (evt.oldIndex !== evt.newIndex) {
+                    callbacks.onModelReorder(modelId, evt.newIndex);
+                }
+
+                document.querySelectorAll('.tab-item.drop-target-active').forEach(tab => {
+                    tab.classList.remove('drop-target-active');
+                });
             }
         });
     }
@@ -215,7 +239,7 @@ const SidebarManager = (() => {
     }
 
     function _toggleColorPalette(anchorElement, tab) {
-        _closeContextMenu(); // Fecha qualquer menu aberto
+        _closeContextMenu();
         const existingPalette = document.querySelector('.color-palette-popup');
         if (existingPalette) {
             existingPalette.remove();
