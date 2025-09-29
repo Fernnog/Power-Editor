@@ -2,13 +2,21 @@
 
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
-let sortableInstance = null; // Instância da biblioteca de drag-and-drop
 const FAVORITES_TAB_ID = 'favorites-tab-id';
 const POWER_TAB_ID = 'rapidos-tab-id';
 const TAB_COLORS = [
-    '#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', 
-    '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6',
-    '#8B5CF6', '#F97316', '#14B8A6', '#EAB308', '#EF4444', '#6366F1'
+    // Vermelhos e Rosas
+    '#F87171', '#EF4444', '#EC4899', '#D946EF', '#c0392b', // Vinho
+    // Laranjas e Amarelos
+    '#FBBF24', '#F59E0B', '#F97316', '#EAB308',
+    // Verdes
+    '#34D399', '#10B981', '#22C55E', '#84CC16', '#6b8e23', // Verde Oliva
+    // Azuis
+    '#60A5FA', '#3B82F6', '#0EA5E9', '#06B6D4',
+    // Roxos e Índigos
+    '#A78BFA', '#8B5CF6', '#6366F1', '#8E44AD',
+    // Sóbrios e Neutros
+    '#6B7280', '#374151', '#111827', '#7f5539', '#A8A29E' // Cinza, Chumbo, Preto, Marrom, Taupe
 ];
 
 let colorIndex = 0;
@@ -20,9 +28,7 @@ const defaultModels = [
 ];
 
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
-const modelList = document.getElementById('model-list');
 const searchBox = document.getElementById('search-box');
-const tabsContainer = document.getElementById('tabs-container');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
 const addNewModelBtn = document.getElementById('add-new-model-btn');
 const exportBtn = document.getElementById('export-btn');
@@ -30,7 +36,6 @@ const importBtn = document.getElementById('import-btn');
 const importFileInput = document.getElementById('import-file-input');
 const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
-const tabActionsContainer = document.getElementById('tab-actions-container');
 const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
@@ -38,6 +43,7 @@ function modifyStateAndBackup(modificationFn) {
     modificationFn();
     saveStateToStorage();
     BackupManager.schedule(appState);
+    render(); // Re-renderiza a UI após qualquer modificação
 }
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
 
@@ -116,6 +122,10 @@ function loadStateFromStorage() {
     }
 }
 
+// --- FUNÇÃO DE RENDERIZAÇÃO PRINCIPAL ---
+function render() {
+    SidebarManager.render(appState);
+}
 
 // --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
 function insertModelContent(model) {
@@ -176,233 +186,14 @@ function insertModelContent(model) {
     }
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO ---
-function renderTabActions() {
-    tabActionsContainer.innerHTML = '';
-    const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
-
-    if (!activeTab || activeTab.id === FAVORITES_TAB_ID || activeTab.id === POWER_TAB_ID) {
-        tabActionsContainer.classList.remove('visible');
-        return;
-    }
-
-    const regularTabsCount = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID).length;
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'tab-action-btn';
-    deleteBtn.innerHTML = ICON_TRASH;
-    deleteBtn.title = 'Excluir esta aba';
-    if (regularTabsCount <= 1) {
-        deleteBtn.disabled = true;
-    }
-    deleteBtn.onclick = () => deleteTab(appState.activeTabId);
-    tabActionsContainer.appendChild(deleteBtn);
-
-    const colorBtn = document.createElement('button');
-    colorBtn.className = 'tab-action-btn';
-    colorBtn.innerHTML = ICON_PALETTE;
-    colorBtn.title = 'Alterar cor da aba';
-    colorBtn.onclick = (event) => {
-        event.stopPropagation();
-        toggleColorPalette(tabActionsContainer, activeTab);
-    };
-    tabActionsContainer.appendChild(colorBtn);
-
-    const renameBtn = document.createElement('button');
-    renameBtn.className = 'tab-action-btn';
-    renameBtn.innerHTML = ICON_PENCIL;
-    renameBtn.title = 'Renomear esta aba';
-    renameBtn.onclick = () => {
-        const newName = prompt('Digite o novo nome para a aba:', activeTab.name);
-        if (newName && newName.trim()) {
-            modifyStateAndBackup(() => {
-                activeTab.name = newName.trim();
-                render();
-            });
-        }
-    };
-    tabActionsContainer.appendChild(renameBtn);
-
-    tabActionsContainer.classList.add('visible');
-}
-
-function toggleColorPalette(anchorElement, tab) {
-    const existingPalette = document.querySelector('.color-palette-popup');
-    if (existingPalette) {
-        existingPalette.remove();
-        return;
-    }
-
-    const palette = document.createElement('div');
-    palette.className = 'color-palette-popup';
-    
-    TAB_COLORS.forEach(color => {
-        const swatch = document.createElement('div');
-        swatch.className = 'color-swatch';
-        swatch.style.backgroundColor = color;
-        swatch.onclick = () => {
-            modifyStateAndBackup(() => {
-                tab.color = color;
-                render();
-            });
-            palette.remove();
-        };
-        palette.appendChild(swatch);
-    });
-
-    anchorElement.appendChild(palette);
-
-    setTimeout(() => {
-        document.addEventListener('click', () => palette.remove(), { once: true });
-    }, 0);
-}
-
-function render() {
-    renderTabs();
-    renderModels(filterModels());
-    renderTabActions();
-}
-
-function renderTabs() {
-    if (sortableInstance) {
-        sortableInstance.destroy();
-    }
-
-    tabsContainer.innerHTML = '';
-    const activeContentArea = document.getElementById('active-content-area');
-    let activeTabColor = '#ccc';
-
-    const createTabElement = (tab) => {
-        const tabEl = document.createElement('button');
-        tabEl.className = 'tab-item';
-        tabEl.dataset.tabId = tab.id;
-        
-        const tabColor = tab.color || '#6c757d';
-        tabEl.style.setProperty('--tab-color', tabColor);
-
-        if (tab.id === appState.activeTabId) {
-            tabEl.classList.add('active');
-            activeTabColor = tabColor;
-        }
-
-        if (tab.id === FAVORITES_TAB_ID) {
-            tabEl.innerHTML = ICON_STAR_FILLED;
-            tabEl.title = tab.name;
-            tabEl.classList.add('tab-item-icon-only');
-        } else if (tab.id === POWER_TAB_ID) {
-            tabEl.innerHTML = ICON_LIGHTNING;
-            tabEl.title = tab.name;
-            tabEl.classList.add('tab-item-icon-only');
-        } else {
-            tabEl.textContent = tab.name;
-        }
-        
-        tabEl.addEventListener('click', () => {
-            appState.activeTabId = tab.id;
-            searchBox.value = '';
-            render();
-        });
-        return tabEl;
-    };
-
-    appState.tabs.forEach(tab => tabsContainer.appendChild(createTabElement(tab)));
-    
-    activeContentArea.style.borderColor = activeTabColor;
-
-    sortableInstance = Sortable.create(tabsContainer, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        dragClass: 'sortable-drag',
-        onEnd: function (evt) {
-            const movedItem = appState.tabs.splice(evt.oldIndex, 1)[0];
-            appState.tabs.splice(evt.newIndex, 0, movedItem);
-            // Salva o estado sem precisar renderizar a UI novamente, o SortableJS já fez isso.
-            modifyStateAndBackup(() => {});
-        }
-    });
-}
-
-function renderModels(modelsToRender) {
-    modelList.innerHTML = '';
-    modelsToRender.forEach(model => {
-        const li = document.createElement('li');
-        li.className = 'model-item';
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'model-header';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'model-name';
-        
-        const colorIndicator = document.createElement('span');
-        colorIndicator.className = 'model-color-indicator';
-        const parentTab = appState.tabs.find(t => t.id === model.tabId);
-        colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
-        nameSpan.appendChild(colorIndicator);
-        
-        if (model.content && model.content.includes('{{')) {
-            const variableIndicator = document.createElement('span');
-            variableIndicator.className = 'model-variable-indicator';
-            variableIndicator.title = 'Este modelo contém variáveis dinâmicas';
-            variableIndicator.textContent = '🤖';
-            nameSpan.appendChild(variableIndicator);
-        }
-
-        const textNode = document.createTextNode(" " + model.name);
-        nameSpan.appendChild(textNode);
-        headerDiv.appendChild(nameSpan);
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'model-actions';
-        
-        const addButton = document.createElement('button');
-        addButton.className = 'action-btn';
-        addButton.innerHTML = ICON_PLUS;
-        addButton.title = 'Inserir modelo';
-        addButton.onclick = () => insertModelContent(model);
-        
-        const editButton = document.createElement('button');
-        editButton.className = 'action-btn';
-        editButton.innerHTML = ICON_PENCIL;
-        editButton.title = 'Editar modelo';
-        editButton.onclick = () => editModel(model.id);
-        
-        const moveButton = document.createElement('button');
-        moveButton.className = 'action-btn';
-        moveButton.innerHTML = ICON_MOVE;
-        moveButton.title = 'Mover para outra aba';
-        moveButton.onclick = () => moveModelToAnotherTab(model.id);
-        
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'action-btn';
-        deleteButton.innerHTML = ICON_TRASH;
-        deleteButton.title = 'Excluir modelo';
-        deleteButton.onclick = () => deleteModel(model.id);
-        
-        const favoriteButton = document.createElement('button');
-        favoriteButton.className = 'action-btn';
-        favoriteButton.innerHTML = model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE;
-        favoriteButton.title = model.isFavorite ? 'Desfavoritar' : 'Favoritar';
-        favoriteButton.onclick = () => toggleFavorite(model.id);
-
-        actionsDiv.appendChild(addButton);
-        actionsDiv.appendChild(editButton);
-        actionsDiv.appendChild(moveButton);
-        actionsDiv.appendChild(deleteButton);
-        actionsDiv.appendChild(favoriteButton);
-        li.appendChild(headerDiv);
-        li.appendChild(actionsDiv);
-        modelList.appendChild(li);
-    });
-}
-
+// --- FUNÇÕES DE FILTRAGEM ---
 let debounceTimer;
-function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { renderModels(filterModels()); }, 250); }
+function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(render, 250); }
 
 function filterModels() {
     const query = searchBox.value.toLowerCase().trim();
     const searchInCurrentTab = searchInTabCheckbox.checked;
-    const activeContentArea = document.getElementById('active-content-area');
-    activeContentArea.style.borderColor = appState.tabs.find(t => t.id === appState.activeTabId)?.color || '#ccc';
 
-    // Se não houver consulta de pesquisa, sempre exiba o conteúdo da aba ativa.
     if (!query) {
         if (appState.activeTabId === FAVORITES_TAB_ID) {
             return appState.models.filter(m => m.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
@@ -410,19 +201,9 @@ function filterModels() {
         return appState.models.filter(m => m.tabId === appState.activeTabId).sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    // A partir daqui, existe uma consulta de pesquisa.
-    activeContentArea.style.borderColor = '#aaa'; // Feedback de busca ativa
-
-    let searchPool;
-    if (searchInCurrentTab) {
-        if (appState.activeTabId === FAVORITES_TAB_ID) {
-            searchPool = appState.models.filter(m => m.isFavorite);
-        } else {
-            searchPool = appState.models.filter(m => m.tabId === appState.activeTabId);
-        }
-    } else {
-        searchPool = appState.models; // Busca global
-    }
+    let searchPool = searchInCurrentTab
+        ? (appState.activeTabId === FAVORITES_TAB_ID ? appState.models.filter(m => m.isFavorite) : appState.models.filter(m => m.tabId === appState.activeTabId))
+        : appState.models;
 
     let filteredModels;
     if (query.includes(' ou ')) {
@@ -442,12 +223,20 @@ function filterModels() {
             model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query)
         );
     }
-
     return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // --- MANIPULAÇÃO DE DADOS ---
-function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
+function addNewTab() { 
+    const name = prompt("Digite o nome da nova aba:"); 
+    if (name && name.trim()) { 
+        modifyStateAndBackup(() => { 
+            const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; 
+            appState.tabs.push(newTab); 
+            appState.activeTabId = newTab.id; 
+        }); 
+    } 
+}
 
 function deleteTab(tabId) {
     const tabToDelete = appState.tabs.find(t => t.id === tabId);
@@ -465,14 +254,28 @@ function deleteTab(tabId) {
             }
             modifyStateAndBackup(() => {
                 const destinationTabId = destinationOptions[choiceIndex].id;
-                appState.models.forEach(model => {
-                    if (model.tabId === tabId) { model.tabId = destinationTabId; }
-                });
+                appState.models.forEach(model => { if (model.tabId === tabId) model.tabId = destinationTabId; });
                 appState.tabs = appState.tabs.filter(t => t.id !== tabId);
                 appState.activeTabId = destinationTabId;
-                render();
             });
         }
+    });
+}
+
+function renameTab(tab) {
+    const newName = prompt('Digite o novo nome para a aba:', tab.name);
+    if (newName && newName.trim()) {
+        modifyStateAndBackup(() => {
+            const tabToUpdate = appState.tabs.find(t => t.id === tab.id);
+            if(tabToUpdate) tabToUpdate.name = newName.trim();
+        });
+    }
+}
+
+function changeTabColor(tab, color) {
+    modifyStateAndBackup(() => {
+        const tabToUpdate = appState.tabs.find(t => t.id === tab.id);
+        if(tabToUpdate) tabToUpdate.color = color;
     });
 }
 
@@ -503,7 +306,6 @@ function addNewModelFromEditor() {
                 const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false };
                 appState.models.push(newModel);
                 searchBox.value = '';
-                render();
             });
             NotificationService.show('Novo modelo salvo com sucesso!', 'success');
         }
@@ -524,7 +326,6 @@ function editModel(modelId) {
             modifyStateAndBackup(() => {
                 model.name = data.name;
                 model.content = data.content;
-                render();
             });
             NotificationService.show('Modelo atualizado!', 'success');
         }
@@ -538,14 +339,18 @@ function deleteModel(modelId) {
         onConfirm: () => {
             modifyStateAndBackup(() => {
                 appState.models = appState.models.filter(m => m.id !== modelId);
-                render();
             });
             NotificationService.show('Modelo excluído com sucesso!', 'success');
         }
     });
 }
 
-function toggleFavorite(modelId) { const model = appState.models.find(m => m.id === modelId); if (model) { modifyStateAndBackup(() => { model.isFavorite = !model.isFavorite; render(); }); } }
+function toggleFavorite(modelId) { 
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) model.isFavorite = !model.isFavorite;
+    });
+}
 
 function moveModelToAnotherTab(modelId) {
     const model = appState.models.find(m => m.id === modelId);
@@ -560,13 +365,47 @@ function moveModelToAnotherTab(modelId) {
     if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
         modifyStateAndBackup(() => {
             model.tabId = destinationOptions[choiceIndex].id;
-            render();
         });
         NotificationService.show(`Modelo movido para a aba "${destinationOptions[choiceIndex].name}".`, 'success');
     } else if(choice) {
         NotificationService.show("Seleção inválida.", "error");
     }
 }
+
+function reorderModel(modelId, newIndex) {
+    modifyStateAndBackup(() => {
+        const modelsInCurrentTab = filterModels();
+        const modelToMove = modelsInCurrentTab.find(m => m.id === modelId);
+        if (!modelToMove) return;
+
+        // Remove from original position in the global list
+        const globalIndex = appState.models.findIndex(m => m.id === modelId);
+        appState.models.splice(globalIndex, 1);
+
+        // Find the new position in the global list
+        if (newIndex >= modelsInCurrentTab.length -1) {
+             // If moved to the end of the filtered list, find the last model of that tab in the global list
+            let lastModelOfTabId = null;
+            for(let i = appState.models.length - 1; i >= 0; i--) {
+                if (appState.models[i].tabId === modelToMove.tabId) {
+                    lastModelOfTabId = appState.models[i].id;
+                    break;
+                }
+            }
+            if(lastModelOfTabId) {
+                 const targetGlobalIndex = appState.models.findIndex(m => m.id === lastModelOfTabId);
+                 appState.models.splice(targetGlobalIndex + 1, 0, modelToMove);
+            } else {
+                 appState.models.push(modelToMove); // Tab was empty
+            }
+        } else {
+            const modelAfter = modelsInCurrentTab[newIndex];
+            const targetGlobalIndex = appState.models.findIndex(m => m.id === modelAfter.id);
+            appState.models.splice(targetGlobalIndex, 0, modelToMove);
+        }
+    });
+}
+
 
 function exportModels() {
     const dataStr = JSON.stringify(appState, null, 2);
@@ -592,16 +431,16 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
-                        appState = importedState;
-                        const filename = file.name;
-                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                        if (match) {
-                            const [, year, month, day, hours, minutes] = match;
-                            const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
-                            if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
-                        }
-                        saveStateToStorage();
-                        render();
+                        modifyStateAndBackup(() => {
+                            appState = importedState;
+                            const filename = file.name;
+                            const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                            if (match) {
+                                const [, year, month, day, hours, minutes] = match;
+                                const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
+                                if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
+                            }
+                        });
                         NotificationService.show('Modelos importados com sucesso!', 'success');
                         BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
                     } else {
@@ -613,9 +452,7 @@ function handleImportFile(event) {
                     importFileInput.value = '';
                 }
             },
-            onCancel: () => {
-                importFileInput.value = '';
-            }
+            onCancel: () => { importFileInput.value = ''; }
         });
     };
     reader.readAsText(file);
@@ -627,7 +464,6 @@ window.addEventListener('DOMContentLoaded', () => {
     BackupManager.init({ statusElement: backupStatusEl });
 
     loadStateFromStorage(); 
-    render(); 
 
     if (typeof TINYMCE_CONFIG !== 'undefined') {
         tinymce.init(TINYMCE_CONFIG);
@@ -637,13 +473,37 @@ window.addEventListener('DOMContentLoaded', () => {
 
     CommandPalette.init();
     
+    // Inicializa o SidebarManager com todas as funções de callback necessárias
+    SidebarManager.init({
+        filterModels,
+        getFavoritesTabId: () => FAVORITES_TAB_ID,
+        getPowerTabId: () => POWER_TAB_ID,
+        getTabColors: () => TAB_COLORS,
+        onTabChange: (tabId) => { appState.activeTabId = tabId; searchBox.value = ''; render(); },
+        onTabReorder: (oldIndex, newIndex) => modifyStateAndBackup(() => {
+            const movedItem = appState.tabs.splice(oldIndex, 1)[0];
+            appState.tabs.splice(newIndex, 0, movedItem);
+        }),
+        onTabDelete: deleteTab,
+        onTabRename: renameTab,
+        onTabColorChange: changeTabColor,
+        onModelInsert: insertModelContent,
+        onModelEdit: editModel,
+        onModelDelete: deleteModel,
+        onModelMove: moveModelToAnotherTab,
+        onModelFavoriteToggle: toggleFavorite,
+        onModelReorder: reorderModel
+    });
+    
+    render(); // Primeira renderização
+
     searchInTabCheckbox.addEventListener('change', debouncedFilter);
     searchBox.addEventListener('input', debouncedFilter);
-    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
+    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); render(); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
-    searchBtn.addEventListener('click', () => { renderModels(filterModels()); });
-    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; renderModels(filterModels()); });
+    searchBtn.addEventListener('click', render);
+    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; render(); });
     exportBtn.addEventListener('click', exportModels);
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
