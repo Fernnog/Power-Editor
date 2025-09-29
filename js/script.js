@@ -2,12 +2,12 @@
 
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
+let sortableInstance = null; // Instância da biblioteca de drag-and-drop
 const FAVORITES_TAB_ID = 'favorites-tab-id';
-const POWER_TAB_ID = 'rapidos-tab-id'; // Nome da constante para clareza (ID interno mantido)
+const POWER_TAB_ID = 'rapidos-tab-id';
 const TAB_COLORS = [
     '#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#2DD4BF', 
     '#F472B6', '#818CF8', '#FB923C', '#EC4899', '#10B981', '#3B82F6',
-    // Novas cores adicionadas
     '#8B5CF6', '#F97316', '#14B8A6', '#EAB308', '#EF4444', '#6366F1'
 ];
 
@@ -31,6 +31,7 @@ const importFileInput = document.getElementById('import-file-input');
 const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const tabActionsContainer = document.getElementById('tab-actions-container');
+const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function modifyStateAndBackup(modificationFn) {
@@ -58,8 +59,8 @@ function loadStateFromStorage() {
             ],
             activeTabId: defaultTabId,
             replacements: [],
-            variableMemory: {}, // INICIALIZA A MEMÓRIA DE VARIÁVEIS
-            globalVariables: [], // INICIALIZA AS VARIÁVEIS GLOBAIS
+            variableMemory: {},
+            globalVariables: [],
             lastBackupTimestamp: null
         };
     };
@@ -94,7 +95,6 @@ function loadStateFromStorage() {
                     }
                 });
 
-                // GARANTE COMPATIBILIDADE COM VERSÕES ANTIGAS
                 appState.replacements = parsedState.replacements || [];
                 appState.variableMemory = parsedState.variableMemory || {};
                 appState.globalVariables = parsedState.globalVariables || [];
@@ -119,72 +119,56 @@ function loadStateFromStorage() {
 
 // --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
 function insertModelContent(model) {
-    // Se a busca estiver ativa, muda para a aba do modelo e limpa a busca
     if (searchBox.value && appState.activeTabId !== model.tabId) {
         appState.activeTabId = model.tabId;
         searchBox.value = '';
-        render(); // Renderiza a UI com a nova aba ativa
+        render();
     }
 
     let content = model.content;
-
-    // ETAPA 1: Substituir variáveis dinâmicas (geradas pelo sistema)
     const now = new Date();
     content = content.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
     content = content.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
 
-    // ETAPA 2: Substituir variáveis globais (definidas pelo usuário)
     if (appState.globalVariables && appState.globalVariables.length > 0) {
         appState.globalVariables.forEach(gVar => {
-            // Cria um RegEx para cada variável global, tratando espaços
             const globalVarRegex = new RegExp(`{{\\s*${gVar.find}\\s*}}`, 'gi');
             content = content.replace(globalVarRegex, gVar.replace);
         });
     }
 
-    // ETAPA 3: Lógica de formulário para as variáveis restantes
     const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...content.matchAll(variableRegex)];
     const uniqueVariables = [...new Set(matches.map(match => match[1]))];
 
     if (uniqueVariables.length > 0) {
-        // A lógica do checkbox "Lembrar valores" será gerenciada no ModalManager
-        // com base na existência de memória para este model.id
         ModalManager.show({
             type: 'variableForm',
             title: 'Preencha as Informações do Modelo',
-            initialData: { variables: uniqueVariables, modelId: model.id }, // Passa o ID do modelo
+            initialData: { variables: uniqueVariables, modelId: model.id },
             saveButtonText: 'Inserir Texto',
             onSave: (data) => {
-                // O objeto 'data' agora contém os valores das variáveis e o status do checkbox
-                const remember = data.rememberValues;
-                const valuesToInsert = { ...data };
-                delete valuesToInsert.rememberValues; // Remove a chave do checkbox dos dados de inserção
-
-                modifyStateAndBackup(() => {
-                    if (remember) {
-                        // Salva os valores na memória
-                        appState.variableMemory[model.id] = valuesToInsert;
-                    } else {
-                        // Remove os valores da memória se a caixa for desmarcada
-                        delete appState.variableMemory[model.id];
-                    }
-                });
-
                 let processedContent = content;
-                for (const key in valuesToInsert) {
+                for (const key in data.values) {
                     const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*}}`, 'g');
-                    processedContent = processedContent.replace(placeholder, valuesToInsert[key] || '');
+                    processedContent = processedContent.replace(placeholder, data.values[key] || '');
                 }
 
                 if (tinymce.activeEditor) {
                     tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
                     tinymce.activeEditor.focus();
                 }
+
+                modifyStateAndBackup(() => {
+                    if (data.shouldRemember) {
+                        appState.variableMemory[model.id] = data.values;
+                    } else {
+                        delete appState.variableMemory[model.id];
+                    }
+                });
             }
         });
     } else {
-        // Se não houver variáveis restantes, insere o conteúdo pré-processado
         if (tinymce.activeEditor) {
             tinymce.activeEditor.execCommand('mceInsertContent', false, content);
             tinymce.activeEditor.focus();
@@ -280,11 +264,20 @@ function render() {
 }
 
 function renderTabs() {
+    // CORREÇÃO: Destruir a instância antiga do SortableJS antes de redesenhar
+    if (sortableInstance) {
+        sortableInstance.destroy();
+    }
+
     tabsContainer.innerHTML = '';
     const activeContentArea = document.getElementById('active-content-area');
     let activeTabColor = '#ccc';
 
-    appState.tabs.forEach(tab => {
+    const specialTabs = appState.tabs.filter(t => t.id === FAVORITES_TAB_ID || t.id === POWER_TAB_ID)
+                                      .sort((a, b) => (a.id === FAVORITES_TAB_ID ? -1 : 1));
+    const sortableTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID);
+
+    const createTabElement = (tab) => {
         const tabEl = document.createElement('button');
         tabEl.className = 'tab-item';
         tabEl.dataset.tabId = tab.id;
@@ -297,7 +290,6 @@ function renderTabs() {
             activeTabColor = tabColor;
         }
 
-        // MODIFICADO: Lógica para renderizar ícone ou texto
         if (tab.id === FAVORITES_TAB_ID) {
             tabEl.innerHTML = ICON_STAR_FILLED;
             tabEl.title = tab.name;
@@ -315,11 +307,38 @@ function renderTabs() {
             searchBox.value = '';
             render();
         });
-        
-        tabsContainer.appendChild(tabEl);
-    });
+        return tabEl;
+    };
+
+    specialTabs.forEach(tab => tabsContainer.appendChild(createTabElement(tab)));
     
+    const sortableContainer = document.createElement('div');
+    sortableContainer.id = 'sortable-tabs-container';
+    sortableContainer.className = 'tabs-container';
+    sortableContainer.style.flexWrap = 'wrap';
+    sortableTabs.forEach(tab => sortableContainer.appendChild(createTabElement(tab)));
+    
+    tabsContainer.appendChild(sortableContainer);
     activeContentArea.style.borderColor = activeTabColor;
+
+    // CORREÇÃO: Reinicializar o SortableJS no novo container
+    if (sortableContainer) {
+        sortableInstance = Sortable.create(sortableContainer, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function (evt) {
+                const sortableTabsCurrent = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID);
+                const movedItem = sortableTabsCurrent.splice(evt.oldIndex, 1)[0];
+                sortableTabsCurrent.splice(evt.newIndex, 0, movedItem);
+
+                modifyStateAndBackup(() => {
+                    const specialTabsCurrent = appState.tabs.filter(t => t.id === FAVORITES_TAB_ID || t.id === POWER_TAB_ID);
+                    appState.tabs = [...specialTabsCurrent, ...sortableTabsCurrent];
+                });
+            }
+        });
+    }
 }
 
 function renderModels(modelsToRender) {
@@ -356,7 +375,7 @@ function renderModels(modelsToRender) {
         addButton.className = 'action-btn';
         addButton.innerHTML = ICON_PLUS;
         addButton.title = 'Inserir modelo';
-        addButton.onclick = () => insertModelContent(model); // ALTERADO: Passa o objeto model inteiro
+        addButton.onclick = () => insertModelContent(model);
         
         const editButton = document.createElement('button');
         editButton.className = 'action-btn';
@@ -398,43 +417,55 @@ function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTim
 
 function filterModels() {
     const query = searchBox.value.toLowerCase().trim();
+    const searchInCurrentTab = searchInTabCheckbox.checked;
     const activeContentArea = document.getElementById('active-content-area');
     activeContentArea.style.borderColor = appState.tabs.find(t => t.id === appState.activeTabId)?.color || '#ccc';
 
-    let filteredModels = [];
-    
+    // Se não houver consulta de pesquisa, sempre exiba o conteúdo da aba ativa.
     if (!query) {
         if (appState.activeTabId === FAVORITES_TAB_ID) {
-            filteredModels = appState.models.filter(m => m.isFavorite);
+            return appState.models.filter(m => m.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
+        }
+        return appState.models.filter(m => m.tabId === appState.activeTabId).sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // A partir daqui, existe uma consulta de pesquisa.
+    activeContentArea.style.borderColor = '#aaa'; // Feedback de busca ativa
+
+    let searchPool;
+    if (searchInCurrentTab) {
+        if (appState.activeTabId === FAVORITES_TAB_ID) {
+            searchPool = appState.models.filter(m => m.isFavorite);
         } else {
-            filteredModels = appState.models.filter(m => m.tabId === appState.activeTabId);
+            searchPool = appState.models.filter(m => m.tabId === appState.activeTabId);
         }
     } else {
-        activeContentArea.style.borderColor = '#aaa';
-        const models = appState.models;
-        if (query.includes(' ou ')) {
-            const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
-            filteredModels = models.filter(model => {
-                const modelText = (model.name + ' ' + model.content).toLowerCase();
-                return terms.some(term => modelText.includes(term));
-            });
-        } else if (query.includes(' e ')) {
-            const terms = query.split(' e ').map(t => t.trim()).filter(Boolean);
-            filteredModels = models.filter(model => {
-                const modelText = (model.name + ' ' + model.content).toLowerCase();
-                return terms.every(term => modelText.includes(term));
-            });
-        } else {
-            filteredModels = models.filter(model =>
-                model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query)
-            );
-        }
+        searchPool = appState.models; // Busca global
+    }
+
+    let filteredModels;
+    if (query.includes(' ou ')) {
+        const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
+        filteredModels = searchPool.filter(model => {
+            const modelText = (model.name + ' ' + model.content).toLowerCase();
+            return terms.some(term => modelText.includes(term));
+        });
+    } else if (query.includes(' e ')) {
+        const terms = query.split(' e ').map(t => t.trim()).filter(Boolean);
+        filteredModels = searchPool.filter(model => {
+            const modelText = (model.name + ' ' + model.content).toLowerCase();
+            return terms.every(term => modelText.includes(term));
+        });
+    } else {
+        filteredModels = searchPool.filter(model =>
+            model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query)
+        );
     }
 
     return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// --- MANIPULAÇÃO DE DADOS (COM alert/confirm SUBSTITUÍDOS) ---
+// --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { const name = prompt("Digite o nome da nova aba:"); if (name && name.trim()) { modifyStateAndBackup(() => { const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; appState.tabs.push(newTab); appState.activeTabId = newTab.id; render(); }); } }
 
 function deleteTab(tabId) {
@@ -471,7 +502,7 @@ function addNewModelFromEditor() {
         return;
     }
     let targetTabId = appState.activeTabId;
-    if (targetTabId === FAVORITES_TAB_ID) {
+    if (targetTabId === FAVORITES_TAB_ID || targetTabId === POWER_TAB_ID) {
         targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID)?.id;
         if (!targetTabId) {
             NotificationService.show("Crie uma aba regular primeiro para poder adicionar modelos.", "error");
@@ -623,9 +654,9 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada.');
     }
 
-    // Inicializa o módulo da Paleta de Comandos
     CommandPalette.init();
-
+    
+    searchInTabCheckbox.addEventListener('change', debouncedFilter);
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); renderModels(filterModels()); } });
     addNewTabBtn.addEventListener('click', addNewTab);
