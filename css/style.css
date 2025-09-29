@@ -870,7 +870,7 @@ blockquote p {
     user-select: none; /* Evita seleção de texto no label */
 }
 
-/* --- (NOVO) ESTILOS PARA O CONTADOR DE MODELOS NA ABA --- */
+/* --- ESTILOS PARA O CONTADOR DE MODELOS NA ABA --- */
 .tab-item {
     position: relative; /* Necessário para posicionar o contador */
     overflow: visible; /* Garante que o contador não seja cortado */
@@ -894,7 +894,7 @@ blockquote p {
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-/* --- (NOVO) ESTILOS PARA O MENU DE CONTEXTO (BOTÃO DIREITO) --- */
+/* --- ESTILOS PARA O MENU DE CONTEXTO (BOTÃO DIREITO) --- */
 .context-menu {
     position: fixed; /* Posição absoluta na tela */
     z-index: 1050;
@@ -932,7 +932,7 @@ blockquote p {
     height: 16px;
 }
 
-/* --- (NOVO) ESTILOS PARA DRAG AND DROP DE MODELOS --- */
+/* --- ESTILOS PARA DRAG AND DROP DE MODELOS --- */
 .model-item.sortable-ghost {
     background: #e9ecef;
     border: 2px dashed #adb5bd;
@@ -943,4 +943,23 @@ blockquote p {
     opacity: 0.9;
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* --- FEEDBACK VISUAL PARA ABA DE DESTINO NO DRAG & DROP --- */
+@keyframes pulse-border {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+.tab-item.drop-target-active {
+    transform: scale(1.08);
+    border: 2px solid #3B82F6; /* Azul brilhante para destaque */
+    animation: pulse-border 1.5s infinite;
 }
