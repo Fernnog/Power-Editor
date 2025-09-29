@@ -443,8 +443,11 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
-                        modifyStateAndBackup(() => {
-                            appState = importedState;
+                        appState = importedState;
+                        
+                        if (importedState.lastBackupTimestamp) {
+                            appState.lastBackupTimestamp = importedState.lastBackupTimestamp;
+                        } else {
                             const filename = file.name;
                             const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
                             if (match) {
@@ -452,9 +455,13 @@ function handleImportFile(event) {
                                 const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
                                 if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
                             }
-                        });
-                        NotificationService.show('Modelos importados com sucesso!', 'success');
+                        }
+                        
+                        saveStateToStorage();
                         BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
+                        render();
+                        
+                        NotificationService.show('Modelos importados com sucesso!', 'success');
                     } else {
                         throw new Error('Formato de arquivo inválido.');
                     }
