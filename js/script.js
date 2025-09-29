@@ -372,19 +372,31 @@ function moveModelToAnotherTab(modelId) {
     }
 }
 
+function moveModelToTab(modelId, newTabId) {
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) {
+            if (newTabId === FAVORITES_TAB_ID) {
+                model.isFavorite = true;
+                NotificationService.show(`"${model.name}" adicionado aos Favoritos.`, 'success');
+            } else {
+                model.tabId = newTabId;
+                NotificationService.show(`Modelo movido para a nova aba.`, 'success');
+            }
+        }
+    });
+}
+
 function reorderModel(modelId, newIndex) {
     modifyStateAndBackup(() => {
         const modelsInCurrentTab = filterModels();
         const modelToMove = modelsInCurrentTab.find(m => m.id === modelId);
         if (!modelToMove) return;
 
-        // Remove from original position in the global list
         const globalIndex = appState.models.findIndex(m => m.id === modelId);
         appState.models.splice(globalIndex, 1);
 
-        // Find the new position in the global list
         if (newIndex >= modelsInCurrentTab.length -1) {
-             // If moved to the end of the filtered list, find the last model of that tab in the global list
             let lastModelOfTabId = null;
             for(let i = appState.models.length - 1; i >= 0; i--) {
                 if (appState.models[i].tabId === modelToMove.tabId) {
@@ -396,7 +408,7 @@ function reorderModel(modelId, newIndex) {
                  const targetGlobalIndex = appState.models.findIndex(m => m.id === lastModelOfTabId);
                  appState.models.splice(targetGlobalIndex + 1, 0, modelToMove);
             } else {
-                 appState.models.push(modelToMove); // Tab was empty
+                 appState.models.push(modelToMove);
             }
         } else {
             const modelAfter = modelsInCurrentTab[newIndex];
@@ -473,7 +485,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     CommandPalette.init();
     
-    // Inicializa o SidebarManager com todas as funções de callback necessárias
     SidebarManager.init({
         filterModels,
         getFavoritesTabId: () => FAVORITES_TAB_ID,
@@ -492,7 +503,8 @@ window.addEventListener('DOMContentLoaded', () => {
         onModelDelete: deleteModel,
         onModelMove: moveModelToAnotherTab,
         onModelFavoriteToggle: toggleFavorite,
-        onModelReorder: reorderModel
+        onModelReorder: reorderModel,
+        onModelDropOnTab: moveModelToTab
     });
     
     render(); // Primeira renderização
