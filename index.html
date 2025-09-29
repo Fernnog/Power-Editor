@@ -37,6 +37,12 @@
             <div class="sidebar-controls">
                 <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
                 
+                <!-- NOVO CONTAINER PARA O FILTRO DE BUSCA -->
+                <div class="search-filter-container">
+                    <input type="checkbox" id="search-in-tab-checkbox" name="search-filter">
+                    <label for="search-in-tab-checkbox">Buscar apenas na aba atual</label>
+                </div>
+
                 <!-- NOVO CARD DE STATUS DO BACKUP -->
                 <div id="backup-status-card">
                     <span class="card-title">ÚLTIMO BACKUP</span>
@@ -118,6 +124,9 @@
     <!-- NOVAS BIBLIOTECAS DE MARKDOWN -->
     <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- BIBLIOTECA PARA ARRASTAR E SOLTAR (DRAG-AND-DROP) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <script src="js/config.js"></script>
     <script src="js/speech.js"></script>
