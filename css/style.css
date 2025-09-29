@@ -829,22 +829,22 @@ blockquote p {
 }
 
 /* Estilo para o espaço reservado (placeholder) onde a aba será solta */
-#sortable-tabs-container .tab-item.sortable-ghost {
+#tabs-container .tab-item.sortable-ghost {
     background-color: #e0e0e0;
     border: 2px dashed #999;
     color: transparent; /* Esconde o texto do placeholder */
 }
 
-#sortable-tabs-container .tab-item.sortable-ghost svg {
+#tabs-container .tab-item.sortable-ghost svg {
     display: none; /* Esconde o ícone do placeholder */
 }
 
 /* --- Feedback visual para abas arrastáveis (Melhoria de UX) --- */
-#sortable-tabs-container .tab-item {
+#tabs-container .tab-item {
     cursor: grab;
 }
 
-#sortable-tabs-container .tab-item:active {
+#tabs-container .tab-item:active {
     cursor: grabbing;
 }
 
