@@ -264,7 +264,6 @@ function render() {
 }
 
 function renderTabs() {
-    // CORREÇÃO: Destruir a instância antiga do SortableJS antes de redesenhar
     if (sortableInstance) {
         sortableInstance.destroy();
     }
@@ -272,10 +271,6 @@ function renderTabs() {
     tabsContainer.innerHTML = '';
     const activeContentArea = document.getElementById('active-content-area');
     let activeTabColor = '#ccc';
-
-    const specialTabs = appState.tabs.filter(t => t.id === FAVORITES_TAB_ID || t.id === POWER_TAB_ID)
-                                      .sort((a, b) => (a.id === FAVORITES_TAB_ID ? -1 : 1));
-    const sortableTabs = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID);
 
     const createTabElement = (tab) => {
         const tabEl = document.createElement('button');
@@ -310,35 +305,21 @@ function renderTabs() {
         return tabEl;
     };
 
-    specialTabs.forEach(tab => tabsContainer.appendChild(createTabElement(tab)));
+    appState.tabs.forEach(tab => tabsContainer.appendChild(createTabElement(tab)));
     
-    const sortableContainer = document.createElement('div');
-    sortableContainer.id = 'sortable-tabs-container';
-    sortableContainer.className = 'tabs-container';
-    sortableContainer.style.flexWrap = 'wrap';
-    sortableTabs.forEach(tab => sortableContainer.appendChild(createTabElement(tab)));
-    
-    tabsContainer.appendChild(sortableContainer);
     activeContentArea.style.borderColor = activeTabColor;
 
-    // CORREÇÃO: Reinicializar o SortableJS no novo container
-    if (sortableContainer) {
-        sortableInstance = Sortable.create(sortableContainer, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            dragClass: 'sortable-drag',
-            onEnd: function (evt) {
-                const sortableTabsCurrent = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID);
-                const movedItem = sortableTabsCurrent.splice(evt.oldIndex, 1)[0];
-                sortableTabsCurrent.splice(evt.newIndex, 0, movedItem);
-
-                modifyStateAndBackup(() => {
-                    const specialTabsCurrent = appState.tabs.filter(t => t.id === FAVORITES_TAB_ID || t.id === POWER_TAB_ID);
-                    appState.tabs = [...specialTabsCurrent, ...sortableTabsCurrent];
-                });
-            }
-        });
-    }
+    sortableInstance = Sortable.create(tabsContainer, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        dragClass: 'sortable-drag',
+        onEnd: function (evt) {
+            const movedItem = appState.tabs.splice(evt.oldIndex, 1)[0];
+            appState.tabs.splice(evt.newIndex, 0, movedItem);
+            // Salva o estado sem precisar renderizar a UI novamente, o SortableJS já fez isso.
+            modifyStateAndBackup(() => {});
+        }
+    });
 }
 
 function renderModels(modelsToRender) {
