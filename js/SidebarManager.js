@@ -77,7 +77,12 @@ const SidebarManager = (() => {
                 tabEl.title = tab.name;
                 tabEl.classList.add('tab-item-icon-only');
             } else {
-                tabEl.textContent = tab.name;
+                // ===============================================================================
+                //  CORREÇÃO AQUI: Usar createTextNode e appendChild para não apagar o contador
+                //  O método anterior (tabEl.textContent = tab.name) substituía todo o conteúdo.
+                const textNode = document.createTextNode(tab.name);
+                tabEl.appendChild(textNode);
+                // ===============================================================================
             }
             
             tabEl.addEventListener('click', () => callbacks.onTabChange(tab.id));
