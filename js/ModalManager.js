@@ -123,13 +123,21 @@ const ModalManager = (() => {
         modalDynamicContent.innerHTML = `<div class="info-modal-content">${data.content || ''}</div>`;
     }
 
+    // --- FUNÇÃO DE DIAGNÓSTICO E CORREÇÃO ---
     function _buildBackupHistoryContent(data = {}) {
+        console.log("[ModalManager._buildBackupHistoryContent] Construindo conteúdo do modal. Dados recebidos:", data);
+
         let historyRowsHtml = (data.history || []).map(item => {
             const date = new Date(item.timestamp);
             const formattedDate = `${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+            
+            // Prioridade 2: Adiciona o feedback visual para o backup atual
+            const isCurrent = item.timestamp === data.currentTimestamp;
+            const currentIndicator = isCurrent ? '<span class="current-backup-indicator">(Atual)</span>' : '';
+
             return `
-                <li class="backup-history-item">
-                    <span class="timestamp">${formattedDate}</span>
+                <li class="backup-history-item ${isCurrent ? 'current' : ''}">
+                    <span class="timestamp">${formattedDate} ${currentIndicator}</span>
                     <button class="restore-backup-btn" data-timestamp="${item.timestamp}">Restaurar</button>
                 </li>
             `;
@@ -138,6 +146,8 @@ const ModalManager = (() => {
         if (!historyRowsHtml) {
             historyRowsHtml = '<li class="backup-history-item"><span class="timestamp">Nenhum backup no histórico ainda.</span></li>';
         }
+
+        console.log("[ModalManager._buildBackupHistoryContent] HTML gerado:", historyRowsHtml);
     
         modalDynamicContent.innerHTML = `
             <p class="modal-description">Selecione um ponto de restauração. A restauração substituirá todos os dados atuais.</p>
@@ -293,6 +303,7 @@ const ModalManager = (() => {
     }
 
     function show(config) {
+        console.log("[ModalManager.show] Abrindo modal com a configuração:", config);
         currentConfig = config;
         modalTitleEl.textContent = config.title;
 
