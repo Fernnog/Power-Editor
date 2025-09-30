@@ -40,12 +40,28 @@ const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
 const backupStatusCard = document.getElementById('backup-status-card');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true }) {
-    modificationFn();
+function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true, logToHistory: true }) {
+    modificationFn(); // Modifica o appState
+
+    // CORREÇÃO: Adiciona um snapshot ao histórico se a opção estiver ativa.
+    if (options.logToHistory) {
+        if (!appState.backupHistory) {
+            appState.backupHistory = [];
+        }
+        const snapshot = {
+            timestamp: new Date().toISOString(),
+            // Cria uma cópia profunda do estado para evitar que futuras modificações afetem o histórico
+            state: JSON.parse(JSON.stringify(appState))
+        };
+        appState.backupHistory.push(snapshot);
+    }
+    
     saveStateToStorage();
+    
     if (options.scheduleBackup) {
         BackupManager.schedule(appState);
     }
+    
     render(); // Re-renderiza a UI após qualquer modificação
 }
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
@@ -70,7 +86,8 @@ function loadStateFromStorage() {
             replacements: [],
             variableMemory: {},
             globalVariables: [],
-            lastBackupTimestamp: null
+            lastBackupTimestamp: null,
+            backupHistory: [] // Garante que a propriedade exista
         };
     };
 
@@ -107,6 +124,7 @@ function loadStateFromStorage() {
                 appState.replacements = parsedState.replacements || [];
                 appState.variableMemory = parsedState.variableMemory || {};
                 appState.globalVariables = parsedState.globalVariables || [];
+                appState.backupHistory = parsedState.backupHistory || []; // Garante que a propriedade exista ao carregar
 
             } else {
                 throw new Error("Formato de estado inválido.");
@@ -178,7 +196,7 @@ function insertModelContent(model) {
                     } else {
                         delete appState.variableMemory[model.id];
                     }
-                });
+                }, { logToHistory: false }); // Não registra preenchimento de variável no histórico
             }
         });
     } else {
@@ -421,6 +439,7 @@ function reorderModel(modelId, newIndex) {
     });
 }
 
+// CORREÇÃO: Função de importação restaurada para a versão correta.
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -432,19 +451,36 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs) {
-                        // Usamos a função centralizada para modificar o estado, mas sem agendar um novo backup
+                        
+                        let backupDate = null;
+                        const filename = file.name;
+                        // Tenta extrair a data do nome do arquivo (ex: 20231225_1430_backup.json)
+                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                        if (match) {
+                            const [, year, month, day, hours, minutes] = match;
+                            const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
+                            if (!isNaN(fileDate)) {
+                                importedState.lastBackupTimestamp = fileDate.toISOString();
+                                backupDate = fileDate;
+                            }
+                        }
+                        
+                        // Usa a função centralizada para substituir o estado e LOGAR no histórico
                         modifyStateAndBackup(() => {
                             appState = importedState;
-                            if (!appState.backupHistory) appState.backupHistory = [];
-                        }, { scheduleBackup: false }); // Não agenda um backup da importação
+                        }, { scheduleBackup: false, logToHistory: true });
                         
-                        BackupManager.updateStatus(null);
+                        // Atualiza o card de status com a data extraída do arquivo
+                        BackupManager.updateStatus(backupDate);
+                        
                         NotificationService.show('Dados importados com sucesso!', 'success');
+
                     } else {
                         throw new Error('Formato de arquivo inválido.');
                     }
                 } catch (error) {
                     NotificationService.show('Erro ao importar arquivo.', 'error');
+                    console.error("Erro de importação:", error);
                 } finally {
                     importFileInput.value = '';
                 }
@@ -522,7 +558,7 @@ window.addEventListener('DOMContentLoaded', () => {
                         if (restoredState) {
                             modifyStateAndBackup(() => {
                                 appState = restoredState;
-                            }, { scheduleBackup: false });
+                            }, { scheduleBackup: false, logToHistory: false }); // Não loga uma restauração como um novo ponto
 
                             BackupManager.updateStatus(new Date(appState.lastBackupTimestamp));
                             NotificationService.show('Backup restaurado com sucesso!', 'success');
