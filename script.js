@@ -41,25 +41,31 @@ const backupStatusCard = document.getElementById('backup-status-card');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true, logToHistory: true }) {
-    console.log(`%c[modifyStateAndBackup] Iniciando. Opções: schedule=${options.scheduleBackup}, log=${options.logToHistory}`, 'color: #8E44AD; font-weight: bold;');
     modificationFn(); // Modifica o appState
 
+    // CORREÇÃO: Adiciona um snapshot ao histórico se a opção estiver ativa.
     if (options.logToHistory) {
         if (!appState.backupHistory) {
             appState.backupHistory = [];
         }
+        // Atualiza o timestamp do estado que será salvo no snapshot
+        appState.lastBackupTimestamp = new Date().toISOString();
+        
         const snapshot = {
-            timestamp: new Date().toISOString(),
+            timestamp: appState.lastBackupTimestamp,
+            // Cria uma cópia profunda do estado para evitar que futuras modificações afetem o histórico
             state: JSON.parse(JSON.stringify(appState))
         };
         appState.backupHistory.push(snapshot);
-        console.log(`%c[modifyStateAndBackup] Snapshot adicionado ao histórico. Total de itens no histórico: ${appState.backupHistory.length}`, 'color: #8E44AD;');
     }
     
     saveStateToStorage();
     
     if (options.scheduleBackup) {
         BackupManager.schedule(appState);
+    } else {
+        // Se o backup não for agendado (ex: importação), atualiza o status visual imediatamente
+        BackupManager.updateStatus(new Date(appState.lastBackupTimestamp));
     }
     
     render(); // Re-renderiza a UI após qualquer modificação
@@ -70,11 +76,9 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
 
 function loadStateFromStorage() {
-    console.log("[loadStateFromStorage] Iniciando carregamento do LocalStorage.");
     const savedState = localStorage.getItem('editorModelosApp');
     
     const setDefaultState = () => {
-        console.warn("[loadStateFromStorage] Nenhum estado salvo encontrado ou estado inválido. Restaurando para o padrão.");
         const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
@@ -89,7 +93,7 @@ function loadStateFromStorage() {
             variableMemory: {},
             globalVariables: [],
             lastBackupTimestamp: null,
-            backupHistory: []
+            backupHistory: [] // Garante que a propriedade exista
         };
     };
 
@@ -98,9 +102,11 @@ function loadStateFromStorage() {
             const parsedState = JSON.parse(savedState);
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
+                
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
+
                 const powerTab = appState.tabs.find(t => t.id === POWER_TAB_ID);
                 if (powerTab) {
                     powerTab.name = 'Power ⚡';
@@ -114,16 +120,18 @@ function loadStateFromStorage() {
                         appState.tabs.unshift(newPowerTab);
                     }
                 }
+
                 appState.tabs.forEach(tab => {
                     if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
                         tab.color = getNextColor();
                     }
                 });
+
                 appState.replacements = parsedState.replacements || [];
                 appState.variableMemory = parsedState.variableMemory || {};
                 appState.globalVariables = parsedState.globalVariables || [];
-                appState.backupHistory = parsedState.backupHistory || [];
-                console.log(`[loadStateFromStorage] Estado carregado com sucesso. Itens no histórico: ${appState.backupHistory.length}`);
+                appState.backupHistory = parsedState.backupHistory || []; // Garante que a propriedade exista ao carregar
+
             } else {
                 throw new Error("Formato de estado inválido.");
             }
@@ -448,31 +456,27 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs) {
-                        console.log("[handleImportFile] Arquivo JSON parseado com sucesso.");
                         
-                        let backupDate = null;
+                        // Garante que a propriedade de histórico exista no arquivo importado
+                        if (!importedState.backupHistory) {
+                           importedState.backupHistory = [];
+                        }
+                        
                         const filename = file.name;
-                        // Tenta extrair a data do nome do arquivo (ex: 20231225_1430_backup.json)
                         const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
                         if (match) {
                             const [, year, month, day, hours, minutes] = match;
                             const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
                             if (!isNaN(fileDate)) {
+                                // Define o timestamp do backup importado
                                 importedState.lastBackupTimestamp = fileDate.toISOString();
-                                backupDate = fileDate;
-                                console.log(`[handleImportFile] Data extraída do nome do arquivo: ${backupDate}`);
                             }
-                        } else {
-                             console.warn("[handleImportFile] Não foi possível extrair a data do nome do arquivo.");
                         }
                         
-                        // Usa a função centralizada para substituir o estado e LOGAR no histórico
+                        // Usa a função centralizada para substituir o estado e LOGAR a importação como um novo ponto no histórico
                         modifyStateAndBackup(() => {
                             appState = importedState;
                         }, { scheduleBackup: false, logToHistory: true });
-                        
-                        // Atualiza o card de status com a data extraída do arquivo
-                        BackupManager.updateStatus(backupDate);
                         
                         NotificationService.show('Dados importados com sucesso!', 'success');
 
@@ -544,20 +548,19 @@ window.addEventListener('DOMContentLoaded', () => {
     importFileInput.addEventListener('change', handleImportFile);
 
     backupStatusCard.addEventListener('click', () => {
-        console.log("%c[DIAGNÓSTICO] Card de backup clicado!", 'background: #222; color: #bada55');
-        console.log("[DIAGNÓSTICO] Estado atual ANTES de abrir o modal:", appState);
-        console.log(`[DIAGNÓSTICO] Verificando appState.backupHistory... Itens: ${appState.backupHistory ? appState.backupHistory.length : 'undefined'}`);
-        
         ModalManager.show({
             type: 'backupHistory',
             title: 'Histórico de Backups',
             initialData: { 
                 history: BackupManager.getHistory(appState),
-                currentTimestamp: appState.lastBackupTimestamp // Passa o timestamp atual para o modal
+                currentTimestamp: appState.lastBackupTimestamp
             },
             saveButtonText: 'Fechar',
             onSave: (data) => {
-                if (!data.timestamp) return;
+                if (!data || !data.timestamp) {
+                    ModalManager.hide(); // Ação para o botão "Fechar"
+                    return;
+                }
 
                 NotificationService.showConfirm({
                     message: "Tem certeza que deseja restaurar este backup? Seus dados atuais serão sobrescritos.",
@@ -568,7 +571,6 @@ window.addEventListener('DOMContentLoaded', () => {
                                 appState = restoredState;
                             }, { scheduleBackup: false, logToHistory: false }); // Não loga uma restauração como um novo ponto
 
-                            BackupManager.updateStatus(new Date(appState.lastBackupTimestamp));
                             NotificationService.show('Backup restaurado com sucesso!', 'success');
                             ModalManager.hide();
                         }
