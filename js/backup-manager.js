@@ -2,7 +2,7 @@
 
 const BackupManager = (() => {
     let debounceTimer = null;
-    const DEBOUNCE_DELAY = 3000;
+    const DEBOUNCE_DELAY = 5000; // 5 segundos de inatividade
     let statusElement = null;
 
     function init(config) {
@@ -26,11 +26,16 @@ const BackupManager = (() => {
     function schedule(state) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            const now = new Date();
-            state.lastBackupTimestamp = now.toISOString();
-            updateStatus(now);
-            saveStateToStorage(); // Função global de script.js
-            console.log(`%c[BackupManager] Backup por inatividade salvo em: ${now.toLocaleString()}`, 'color: blue');
+            // CORREÇÃO CRÍTICA: O backup automático agora também usa a função central
+            // para garantir que um ponto de restauração seja criado no histórico.
+            console.log(`%c[BackupManager] Inatividade detectada. Criando ponto de restauração automático...`, 'color: blue');
+            modifyStateAndBackup(() => {
+                // A função `modifyStateAndBackup` já atualiza o timestamp,
+                // então nenhuma modificação de estado é necessária aqui.
+                // Apenas chamamos para que o log no histórico seja feito.
+            }, { scheduleBackup: false, logToHistory: true }); // Agendamento falso para evitar loop
+            
+            NotificationService.show('Backup automático salvo por inatividade.', 'info', 2000);
         }, DEBOUNCE_DELAY);
     }
 
@@ -52,12 +57,11 @@ const BackupManager = (() => {
     function getHistory(state) {
         const MAX_HISTORY_ITEMS = 10;
         const history = state.backupHistory || [];
-        console.log(`[getHistory] Histórico recebido com ${history.length} itens. Retornando os últimos ${MAX_HISTORY_ITEMS}.`);
+        // Retorna os N mais recentes, com o último backup no topo da lista.
         return history.slice(-MAX_HISTORY_ITEMS).reverse();
     }
 
     function restoreFromHistory(timestamp, state) {
-        console.log(`[restoreFromHistory] Tentando restaurar backup com timestamp: ${timestamp}`);
         const historyEntry = (state.backupHistory || []).find(entry => entry.timestamp === timestamp);
         if (!historyEntry) {
             NotificationService.show('Backup não encontrado no histórico.', 'error');
@@ -65,10 +69,7 @@ const BackupManager = (() => {
         }
         try {
             if (historyEntry.state) {
-                console.log("[restoreFromHistory] Backup restaurado com sucesso a partir de 'entry.state'.");
                 return historyEntry.state;
-            } else if (historyEntry.data) {
-                return JSON.parse(historyEntry.data);
             }
             throw new Error("Formato de histórico inválido.");
         } catch (e) {
