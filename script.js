@@ -41,19 +41,19 @@ const backupStatusCard = document.getElementById('backup-status-card');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true, logToHistory: true }) {
+    console.log(`%c[modifyStateAndBackup] Iniciando. Opções: schedule=${options.scheduleBackup}, log=${options.logToHistory}`, 'color: #8E44AD; font-weight: bold;');
     modificationFn(); // Modifica o appState
 
-    // CORREÇÃO: Adiciona um snapshot ao histórico se a opção estiver ativa.
     if (options.logToHistory) {
         if (!appState.backupHistory) {
             appState.backupHistory = [];
         }
         const snapshot = {
             timestamp: new Date().toISOString(),
-            // Cria uma cópia profunda do estado para evitar que futuras modificações afetem o histórico
             state: JSON.parse(JSON.stringify(appState))
         };
         appState.backupHistory.push(snapshot);
+        console.log(`%c[modifyStateAndBackup] Snapshot adicionado ao histórico. Total de itens no histórico: ${appState.backupHistory.length}`, 'color: #8E44AD;');
     }
     
     saveStateToStorage();
@@ -70,9 +70,11 @@ function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.lengt
 function saveStateToStorage() { localStorage.setItem('editorModelosApp', JSON.stringify(appState)); }
 
 function loadStateFromStorage() {
+    console.log("[loadStateFromStorage] Iniciando carregamento do LocalStorage.");
     const savedState = localStorage.getItem('editorModelosApp');
     
     const setDefaultState = () => {
+        console.warn("[loadStateFromStorage] Nenhum estado salvo encontrado ou estado inválido. Restaurando para o padrão.");
         const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
@@ -87,7 +89,7 @@ function loadStateFromStorage() {
             variableMemory: {},
             globalVariables: [],
             lastBackupTimestamp: null,
-            backupHistory: [] // Garante que a propriedade exista
+            backupHistory: []
         };
     };
 
@@ -96,11 +98,9 @@ function loadStateFromStorage() {
             const parsedState = JSON.parse(savedState);
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
-                
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
                 }
-
                 const powerTab = appState.tabs.find(t => t.id === POWER_TAB_ID);
                 if (powerTab) {
                     powerTab.name = 'Power ⚡';
@@ -114,18 +114,16 @@ function loadStateFromStorage() {
                         appState.tabs.unshift(newPowerTab);
                     }
                 }
-
                 appState.tabs.forEach(tab => {
                     if (!tab.color && tab.id !== FAVORITES_TAB_ID) {
                         tab.color = getNextColor();
                     }
                 });
-
                 appState.replacements = parsedState.replacements || [];
                 appState.variableMemory = parsedState.variableMemory || {};
                 appState.globalVariables = parsedState.globalVariables || [];
-                appState.backupHistory = parsedState.backupHistory || []; // Garante que a propriedade exista ao carregar
-
+                appState.backupHistory = parsedState.backupHistory || [];
+                console.log(`[loadStateFromStorage] Estado carregado com sucesso. Itens no histórico: ${appState.backupHistory.length}`);
             } else {
                 throw new Error("Formato de estado inválido.");
             }
@@ -450,6 +448,7 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs) {
+                        console.log("[handleImportFile] Arquivo JSON parseado com sucesso.");
                         
                         let backupDate = null;
                         const filename = file.name;
@@ -461,7 +460,10 @@ function handleImportFile(event) {
                             if (!isNaN(fileDate)) {
                                 importedState.lastBackupTimestamp = fileDate.toISOString();
                                 backupDate = fileDate;
+                                console.log(`[handleImportFile] Data extraída do nome do arquivo: ${backupDate}`);
                             }
+                        } else {
+                             console.warn("[handleImportFile] Não foi possível extrair a data do nome do arquivo.");
                         }
                         
                         // Usa a função centralizada para substituir o estado e LOGAR no histórico
@@ -542,12 +544,16 @@ window.addEventListener('DOMContentLoaded', () => {
     importFileInput.addEventListener('change', handleImportFile);
 
     backupStatusCard.addEventListener('click', () => {
+        console.log("%c[DIAGNÓSTICO] Card de backup clicado!", 'background: #222; color: #bada55');
+        console.log("[DIAGNÓSTICO] Estado atual ANTES de abrir o modal:", appState);
+        console.log(`[DIAGNÓSTICO] Verificando appState.backupHistory... Itens: ${appState.backupHistory ? appState.backupHistory.length : 'undefined'}`);
+        
         ModalManager.show({
             type: 'backupHistory',
             title: 'Histórico de Backups',
             initialData: { 
                 history: BackupManager.getHistory(appState),
-                currentTimestamp: appState.lastBackupTimestamp
+                currentTimestamp: appState.lastBackupTimestamp // Passa o timestamp atual para o modal
             },
             saveButtonText: 'Fechar',
             onSave: (data) => {
