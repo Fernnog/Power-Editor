@@ -37,7 +37,7 @@ const importFileInput = document.getElementById('import-file-input');
 const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
-const historyBtn = document.getElementById('history-btn'); // <-- CORREÇÃO APLICADA AQUI
+const backupStatusCard = document.getElementById('backup-status-card');
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
 function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true }) {
@@ -506,7 +506,7 @@ window.addEventListener('DOMContentLoaded', () => {
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
 
-    historyBtn.addEventListener('click', () => {
+    backupStatusCard.addEventListener('click', () => {
         ModalManager.show({
             type: 'backupHistory',
             title: 'Histórico de Backups',
