@@ -26,14 +26,11 @@ const BackupManager = (() => {
     function schedule(state) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            // A lógica de criar o snapshot do histórico agora é responsabilidade
-            // da função `modifyStateAndBackup` em script.js para ser síncrona com a ação do usuário.
-            // Este agendamento é apenas para o backup automático por inatividade.
             const now = new Date();
             state.lastBackupTimestamp = now.toISOString();
             updateStatus(now);
             saveStateToStorage(); // Função global de script.js
-            console.log(`Backup por inatividade salvo em: ${now.toLocaleString()}`);
+            console.log(`%c[BackupManager] Backup por inatividade salvo em: ${now.toLocaleString()}`, 'color: blue');
         }, DEBOUNCE_DELAY);
     }
 
@@ -55,23 +52,22 @@ const BackupManager = (() => {
     function getHistory(state) {
         const MAX_HISTORY_ITEMS = 10;
         const history = state.backupHistory || [];
-        // Retorna os N mais recentes, com o último backup no topo da lista.
+        console.log(`[getHistory] Histórico recebido com ${history.length} itens. Retornando os últimos ${MAX_HISTORY_ITEMS}.`);
         return history.slice(-MAX_HISTORY_ITEMS).reverse();
     }
 
     function restoreFromHistory(timestamp, state) {
+        console.log(`[restoreFromHistory] Tentando restaurar backup com timestamp: ${timestamp}`);
         const historyEntry = (state.backupHistory || []).find(entry => entry.timestamp === timestamp);
         if (!historyEntry) {
             NotificationService.show('Backup não encontrado no histórico.', 'error');
             return null;
         }
         try {
-            // CORREÇÃO: A estrutura do histórico agora armazena o estado como um objeto.
-            // Retornamos o objeto de estado diretamente.
             if (historyEntry.state) {
+                console.log("[restoreFromHistory] Backup restaurado com sucesso a partir de 'entry.state'.");
                 return historyEntry.state;
             } else if (historyEntry.data) {
-                // Fallback para o formato antigo caso o usuário tenha dados legados no LocalStorage
                 return JSON.parse(historyEntry.data);
             }
             throw new Error("Formato de histórico inválido.");
