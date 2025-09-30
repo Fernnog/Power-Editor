@@ -549,7 +549,15 @@ blockquote p {
     margin-top: 10px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
+
+#backup-status-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
 #backup-status-card .card-title {
     display: block;
     font-size: 10px;
