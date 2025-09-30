@@ -439,7 +439,6 @@ function reorderModel(modelId, newIndex) {
     });
 }
 
-// CORREÇÃO: Função de importação restaurada para a versão correta.
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -546,7 +545,10 @@ window.addEventListener('DOMContentLoaded', () => {
         ModalManager.show({
             type: 'backupHistory',
             title: 'Histórico de Backups',
-            initialData: { history: BackupManager.getHistory(appState) },
+            initialData: { 
+                history: BackupManager.getHistory(appState),
+                currentTimestamp: appState.lastBackupTimestamp
+            },
             saveButtonText: 'Fechar',
             onSave: (data) => {
                 if (!data.timestamp) return;
