@@ -435,7 +435,9 @@ function exportModels() {
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
+    
     reader.onload = function(e) {
         NotificationService.showConfirm({
             message: "Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?",
@@ -443,18 +445,34 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
-                        modifyStateAndBackup(() => {
-                            appState = importedState;
-                            const filename = file.name;
-                            const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                            if (match) {
-                                const [, year, month, day, hours, minutes] = match;
-                                const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
-                                if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
+                        
+                        // 1. Atualiza o estado principal da aplicação.
+                        appState = importedState;
+                        
+                        // 2. Tenta extrair a data do nome do arquivo para atualizar o timestamp.
+                        const filename = file.name;
+                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                        let backupDate = null;
+                        if (match) {
+                            const [, year, month, day, hours, minutes] = match;
+                            const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
+                            if (!isNaN(fileDate)) {
+                                appState.lastBackupTimestamp = fileDate.toISOString();
+                                backupDate = fileDate;
                             }
-                        });
+                        }
+
+                        // 3. Salva o novo estado no LocalStorage.
+                        saveStateToStorage();
+                        
+                        // 4. Atualiza o card de status na UI com a data do arquivo importado.
+                        BackupManager.updateStatus(backupDate);
+                        
+                        // 5. Renderiza a aplicação inteira com os novos dados.
+                        render();
+                        
                         NotificationService.show('Modelos importados com sucesso!', 'success');
-                        BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
+
                     } else {
                         throw new Error('Formato de arquivo inválido.');
                     }
