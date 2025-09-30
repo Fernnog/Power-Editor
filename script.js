@@ -37,12 +37,15 @@ const importFileInput = document.getElementById('import-file-input');
 const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
+const historyBtn = document.getElementById('history-btn'); // <-- CORREÇÃO APLICADA AQUI
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function modifyStateAndBackup(modificationFn) {
+function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true }) {
     modificationFn();
     saveStateToStorage();
-    BackupManager.schedule(appState);
+    if (options.scheduleBackup) {
+        BackupManager.schedule(appState);
+    }
     render(); // Re-renderiza a UI após qualquer modificação
 }
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
@@ -418,66 +421,30 @@ function reorderModel(modelId, newIndex) {
     });
 }
 
-
-function exportModels() {
-    const dataStr = JSON.stringify(appState, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(dataBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'modelos_backup.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
     const reader = new FileReader();
-    
     reader.onload = function(e) {
         NotificationService.showConfirm({
             message: "Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?",
             onConfirm: () => {
                 try {
                     const importedState = JSON.parse(e.target.result);
-                    if (importedState.models && importedState.tabs && importedState.activeTabId) {
+                    if (importedState.models && importedState.tabs) {
+                        // Usamos a função centralizada para modificar o estado, mas sem agendar um novo backup
+                        modifyStateAndBackup(() => {
+                            appState = importedState;
+                            if (!appState.backupHistory) appState.backupHistory = [];
+                        }, { scheduleBackup: false }); // Não agenda um backup da importação
                         
-                        // 1. Atualiza o estado principal da aplicação.
-                        appState = importedState;
-                        
-                        // 2. Tenta extrair a data do nome do arquivo para atualizar o timestamp.
-                        const filename = file.name;
-                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                        let backupDate = null;
-                        if (match) {
-                            const [, year, month, day, hours, minutes] = match;
-                            const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
-                            if (!isNaN(fileDate)) {
-                                appState.lastBackupTimestamp = fileDate.toISOString();
-                                backupDate = fileDate;
-                            }
-                        }
-
-                        // 3. Salva o novo estado no LocalStorage.
-                        saveStateToStorage();
-                        
-                        // 4. Atualiza o card de status na UI com a data do arquivo importado.
-                        BackupManager.updateStatus(backupDate);
-                        
-                        // 5. Renderiza a aplicação inteira com os novos dados.
-                        render();
-                        
-                        NotificationService.show('Modelos importados com sucesso!', 'success');
-
+                        BackupManager.updateStatus(null);
+                        NotificationService.show('Dados importados com sucesso!', 'success');
                     } else {
                         throw new Error('Formato de arquivo inválido.');
                     }
                 } catch (error) {
-                    NotificationService.show('Erro ao importar o arquivo. Verifique se é um JSON válido.', 'error');
+                    NotificationService.show('Erro ao importar arquivo.', 'error');
                 } finally {
                     importFileInput.value = '';
                 }
@@ -534,7 +501,36 @@ window.addEventListener('DOMContentLoaded', () => {
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
     searchBtn.addEventListener('click', render);
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; render(); });
-    exportBtn.addEventListener('click', exportModels);
+    
+    exportBtn.addEventListener('click', () => BackupManager.exportData(appState));
     importBtn.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', handleImportFile);
+
+    historyBtn.addEventListener('click', () => {
+        ModalManager.show({
+            type: 'backupHistory',
+            title: 'Histórico de Backups',
+            initialData: { history: BackupManager.getHistory(appState) },
+            saveButtonText: 'Fechar',
+            onSave: (data) => {
+                if (!data.timestamp) return;
+
+                NotificationService.showConfirm({
+                    message: "Tem certeza que deseja restaurar este backup? Seus dados atuais serão sobrescritos.",
+                    onConfirm: () => {
+                        const restoredState = BackupManager.restoreFromHistory(data.timestamp, appState);
+                        if (restoredState) {
+                            modifyStateAndBackup(() => {
+                                appState = restoredState;
+                            }, { scheduleBackup: false });
+
+                            BackupManager.updateStatus(new Date(appState.lastBackupTimestamp));
+                            NotificationService.show('Backup restaurado com sucesso!', 'success');
+                            ModalManager.hide();
+                        }
+                    }
+                });
+            }
+        });
+    });
 });
