@@ -1,7 +1,8 @@
+// js/backup-manager.js
+
 const BackupManager = (() => {
     let debounceTimer = null;
-    const DEBOUNCE_DELAY = 3000; // Aumentado para 3s
-    const MAX_HISTORY_ITEMS = 5;
+    const DEBOUNCE_DELAY = 3000;
     let statusElement = null;
 
     function init(config) {
@@ -22,36 +23,17 @@ const BackupManager = (() => {
         }
     }
 
-    function saveBackupToHistory(state) {
-        const now = new Date();
-        // Criamos uma cópia profunda para garantir um snapshot real do estado
-        const stateSnapshot = JSON.parse(JSON.stringify(state));
-        stateSnapshot.lastBackupTimestamp = now.toISOString();
-
-        if (!state.backupHistory) {
-            state.backupHistory = [];
-        }
-
-        state.backupHistory.unshift({
-            timestamp: now.toISOString(),
-            data: JSON.stringify(stateSnapshot)
-        });
-
-        if (state.backupHistory.length > MAX_HISTORY_ITEMS) {
-            state.backupHistory.pop();
-        }
-        
-        updateStatus(now);
-        console.log(`Backup salvo no histórico em: ${now.toLocaleString()}`);
-    }
-
     function schedule(state) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            saveBackupToHistory(state);
-            // A função `modifyStateAndBackup` agora é responsável por salvar no LocalStorage
-            // Este agendamento apenas atualiza o histórico.
-            saveStateToStorage();
+            // A lógica de criar o snapshot do histórico agora é responsabilidade
+            // da função `modifyStateAndBackup` em script.js para ser síncrona com a ação do usuário.
+            // Este agendamento é apenas para o backup automático por inatividade.
+            const now = new Date();
+            state.lastBackupTimestamp = now.toISOString();
+            updateStatus(now);
+            saveStateToStorage(); // Função global de script.js
+            console.log(`Backup por inatividade salvo em: ${now.toLocaleString()}`);
         }, DEBOUNCE_DELAY);
     }
 
@@ -71,7 +53,10 @@ const BackupManager = (() => {
     }
     
     function getHistory(state) {
-        return state.backupHistory || [];
+        const MAX_HISTORY_ITEMS = 10;
+        const history = state.backupHistory || [];
+        // Retorna os N mais recentes, com o último backup no topo da lista.
+        return history.slice(-MAX_HISTORY_ITEMS).reverse();
     }
 
     function restoreFromHistory(timestamp, state) {
@@ -81,9 +66,18 @@ const BackupManager = (() => {
             return null;
         }
         try {
-            return JSON.parse(historyEntry.data);
+            // CORREÇÃO: A estrutura do histórico agora armazena o estado como um objeto.
+            // Retornamos o objeto de estado diretamente.
+            if (historyEntry.state) {
+                return historyEntry.state;
+            } else if (historyEntry.data) {
+                // Fallback para o formato antigo caso o usuário tenha dados legados no LocalStorage
+                return JSON.parse(historyEntry.data);
+            }
+            throw new Error("Formato de histórico inválido.");
         } catch (e) {
             NotificationService.show('Erro ao restaurar backup: dados corrompidos.', 'error');
+            console.error("Erro ao restaurar:", e);
             return null;
         }
     }
