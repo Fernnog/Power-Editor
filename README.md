@@ -35,10 +35,14 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
     -   **Gerenciador de Substituições Automáticas:** Crie regras personalizadas (ex: `*id` se transforma em `(#id: ;fl.)`) para automatizar a digitação de termos recorrentes.
 
 #### Gerenciador de Modelos Inteligente (Sidebar)
--   **Sistema de Variáveis Dinâmicas:**
-    -   **Criação de Modelos Inteligentes:** Crie modelos com placeholders usando a sintaxe `{{nome_da_variavel}}`.
-    -   **Preenchimento Guiado:** Ao usar um modelo com variáveis, uma janela pop-up (modal) é exibida, solicitando que você preencha um formulário com os valores para cada variável.
-    -   **Inserção Automatizada:** O texto é inserido no editor com todas as variáveis já substituídas.
+-   **<!-- MODIFICADO --> Sistema de Automação com Snippets e Variáveis Avançadas:** Transforme modelos simples em documentos inteligentes que se montam e se preenchem de forma semi-automática.
+    -   **Modelos Encadeados (Snippets):** Crie modelos pequenos e reutilizáveis (ex: uma assinatura, um cabeçalho) e insira-os em modelos maiores com a sintaxe `{{snippet:Nome_Do_Modelo}}`. Atualize o snippet uma vez e a mudança se reflete em todos os lugares.
+    -   **Variáveis de Escolha:** Evite erros de digitação criando variáveis que geram um menu de opções. Use a sintaxe `{{status:choice(Pendente|Aprovado|Recusado)}}` para que o sistema apresente um menu suspenso em vez de um campo de texto.
+    -   **Variáveis de Preenchimento Rápido:** Para informações simples, use `{{nome:prompt}}` para que o sistema peça a informação através de uma pergunta direta, sem abrir o formulário completo.
+    -   **Variáveis de Sistema Automáticas:** Deixe o sistema preencher informações para você:
+        -   `{{data_atual}}`: Insere a data no formato DD/MM/AAAA.
+        -   `{{data_por_extenso}}`: Insere a data completa (ex: "terça-feira, 01 de outubro de 2025").
+        -   `{{hora_atual}}`: Insere a hora no formato HH:MM.
 -   **Reorganização com Arrastar e Soltar (Drag and Drop):** Reordene todas as abas, incluindo Favoritos (⭐) e Power (⚡), simplesmente arrastando-as para a posição desejada para personalizar completamente seu layout.
 -   **Organização por Abas:** Crie, renomeie, personalize com uma paleta de cores expandida e exclua abas para organizar seus modelos. Inclui abas especiais para **Favoritos (⭐)** e **Power (⚡)**, representadas por ícones para uma interface mais limpa.
 -   **Gerenciamento Completo de Modelos (CRUD):** Crie, edite, exclua e mova modelos entre abas de forma intuitiva.
@@ -68,10 +72,10 @@ A aplicação estará pronta para uso imediato.
 
 -   `index.html`: Define a estrutura da página, incluindo os containers para a **Paleta de Comandos** e o **botão flutuante (FAB)**.
 -   `css/style.css`: Contém todas as regras de estilização, incluindo os estilos de feedback visual para o **arrastar e soltar (Drag and Drop)** das abas.
--   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), eventos principais e a lógica de renderização.
+-   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), eventos principais e a **lógica de processamento de modelos (snippets, variáveis)**.
 -   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE, incluindo a definição do novo botão para **ajustar texto quebrado**.
 -   `js/editor-actions.js`: Contém funções de ações específicas do editor.
--   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais dinâmicas.
+-   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais dinâmicas, **incluindo o novo guia interativo de ajuda**.
 -   `js/NotificationService.js`: Módulo dedicado que encapsula a lógica para notificações "toast".
 -   `js/CommandPalette.js`: Módulo que controla toda a lógica da Paleta de Comandos.
 -   `js/markdown-converter.js`: Módulo com funções para converter HTML para Markdown e vice-versa.
@@ -85,11 +89,11 @@ A aplicação estará pronta para uso imediato.
 ## 6. Roadmap de Desenvolvimento
 
 ### Recém-Implementado
--   ✅ **Ferramenta de Ajuste de Texto Quebrado (PDF):** Substituição da antiga funcionalidade de IA por uma ferramenta prática para limpar textos copiados de PDFs.
--   ✅ **Reorganização Total das Abas com Arrastar e Soltar (Drag and Drop):** Agora é possível reordenar todas as abas, incluindo Favoritos e Power, para uma organização totalmente personalizada.
--   ✅ **Otimização de Busca com "Debounce":** A performance da busca na sidebar foi aprimorada para evitar sobrecarga em listas de modelos muito grandes.
+-   ✅ **<!-- NOVO --> Sistema de Automação com Snippets e Variáveis Avançadas:** Implementação de modelos encadeados (`{{snippet}}`), variáveis de escolha (`{{var:choice()}}`) e a nova data por extenso (`{{data_por_extenso}}`).
+-   ✅ Ferramenta de Ajuste de Texto Quebrado (PDF)
+-   ✅ Reorganização Total das Abas com Arrastar e Soltar (Drag and Drop)
+-   ✅ Otimização de Busca com "Debounce"
 -   ✅ Sistema de Notificações "Toast"
--   ✅ Variáveis Dinâmicas nos Modelos (`{{variavel}}`)
 -   ✅ Paleta de Comandos Rápidos (Power Palette)
 
 ### Curto Prazo (Quick Wins & UX)
@@ -97,10 +101,12 @@ A aplicação estará pronta para uso imediato.
 -   [ ] **Criar um modal de "Configurações":** Um local central para o usuário gerenciar preferências, como chaves de API para futuras integrações, sem precisar editar arquivos de código.
 
 ### Médio Prazo (Arquitetura e Funcionalidades)
--   [ ] **Variáveis Globais e do Sistema:** Permitir que o usuário defina variáveis globais (ex: `{{meu_nome}}`) em uma área de configurações, e usar variáveis geradas pelo sistema (ex: `{{data_por_extenso}}`).
+-   [ ] **<!-- MODIFICADO --> Expandir Variáveis e introduzir Condicionais:** Permitir que o usuário defina variáveis globais (ex: `{{meu_nome}}`) e introduzir lógica condicional nos modelos (ex: `{{#if:variavel}}...{{/if}}`).
 -   [ ] **Reintroduzir e expandir ferramentas de IA:** Adicionar novas ações inteligentes como "Resumir Texto", "Ajustar Tom" (formal, amigável), ou "Expandir Ideia" através de um menu de IA dedicado.
--   [ ] **Refatorar `script.js`:** Desmembrar o arquivo principal em módulos menores e mais focados (ex: `stateManager.js`, `uiRenderer.js`, `eventHandlers.js`) para melhorar a manutenibilidade do código.
+-   [ ] **Refatorar `script.js`:** Desmembrar o arquivo principal em módulos menores e mais focados (ex: `TemplateProcessor.js`, `uiRenderer.js`, `eventHandlers.js`) para melhorar a manutenibilidade do código.
 
 ### Longo Prazo (Visão Futura)
 -   [ ] **Histórico de Versões:** Implementar um sistema que salva "snapshots" do documento no `LocalStorage` periodicamente, permitindo reverter para versões anteriores.
 -   [ ] **Sincronização entre Dispositivos (Cloud):** Explorar a possibilidade de usar serviços como Firebase (Firestore/Auth) para permitir que os usuários acessem seus modelos e documentos de qualquer lugar.
+```
+--- END OF FILE README.md ---
