@@ -349,7 +349,15 @@ const ModalManager = (() => {
     }
 
     function onSaveClick() {
-        if (!currentConfig || typeof currentConfig.onSave !== 'function') return hide();
+        if (!currentConfig || typeof currentConfig.onSave !== 'function') {
+            hide();
+            return;
+        }
+
+        if (currentConfig.type === 'backupHistory') {
+            hide();
+            return;
+        }
 
         let dataToSave;
         switch (currentConfig.type) {
