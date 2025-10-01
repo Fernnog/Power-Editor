@@ -161,6 +161,32 @@ function _resolveSnippets(content, recursionDepth = 0) {
 }
 
 /**
+ * Processa e substitui todas as variáveis de sistema em um bloco de texto.
+ * @param {string} content O texto a ser processado.
+ * @returns {string} O texto com as variáveis de sistema substituídas.
+ */
+function _processSystemVariables(content) {
+    const now = new Date();
+    
+    // Formato DD/MM/AAAA
+    const dataSimples = now.toLocaleDateString('pt-BR');
+    
+    // Formato "terça-feira, 01 de outubro de 2025"
+    const optionsExtenso = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dataExtenso = now.toLocaleDateString('pt-BR', optionsExtenso);
+
+    // Formato HH:MM
+    const horaSimples = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    let processedContent = content;
+    processedContent = processedContent.replace(/{{data_atual}}/gi, dataSimples);
+    processedContent = processedContent.replace(/{{hora_atual}}/gi, horaSimples);
+    processedContent = processedContent.replace(/{{data_por_extenso}}/gi, dataExtenso);
+    
+    return processedContent;
+}
+
+/**
  * Função orquestradora para inserir o conteúdo de um modelo, processando
  * snippets, prompts, variáveis globais e variáveis de formulário em etapas.
  * @param {object} model - O objeto do modelo a ser inserido.
@@ -200,10 +226,16 @@ async function insertModelContent(model) {
     const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...processedContent.matchAll(variableRegex)];
     
-    // Filtra para não incluir snippets, prompts ou variáveis de sistema que já foram processados
+    // Filtra para não incluir snippets, prompts ou variáveis de sistema
     const uniqueVariablesForModal = [...new Set(matches
         .map(match => match[1])
-        .filter(v => !v.startsWith('snippet:') && !v.endsWith(':prompt') && v !== 'data_atual' && v !== 'hora_atual')
+        .filter(v => 
+            !v.startsWith('snippet:') && 
+            !v.endsWith(':prompt') && 
+            v !== 'data_atual' && 
+            v !== 'hora_atual' &&
+            v !== 'data_por_extenso'
+        )
     )];
 
     // --- ETAPA 4: Exibir o modal se houver variáveis ---
@@ -222,10 +254,8 @@ async function insertModelContent(model) {
                     finalContent = finalContent.replace(placeholder, data.values[key] || '');
                 }
                 
-                // Substitui variáveis de sistema (data/hora)
-                const now = new Date();
-                finalContent = finalContent.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
-                finalContent = finalContent.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+                // ETAPA FINAL: Processa TODAS as variáveis de sistema de uma vez
+                finalContent = _processSystemVariables(finalContent);
 
                 if(tinymce.activeEditor) {
                     tinymce.activeEditor.execCommand('mceInsertContent', false, finalContent);
@@ -241,10 +271,10 @@ async function insertModelContent(model) {
         });
     } else {
         // --- ETAPA 5: Inserir diretamente se não houver mais variáveis de usuário ---
-        const now = new Date();
-        processedContent = processedContent.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
-        processedContent = processedContent.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-
+        
+        // ETAPA FINAL: Processa TODAS as variáveis de sistema de uma vez
+        processedContent = _processSystemVariables(processedContent);
+    
         if(tinymce.activeEditor) {
             tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
             tinymce.activeEditor.focus();
