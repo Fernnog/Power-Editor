@@ -56,36 +56,49 @@ const ModalManager = (() => {
     }
 
     /**
-     * CONSTRUÇÃO DO FORMULÁRIO DE VARIÁVEIS, AGORA COM MEMÓRIA E CHECKBOX DE CONTROLE.
+     * MODIFICADO: CONSTRUÇÃO DO FORMULÁRIO DE VARIÁVEIS, AGORA COM SUPORTE A VARIÁVEIS DE ESCOLHA (<select>).
      * @param {object} data - Dados iniciais { variables, modelId }.
      */
     function _buildVariableFormContent(data = {}) {
-        // Busca os dados salvos na memória para este modelo específico.
         const savedValues = (appState.variableMemory && appState.variableMemory[data.modelId]) || {};
-        const hasSavedValues = Object.keys(savedValues).length > 0;
-
         const toTitleCase = str => str.replace(/_/g, ' ').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1));
-
-        let formFieldsHtml = (data.variables || []).map(variable => {
-            // Usa o valor salvo na memória, se existir; caso contrário, usa uma string vazia.
-            const prefilledValue = savedValues[variable] || '';
-            return `
-            <div class="variable-row">
-                <label for="var-${variable}">${toTitleCase(variable)}:</label>
-                <input type="text" id="var-${variable}" name="${variable}" value="${prefilledValue}" required>
-            </div>
-            `;
+    
+        let formFieldsHtml = (data.variables || []).map(variableFullName => {
+            const parts = variableFullName.split(':');
+            const variableName = parts[0];
+            const variableType = parts.length > 1 ? parts[1] : 'text';
+    
+            const prefilledValue = savedValues[variableName] || '';
+            let fieldHtml = '';
+    
+            // Verifica se é uma variável de escolha com a sintaxe: choice(Opção 1|Opção 2)
+            const choiceMatch = variableType.match(/^choice\((.*)\)$/);
+            if (choiceMatch) {
+                const options = choiceMatch[1].split('|');
+                const optionsHtml = options.map(opt => 
+                    `<option value="${opt}" ${prefilledValue === opt ? 'selected' : ''}>${opt}</option>`
+                ).join('');
+                
+                fieldHtml = `
+                    <label for="var-${variableName}">${toTitleCase(variableName)}:</label>
+                    <select id="var-${variableName}" name="${variableName}">${optionsHtml}</select>
+                `;
+            } else { // Fallback para campo de texto padrão
+                fieldHtml = `
+                    <label for="var-${variableName}">${toTitleCase(variableName)}:</label>
+                    <input type="text" id="var-${variableName}" name="${variableName}" value="${prefilledValue}" required>
+                `;
+            }
+            return `<div class="variable-row">${fieldHtml}</div>`;
         }).join('');
-
-        // Adiciona o checkbox para controlar o salvamento dos dados.
-        // Ele vem marcado por padrão para incentivar o uso da funcionalidade.
+    
         const rememberCheckboxHtml = `
             <div class="modal-remember-choice">
                 <input type="checkbox" id="modal-remember-vars" checked>
                 <label for="modal-remember-vars">Lembrar valores para o próximo uso deste modelo</label>
             </div>
         `;
-
+    
         modalDynamicContent.innerHTML = `
             <p class="modal-description">Por favor, preencha os campos abaixo. Eles serão usados para completar o seu modelo.</p>
             <form id="variable-form">${formFieldsHtml}</form>
@@ -310,7 +323,7 @@ const ModalManager = (() => {
 
         modalContainer.classList.add('visible');
         _attachDynamicEventListeners();
-        const firstInput = modalDynamicContent.querySelector('input[type="text"], textarea');
+        const firstInput = modalDynamicContent.querySelector('input[type="text"], textarea, select');
         if (firstInput) {
             firstInput.focus();
         }
