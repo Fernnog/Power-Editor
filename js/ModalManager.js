@@ -91,17 +91,9 @@ const ModalManager = (() => {
             return `<div class="variable-row">${fieldHtml}</div>`;
         }).join('');
     
-        const rememberCheckboxHtml = `
-            <div class="modal-remember-choice">
-                <input type="checkbox" id="modal-remember-vars" checked>
-                <label for="modal-remember-vars">Lembrar valores para o próximo uso deste modelo</label>
-            </div>
-        `;
-    
         modalDynamicContent.innerHTML = `
             <p class="modal-description">Por favor, preencha os campos abaixo. Eles serão usados para completar o seu modelo.</p>
             <form id="variable-form">${formFieldsHtml}</form>
-            ${rememberCheckboxHtml}
         `;
     }
 
@@ -324,7 +316,6 @@ const ModalManager = (() => {
     
     function _getVariableFormData() {
         const form = modalDynamicContent.querySelector('#variable-form');
-        const rememberCheckbox = modalDynamicContent.querySelector('#modal-remember-vars');
         if (!form) return {};
 
         const formData = new FormData(form);
@@ -334,8 +325,7 @@ const ModalManager = (() => {
         }
 
         return {
-            values: values,
-            shouldRemember: rememberCheckbox ? rememberCheckbox.checked : false
+            values: values
         };
     }
 
