@@ -1,6 +1,6 @@
-# Editor de Documentos - Projeto de Migração e Otimização
+# Power Editor - Editor de Documentos de Alta Performance
 
-Este repositório contém o código-fonte de um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
+Este repositório contém o código-fonte do Power Editor, um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
 
 ## 1. Contexto do Projeto
 
@@ -31,7 +31,7 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 -   **Formatação de Texto e Parágrafo:** Suporte completo para **Negrito**, *Itálico*, <u>Sublinhado</u>, listas, citações e alinhamento.
 -   **Ferramentas de Produtividade:**
     -   **Ditado por Voz:** Utilize o microfone para transcrever sua fala diretamente no editor.
-    -   **Correção Inteligente com IA (Gemini):** Selecione um texto e, com um clique, envie-o para a API do Google para corrigir erros de gramática, ortografia e pontuação.
+    -   **Ajuste de Texto Quebrado (PDF):** Cole textos copiados de PDFs e, com um clique, remova todas as quebras de linha indesejadas, unificando o conteúdo em parágrafos coesos instantaneamente.
     -   **Gerenciador de Substituições Automáticas:** Crie regras personalizadas (ex: `*id` se transforma em `(#id: ;fl.)`) para automatizar a digitação de termos recorrentes.
 
 #### Gerenciador de Modelos Inteligente (Sidebar)
@@ -57,62 +57,48 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 
 ## 4. Como Executar
 
-Por ser uma aplicação majoritariamente client-side, a execução é simples. No entanto, a funcionalidade de correção com IA requer uma pequena configuração.
+Por ser uma aplicação totalmente client-side, a execução é extremamente simples. Nenhuma configuração de API é necessária.
 
 1.  **Clone ou faça o download deste repositório.**
+2.  **Abra o arquivo `index.html` em qualquer navegador moderno** (Chrome, Firefox, Edge, etc.).
 
-2.  **Configure sua Chave de API (Obrigatório para a função de IA):**
-    *   Navegue até a pasta `js/`.
-    *   Crie um **novo arquivo** e nomeie-o exatamente como **`config.js`**.
-    *   Abra este novo arquivo e cole o seguinte código dentro dele:
-        ```javascript
-        const CONFIG = {
-            // IMPORTANTE: Cole sua chave de API do Google AI Studio aqui, dentro das aspas.
-            apiKey: "SUA_CHAVE_API_VAI_AQUI"
-        };
-        ```
-    *   Substitua `"SUA_CHAVE_API_VAI_AQUI"` pela sua chave de API real.
-    *   **Nota de Segurança:** Este arquivo `config.js` **não deve ser compartilhado ou enviado para repositórios públicos**.
-
-3.  **Abra o arquivo `index.html` em qualquer navegador moderno** (Chrome, Firefox, Edge, etc.). A aplicação estará pronta para uso.
+A aplicação estará pronta para uso imediato.
 
 ## 5. Estrutura de Arquivos
 
 -   `index.html`: Define a estrutura da página, incluindo os containers para a **Paleta de Comandos** e o **botão flutuante (FAB)**.
 -   `css/style.css`: Contém todas as regras de estilização, incluindo os estilos de feedback visual para o **arrastar e soltar (Drag and Drop)** das abas.
--   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), eventos principais e a lógica de renderização, incluindo a **funcionalidade de arrastar e soltar unificada para todas as abas**.
--   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE.
--   `js/editor-actions.js`: Contém funções de ações específicas do editor, como formatação de documento, que são chamadas pela configuração do TinyMCE.
--   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais.
+-   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), eventos principais e a lógica de renderização.
+-   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE, incluindo a definição do novo botão para **ajustar texto quebrado**.
+-   `js/editor-actions.js`: Contém funções de ações específicas do editor.
+-   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais dinâmicas.
 -   `js/NotificationService.js`: Módulo dedicado que encapsula a lógica para notificações "toast".
 -   `js/CommandPalette.js`: Módulo que controla toda a lógica da Paleta de Comandos.
 -   `js/markdown-converter.js`: Módulo com funções para converter HTML para Markdown e vice-versa.
 -   `js/backup-manager.js`: Módulo de suporte para a lógica de backup.
 -   `js/speech.js`: Módulo para a API de Reconhecimento de Voz.
--   `js/gemini-service.js`: Módulo para comunicação com a API do Google AI (Gemini).
+-   `js/gemini-service.js`: Módulo para comunicação com a API do Google AI (Gemini). **(Atualmente inativo na UI principal)**.
 -   `js/ui-icons.js`: Arquivo central para constantes de ícones SVG.
--   `js/config.js`: **(Local)** Arquivo de configuração para armazenar a chave de API (deve ser criado manualmente).
+-   `js/config.js`: **(Legado)** Arquivo de configuração que era usado para armazenar a chave de API. **Não é mais necessário para as funcionalidades atuais**.
 -   `README.md`: Este arquivo.
 
 ## 6. Roadmap de Desenvolvimento
 
 ### Recém-Implementado
+-   ✅ **Ferramenta de Ajuste de Texto Quebrado (PDF):** Substituição da antiga funcionalidade de IA por uma ferramenta prática para limpar textos copiados de PDFs.
 -   ✅ **Reorganização Total das Abas com Arrastar e Soltar (Drag and Drop):** Agora é possível reordenar todas as abas, incluindo Favoritos e Power, para uma organização totalmente personalizada.
 -   ✅ **Otimização de Busca com "Debounce":** A performance da busca na sidebar foi aprimorada para evitar sobrecarga em listas de modelos muito grandes.
 -   ✅ Sistema de Notificações "Toast"
 -   ✅ Variáveis Dinâmicas nos Modelos (`{{variavel}}`)
 -   ✅ Paleta de Comandos Rápidos (Power Palette)
--   ✅ Rebranding e Otimização de Abas (Ícones para Power ⚡ e Favoritos ⭐)
--   ✅ Botão de Acesso Rápido (FAB)
--   ✅ Paleta de Cores Expandida para personalização das abas.
 
 ### Curto Prazo (Quick Wins & UX)
 -   [ ] **Memória de Variáveis:** Salvar os valores preenchidos no `LocalStorage` para pré-preencher o formulário na próxima vez que o mesmo modelo for usado.
--   [ ] **Melhorar Gestão da Chave de API (UX):** Em vez de usar um arquivo `config.js`, criar um modal de "Configurações" onde o usuário possa inserir e salvar sua chave de API no `LocalStorage`.
+-   [ ] **Criar um modal de "Configurações":** Um local central para o usuário gerenciar preferências, como chaves de API para futuras integrações, sem precisar editar arquivos de código.
 
 ### Médio Prazo (Arquitetura e Funcionalidades)
 -   [ ] **Variáveis Globais e do Sistema:** Permitir que o usuário defina variáveis globais (ex: `{{meu_nome}}`) em uma área de configurações, e usar variáveis geradas pelo sistema (ex: `{{data_por_extenso}}`).
--   [ ] **Expandir Funcionalidades de IA:** Adicionar novas ferramentas como "Ajustar Tom do Texto" (formal, amigável) ou "Expandir Ideia" diretamente na barra de ferramentas.
+-   [ ] **Reintroduzir e expandir ferramentas de IA:** Adicionar novas ações inteligentes como "Resumir Texto", "Ajustar Tom" (formal, amigável), ou "Expandir Ideia" através de um menu de IA dedicado.
 -   [ ] **Refatorar `script.js`:** Desmembrar o arquivo principal em módulos menores e mais focados (ex: `stateManager.js`, `uiRenderer.js`, `eventHandlers.js`) para melhorar a manutenibilidade do código.
 
 ### Longo Prazo (Visão Futura)
