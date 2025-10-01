@@ -549,15 +549,7 @@ blockquote p {
     margin-top: 10px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-
-#backup-status-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
 #backup-status-card .card-title {
     display: block;
     font-size: 10px;
@@ -970,52 +962,4 @@ blockquote p {
     transform: scale(1.08);
     border: 2px solid #3B82F6; /* Azul brilhante para destaque */
     animation: pulse-border 1.5s infinite;
-}
-
-/* --- ESTILOS PARA O MODAL DE HISTÓRICO DE BACKUPS --- */
-#backup-history-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    max-height: 50vh;
-    overflow-y: auto;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-}
-
-.backup-history-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    transition: background-color 0.2s;
-}
-
-.backup-history-item:not(:last-child) {
-    border-bottom: 1px solid #e9ecef;
-}
-
-.backup-history-item:hover {
-    background-color: #f8f9fa;
-}
-
-.backup-history-item .timestamp {
-    font-size: 15px;
-    color: #333;
-}
-
-.restore-backup-btn {
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: bold;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.restore-backup-btn:hover {
-    background-color: #218838;
 }
