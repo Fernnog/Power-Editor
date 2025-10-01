@@ -43,7 +43,7 @@ const backupStatusCard = document.getElementById('backup-status-card');
 function modifyStateAndBackup(modificationFn, options = { scheduleBackup: true, logToHistory: true }) {
     modificationFn(); // Modifica o appState
 
-    // CORREÇÃO: Adiciona um snapshot ao histórico se a opção estiver ativa.
+    // Adiciona um snapshot ao histórico se a opção estiver ativa.
     if (options.logToHistory) {
         if (!appState.backupHistory) {
             appState.backupHistory = [];
@@ -457,7 +457,6 @@ function handleImportFile(event) {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs) {
                         
-                        // Garante que a propriedade de histórico exista no arquivo importado
                         if (!importedState.backupHistory) {
                            importedState.backupHistory = [];
                         }
@@ -468,12 +467,10 @@ function handleImportFile(event) {
                             const [, year, month, day, hours, minutes] = match;
                             const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
                             if (!isNaN(fileDate)) {
-                                // Define o timestamp do backup importado
                                 importedState.lastBackupTimestamp = fileDate.toISOString();
                             }
                         }
                         
-                        // Usa a função centralizada para substituir o estado e LOGAR a importação como um novo ponto no histórico
                         modifyStateAndBackup(() => {
                             appState = importedState;
                         }, { scheduleBackup: false, logToHistory: true });
