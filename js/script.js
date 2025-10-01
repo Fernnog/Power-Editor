@@ -127,64 +127,131 @@ function render() {
     SidebarManager.render(appState);
 }
 
-// --- FUNÇÕES DO EDITOR (ATUALIZADA COM VARIÁVEIS DINÂMICAS) ---
-function insertModelContent(model) {
+// --- LÓGICA DE PROCESSAMENTO DE MODELOS (SNIPPETS E VARIÁVEIS AVANÇADAS) ---
+
+/**
+ * Função auxiliar para resolver snippets aninhados de forma recursiva.
+ * @param {string} content - O conteúdo a ser processado.
+ * @param {number} [recursionDepth=0] - Controle para evitar loops infinitos.
+ * @returns {string} O conteúdo com todos os snippets substituídos.
+ */
+function _resolveSnippets(content, recursionDepth = 0) {
+    if (recursionDepth > 10) { // Trava de segurança contra loops infinitos
+        console.error("Profundidade máxima de snippets aninhados atingida. Verifique se há referências circulares.");
+        NotificationService.show("Erro: Referência circular ou excesso de aninhamento nos snippets.", "error");
+        return content;
+    }
+
+    const snippetRegex = /{{\s*snippet:([^}]+?)\s*}}/g;
+    let requiresAnotherPass = false;
+    
+    const resolvedContent = content.replace(snippetRegex, (match, modelName) => {
+        const snippetModel = appState.models.find(m => m.name.toLowerCase() === modelName.trim().toLowerCase());
+        if (snippetModel) {
+            requiresAnotherPass = true; // O snippet pode conter outros snippets
+            return snippetModel.content;
+        } else {
+            NotificationService.show(`Snippet "${modelName}" não encontrado.`, "error");
+            return `[SNIPPET "${modelName}" NÃO ENCONTRADO]`;
+        }
+    });
+
+    // Se algum snippet foi substituído, faz outra passagem para resolver snippets aninhados
+    return requiresAnotherPass ? _resolveSnippets(resolvedContent, recursionDepth + 1) : resolvedContent;
+}
+
+/**
+ * Função orquestradora para inserir o conteúdo de um modelo, processando
+ * snippets, prompts, variáveis globais e variáveis de formulário em etapas.
+ * @param {object} model - O objeto do modelo a ser inserido.
+ */
+async function insertModelContent(model) {
     if (searchBox.value && appState.activeTabId !== model.tabId) {
         appState.activeTabId = model.tabId;
         searchBox.value = '';
         render();
     }
 
-    let content = model.content;
-    const now = new Date();
-    content = content.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
-    content = content.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    // --- ETAPA 1: Resolver todos os snippets primeiro ---
+    let processedContent = _resolveSnippets(model.content);
 
+    // Processar variáveis globais
     if (appState.globalVariables && appState.globalVariables.length > 0) {
         appState.globalVariables.forEach(gVar => {
             const globalVarRegex = new RegExp(`{{\\s*${gVar.find}\\s*}}`, 'gi');
-            content = content.replace(globalVarRegex, gVar.replace);
+            processedContent = processedContent.replace(globalVarRegex, gVar.replace);
         });
     }
 
-    const variableRegex = /{{\s*([^}]+?)\s*}}/g;
-    const matches = [...content.matchAll(variableRegex)];
-    const uniqueVariables = [...new Set(matches.map(match => match[1]))];
+    // --- ETAPA 2: Processar variáveis de preenchimento rápido (:prompt) ---
+    const promptRegex = /{{\s*([^:]+?):prompt\s*}}/g;
+    let promptMatches;
+    // Usamos um loop while para garantir que todos os prompts sejam processados sequencialmente
+    while ((promptMatches = promptRegex.exec(processedContent)) !== null) {
+        const variableName = promptMatches[1];
+        const userValue = prompt(`Por favor, insira o valor para "${variableName.replace(/_/g, ' ')}":`);
+        
+        // Substitui todas as ocorrências desta variável de prompt específica
+        const replaceRegex = new RegExp(`{{\\s*${variableName}:prompt\\s*}}`, 'g');
+        processedContent = processedContent.replace(replaceRegex, userValue || '');
+    }
 
-    if (uniqueVariables.length > 0) {
+    // --- ETAPA 3: Coletar variáveis restantes para o modal ---
+    const variableRegex = /{{\s*([^}]+?)\s*}}/g;
+    const matches = [...processedContent.matchAll(variableRegex)];
+    
+    // Filtra para não incluir snippets, prompts ou variáveis de sistema que já foram processados
+    const uniqueVariablesForModal = [...new Set(matches
+        .map(match => match[1])
+        .filter(v => !v.startsWith('snippet:') && !v.endsWith(':prompt') && v !== 'data_atual' && v !== 'hora_atual')
+    )];
+
+    // --- ETAPA 4: Exibir o modal se houver variáveis ---
+    if (uniqueVariablesForModal.length > 0) {
         ModalManager.show({
             type: 'variableForm',
             title: 'Preencha as Informações do Modelo',
-            initialData: { variables: uniqueVariables, modelId: model.id },
+            initialData: { variables: uniqueVariablesForModal, modelId: model.id },
             saveButtonText: 'Inserir Texto',
             onSave: (data) => {
-                let processedContent = content;
+                let finalContent = processedContent;
+                
+                // Substitui variáveis do modal
                 for (const key in data.values) {
-                    const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*}}`, 'g');
-                    processedContent = processedContent.replace(placeholder, data.values[key] || '');
+                    const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(:choice\\(.*?\\))?\\s*}}`, 'g');
+                    finalContent = finalContent.replace(placeholder, data.values[key] || '');
                 }
+                
+                // Substitui variáveis de sistema (data/hora)
+                const now = new Date();
+                finalContent = finalContent.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
+                finalContent = finalContent.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
 
-                if (tinymce.activeEditor) {
-                    tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
+                if(tinymce.activeEditor) {
+                    tinymce.activeEditor.execCommand('mceInsertContent', false, finalContent);
                     tinymce.activeEditor.focus();
                 }
 
+                // Lógica de salvar na memória
                 modifyStateAndBackup(() => {
-                    if (data.shouldRemember) {
-                        appState.variableMemory[model.id] = data.values;
-                    } else {
-                        delete appState.variableMemory[model.id];
-                    }
+                    if (data.shouldRemember) { appState.variableMemory[model.id] = data.values; } 
+                    else { delete appState.variableMemory[model.id]; }
                 });
             }
         });
     } else {
-        if (tinymce.activeEditor) {
-            tinymce.activeEditor.execCommand('mceInsertContent', false, content);
+        // --- ETAPA 5: Inserir diretamente se não houver mais variáveis de usuário ---
+        const now = new Date();
+        processedContent = processedContent.replace(/{{data_atual}}/gi, now.toLocaleDateString('pt-BR'));
+        processedContent = processedContent.replace(/{{hora_atual}}/gi, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+
+        if(tinymce.activeEditor) {
+            tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
             tinymce.activeEditor.focus();
         }
     }
 }
+
 
 // --- FUNÇÕES DE FILTRAGEM ---
 let debounceTimer;
