@@ -963,3 +963,79 @@ blockquote p {
     border: 2px solid #3B82F6; /* Azul brilhante para destaque */
     animation: pulse-border 1.5s infinite;
 }
+
+/* --- ESTILOS PARA O GUIA RÁPIDO INTERATIVO (ACORDEÃO) --- */
+.accordion-container {
+    border-top: 1px solid #eee;
+    margin-top: 15px;
+}
+
+.accordion-card {
+    border-bottom: 1px solid #eee;
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 15px 5px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+.accordion-header:hover {
+    background-color: #f8f9fa;
+}
+
+.accordion-toggle-icon {
+    font-size: 20px;
+    font-weight: bold;
+    transition: transform 0.3s ease-in-out;
+    flex-shrink: 0;
+    margin-left: 15px;
+}
+
+.accordion-header.active .accordion-toggle-icon {
+    transform: rotate(45deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    padding: 0 15px;
+}
+
+.accordion-content.visible {
+    /* Valor alto para garantir que o conteúdo caiba */
+    max-height: 800px; 
+    padding: 5px 15px 20px 15px;
+}
+
+.accordion-content p, .accordion-content li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+}
+
+.accordion-content pre {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 13px;
+}
+
+.accordion-content code {
+    font-family: 'Courier New', Courier, monospace;
+    color: #c82333;
+}
