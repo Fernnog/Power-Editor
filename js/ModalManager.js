@@ -248,7 +248,8 @@ const ModalManager = (() => {
                                     <h4>Variáveis de Sistema (Automáticas):</h4>
                                     <p>São preenchidas no momento do uso, sem que você precise digitar nada.</p>
                                     <ul>
-                                        <li><code>{{data_atual}}</code> - Insere a data de hoje (ex: 26/07/2024).</li>
+                                        <li><code>{{data_atual}}</code> - Insere a data simples (ex: 26/07/2024).</li>
+                                        <li><code>{{data_por_extenso}}</code> - Insere a data completa (ex: terça-feira, 26 de julho de 2024).</li>
                                         <li><code>{{hora_atual}}</code> - Insere a hora atual (ex: 14:30).</li>
                                     </ul>
                                     <h4>Preenchimento Rápido (Prompt):</h4>
