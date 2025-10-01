@@ -116,11 +116,22 @@ const ModalManager = (() => {
     }
     
     /**
-     * Constrói o conteúdo HTML para um modal informativo.
+     * Constrói o HTML para um modal informativo.
      * @param {object} data - Dados iniciais { content }.
      */
     function _buildInfoContent(data = {}) {
         modalDynamicContent.innerHTML = `<div class="info-modal-content">${data.content || ''}</div>`;
+    }
+    
+    /**
+     * Constrói o HTML para o ajustador de texto quebrado.
+     * @param {object} data - Dados iniciais (geralmente vazio).
+     */
+    function _buildTextFixerContent(data = {}) {
+        modalDynamicContent.innerHTML = `
+            <label for="modal-input-broken-text">Cole o texto quebrado (copiado do PDF) abaixo:</label>
+            <textarea id="modal-input-broken-text" class="text-editor-modal" style="min-height: 200px;" placeholder="Seu texto com quebras de linha..."></textarea>
+        `;
     }
 
     /**
@@ -286,6 +297,9 @@ const ModalManager = (() => {
             case 'globalVarManager': // NOVO TIPO DE MODAL
                 _buildGlobalVarManagerContent(config.initialData);
                 break;
+            case 'textFixer':
+                _buildTextFixerContent(config.initialData);
+                break;
             case 'info':
                 _buildInfoContent(config.initialData);
                 break;
@@ -296,7 +310,7 @@ const ModalManager = (() => {
 
         modalContainer.classList.add('visible');
         _attachDynamicEventListeners();
-        const firstInput = modalDynamicContent.querySelector('input[type="text"]');
+        const firstInput = modalDynamicContent.querySelector('input[type="text"], textarea');
         if (firstInput) {
             firstInput.focus();
         }
@@ -327,6 +341,11 @@ const ModalManager = (() => {
             case 'globalVarManager': // NOVO
                  dataToSave = {
                     globalVariables: _getGlobalVarData()
+                };
+                break;
+            case 'textFixer':
+                dataToSave = {
+                    text: modalDynamicContent.querySelector('#modal-input-broken-text').value
                 };
                 break;
         }
