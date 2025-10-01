@@ -30,7 +30,8 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-download-doc', ICON_DOWNLOAD_DOC);
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
         editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
-        editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN); // NOVO ÍCONE REGISTRADO
+        editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN);
+        editor.ui.registry.addIcon('custom-join-lines', ICON_JOIN_LINES); // NOVO ÍCONE REGISTRADO
 
         // --- Definição dos Botões ---
 
@@ -75,43 +76,28 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // Botão de Correção com IA
+        // Botão de Ajustar Texto Quebrado (substituindo o de IA)
         editor.ui.registry.addButton('customAiButton', {
-            icon: 'custom-ai-brain',
-            tooltip: 'Corrigir Texto com IA',
-            onAction: async function(api) {
-                if (typeof CONFIG === 'undefined' || !CONFIG.apiKey || CONFIG.apiKey === "SUA_CHAVE_API_VAI_AQUI") {
-                    NotificationService.show("Erro: A chave de API não foi encontrada. Verifique o arquivo js/config.js.", 'error', 6000);
-                    return;
-                }
-                
-                const selectedText = editor.selection.getContent({ format: 'text' });
-                if (!selectedText) {
-                    NotificationService.show("Por favor, selecione o texto que deseja corrigir.", 'info');
-                    return;
-                }
-                
-                editor.formatter.register('ia_processing_marker', { inline: 'span', classes: 'ia-processing' });
-                
-                try {
-                    api.setEnabled(false);
-                    api.setIcon('custom-spinner');
-
-                    editor.formatter.apply('ia_processing_marker');
-                    
-                    const correctedText = await GeminiService.correctText(selectedText, CONFIG.apiKey);
-                    
-                    editor.formatter.remove('ia_processing_marker');
-                    editor.selection.setContent(correctedText);
-                    
-                } catch (error) {
-                    console.error("Erro na correção de texto:", error);
-                    editor.formatter.remove('ia_processing_marker');
-                    NotificationService.show('Ocorreu um erro ao corrigir o texto. Veja o console para detalhes.', 'error');
-                } finally {
-                    api.setEnabled(true);
-                    api.setIcon('custom-ai-brain');
-                }
+            icon: 'custom-join-lines',
+            tooltip: 'Ajustar Texto Quebrado (de PDF)',
+            onAction: function(api) {
+                ModalManager.show({
+                    type: 'textFixer',
+                    title: 'Ajustar Texto Quebrado',
+                    saveButtonText: 'Ajustar e Inserir',
+                    onSave: (data) => {
+                        if (data.text) {
+                            // Lógica principal: remove quebras de linha e espaços extras
+                            const textoAjustado = data.text.replace(/\n/g, ' ').trim();
+                            
+                            // Insere o texto processado no editor
+                            editor.execCommand('mceInsertContent', false, textoAjustado);
+                            NotificationService.show('Texto ajustado e inserido com sucesso!', 'success');
+                        } else {
+                            NotificationService.show('Nenhum texto foi inserido na caixa.', 'info');
+                        }
+                    }
+                });
             }
         });
 
