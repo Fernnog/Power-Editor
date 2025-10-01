@@ -123,43 +123,6 @@ const ModalManager = (() => {
         modalDynamicContent.innerHTML = `<div class="info-modal-content">${data.content || ''}</div>`;
     }
 
-    // --- FUNÇÃO DE DIAGNÓSTICO E CORREÇÃO ---
-    function _buildBackupHistoryContent(data = {}) {
-        let historyRowsHtml = (data.history || []).map(item => {
-            const date = new Date(item.timestamp);
-            const formattedDate = `${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-            
-            const isCurrent = item.timestamp === data.currentTimestamp;
-            const currentIndicator = isCurrent ? '<span class="current-backup-indicator">(Atual)</span>' : '';
-
-            return `
-                <li class="backup-history-item ${isCurrent ? 'current' : ''}">
-                    <span class="timestamp">${formattedDate} ${currentIndicator}</span>
-                    <button class="restore-backup-btn" data-timestamp="${item.timestamp}">Restaurar</button>
-                </li>
-            `;
-        }).join('');
-    
-        if (!historyRowsHtml) {
-            historyRowsHtml = '<li class="backup-history-item"><span class="timestamp">Nenhum backup no histórico ainda.</span></li>';
-        }
-    
-        modalDynamicContent.innerHTML = `
-            <p class="modal-description">Selecione um ponto de restauração. A restauração substituirá todos os dados atuais.</p>
-            <ul id="backup-history-list">${historyRowsHtml}</ul>
-        `;
-    
-        modalDynamicContent.querySelectorAll('.restore-backup-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const timestamp = e.target.dataset.timestamp;
-                // O callback onSave será chamado com o timestamp para que script.js possa processar
-                if (currentConfig.onSave) {
-                    currentConfig.onSave({ timestamp });
-                }
-            });
-        });
-    }
-
     /**
      * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
      */
@@ -323,9 +286,6 @@ const ModalManager = (() => {
             case 'globalVarManager': // NOVO TIPO DE MODAL
                 _buildGlobalVarManagerContent(config.initialData);
                 break;
-            case 'backupHistory': // NOVO TIPO DE MODAL
-                _buildBackupHistoryContent(config.initialData);
-                break;
             case 'info':
                 _buildInfoContent(config.initialData);
                 break;
@@ -349,15 +309,7 @@ const ModalManager = (() => {
     }
 
     function onSaveClick() {
-        if (!currentConfig || typeof currentConfig.onSave !== 'function') {
-            hide();
-            return;
-        }
-
-        if (currentConfig.type === 'backupHistory') {
-            hide();
-            return;
-        }
+        if (!currentConfig || typeof currentConfig.onSave !== 'function') return hide();
 
         let dataToSave;
         switch (currentConfig.type) {

@@ -1,16 +1,24 @@
-// js/backup-manager.js
-
 const BackupManager = (() => {
     let debounceTimer = null;
-    const DEBOUNCE_DELAY = 5000; // 5 segundos de inatividade
-    let statusElement = null;
+    const DEBOUNCE_DELAY = 2500; // 2.5 segundos de inatividade antes de salvar
+    let statusElement = null; // Referência ao elemento do DOM para o status
 
+    /**
+     * Inicializa o módulo, recebendo o elemento da UI para exibir o status.
+     * @param {object} config - Objeto de configuração.
+     * @param {HTMLElement} config.statusElement - O elemento onde o status do backup será exibido.
+     */
     function init(config) {
         statusElement = config.statusElement;
     }
 
+    /**
+     * Atualiza o texto do status do backup na interface do usuário.
+     * @param {Date | null} dateObject - O objeto Date do último backup ou null.
+     */
     function updateStatus(dateObject) {
         if (!statusElement) return;
+        
         if (dateObject instanceof Date && !isNaN(dateObject)) {
             const day = String(dateObject.getDate()).padStart(2, '0');
             const month = String(dateObject.getMonth() + 1).padStart(2, '0');
@@ -23,68 +31,60 @@ const BackupManager = (() => {
         }
     }
 
-    function schedule(state) {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            // CORREÇÃO CRÍTICA: O backup automático agora também usa a função central
-            // para garantir que um ponto de restauração seja criado no histórico.
-            console.log(`%c[BackupManager] Inatividade detectada. Criando ponto de restauração automático...`, 'color: blue');
-            modifyStateAndBackup(() => {
-                // A função `modifyStateAndBackup` já atualiza o timestamp,
-                // então nenhuma modificação de estado é necessária aqui.
-                // Apenas chamamos para que o log no histórico seja feito.
-            }, { scheduleBackup: false, logToHistory: true }); // Agendamento falso para evitar loop
-            
-            NotificationService.show('Backup automático salvo por inatividade.', 'info', 2000);
-        }, DEBOUNCE_DELAY);
-    }
-
-    function exportData(state) {
-        const dataStr = JSON.stringify(state, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
-        const a = document.createElement('a');
+    /**
+     * Aciona o download do backup e atualiza o status na tela.
+     * @param {object} state - O objeto de estado atual da aplicação (appState).
+     */
+    function triggerAutoBackup(state) {
         const now = new Date();
-        const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        const timestamp = `${year}${month}${day}_${hours}${minutes}`;
+        const filename = `${timestamp}_ModelosDosMeusDocumentos.json`;
+
+        // Garante que o timestamp mais recente seja salvo DENTRO do arquivo de backup
+        state.lastBackupTimestamp = now.toISOString();
+
+        const dataStr = JSON.stringify(state, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const a = document.createElement('a');
         a.href = url;
-        a.download = `${timestamp}_modelos_backup.json`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }
-    
-    function getHistory(state) {
-        const MAX_HISTORY_ITEMS = 10;
-        const history = state.backupHistory || [];
-        // Retorna os N mais recentes, com o último backup no topo da lista.
-        return history.slice(-MAX_HISTORY_ITEMS).reverse();
+        
+        // Atualiza o status visual na tela
+        updateStatus(now);
+        console.log(`Backup automático realizado: ${filename}`);
     }
 
-    function restoreFromHistory(timestamp, state) {
-        const historyEntry = (state.backupHistory || []).find(entry => entry.timestamp === timestamp);
-        if (!historyEntry) {
-            NotificationService.show('Backup não encontrado no histórico.', 'error');
-            return null;
-        }
-        try {
-            if (historyEntry.state) {
-                return historyEntry.state;
-            }
-            throw new Error("Formato de histórico inválido.");
-        } catch (e) {
-            NotificationService.show('Erro ao restaurar backup: dados corrompidos.', 'error');
-            console.error("Erro ao restaurar:", e);
-            return null;
-        }
+    /**
+     * Agenda a execução do backup automático após um período de inatividade.
+     * @param {object} state - O objeto de estado atual da aplicação (appState).
+     */
+    function schedule(state) {
+        // Cancela qualquer backup agendado anteriormente
+        clearTimeout(debounceTimer);
+
+        // Agenda um novo backup
+        debounceTimer = setTimeout(() => {
+            // Passa uma cópia do estado para evitar problemas de referência
+            triggerAutoBackup({ ...state });
+        }, DEBOUNCE_DELAY);
     }
 
+    // Expõe as funções públicas do módulo
     return {
         init,
         schedule,
-        updateStatus,
-        exportData,
-        getHistory,
-        restoreFromHistory
+        updateStatus
     };
 })();
