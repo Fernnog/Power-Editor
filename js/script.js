@@ -262,11 +262,7 @@ async function insertModelContent(model) {
                     tinymce.activeEditor.focus();
                 }
 
-                // Lógica de salvar na memória
-                modifyStateAndBackup(() => {
-                    if (data.shouldRemember) { appState.variableMemory[model.id] = data.values; } 
-                    else { delete appState.variableMemory[model.id]; }
-                });
+                // CORREÇÃO: A chamada modifyStateAndBackup foi completamente removida daqui para não acionar o backup.
             }
         });
     } else {
@@ -540,18 +536,27 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
-                        modifyStateAndBackup(() => {
-                            appState = importedState;
-                            const filename = file.name;
-                            const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                            if (match) {
-                                const [, year, month, day, hours, minutes] = match;
-                                const fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
-                                if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
+                        
+                        // --- LÓGICA MANUAL PARA EVITAR BACKUP AUTOMÁTICO ---
+                        appState = importedState;
+                        
+                        const filename = file.name;
+                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                        let fileDate = null;
+                        if (match) {
+                            const [, year, month, day, hours, minutes] = match;
+                            fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
+                            if (!isNaN(fileDate)) { 
+                                appState.lastBackupTimestamp = fileDate.toISOString(); 
                             }
-                        });
+                        }
+                        
+                        saveStateToStorage();
+                        render();
+                        BackupManager.updateStatus(fileDate); // Atualiza o card com a data do arquivo
                         NotificationService.show('Modelos importados com sucesso!', 'success');
-                        BackupManager.updateStatus(appState.lastBackupTimestamp ? new Date(appState.lastBackupTimestamp) : null);
+                        // FIM DA LÓGICA MANUAL
+
                     } else {
                         throw new Error('Formato de arquivo inválido.');
                     }
