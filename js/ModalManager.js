@@ -56,7 +56,7 @@ const ModalManager = (() => {
     }
 
     /**
-     * MODIFICADO: CONSTRUÇÃO DO FORMULÁRIO DE VARIÁVEIS, AGORA COM SUPORTE A VARIÁVEIS DE ESCOLHA (<select>).
+     * CONSTRUÇÃO DO FORMULÁRIO DE VARIÁVEIS, COM SUPORTE A VARIÁVEIS DE ESCOLHA (<select>).
      * @param {object} data - Dados iniciais { variables, modelId }.
      */
     function _buildVariableFormContent(data = {}) {
@@ -71,7 +71,6 @@ const ModalManager = (() => {
             const prefilledValue = savedValues[variableName] || '';
             let fieldHtml = '';
     
-            // Verifica se é uma variável de escolha com a sintaxe: choice(Opção 1|Opção 2)
             const choiceMatch = variableType.match(/^choice\((.*)\)$/);
             if (choiceMatch) {
                 const options = choiceMatch[1].split('|');
@@ -107,7 +106,7 @@ const ModalManager = (() => {
     }
 
     /**
-     * NOVO: Constrói o conteúdo HTML para o gerenciador de Variáveis Globais.
+     * Constrói o conteúdo HTML para o gerenciador de Variáveis Globais.
      * @param {object} data - Dados iniciais { globalVariables }.
      */
     function _buildGlobalVarManagerContent(data = {}) {
@@ -129,11 +128,27 @@ const ModalManager = (() => {
     }
     
     /**
-     * Constrói o HTML para um modal informativo.
-     * @param {object} data - Dados iniciais { content }.
+     * MODIFICADO: Constrói o HTML para um modal informativo com estrutura de acordeão.
+     * @param {object} data - Dados iniciais { title, cards }.
      */
     function _buildInfoContent(data = {}) {
-        modalDynamicContent.innerHTML = `<div class="info-modal-content">${data.content || ''}</div>`;
+        const cardsHtml = (data.cards || []).map((card, index) => `
+            <div class="accordion-card">
+                <button class="accordion-header" aria-expanded="false" aria-controls="accordion-content-${index}">
+                    <span>${card.title}</span>
+                    <span class="accordion-toggle-icon">+</span>
+                </button>
+                <div id="accordion-content-${index}" class="accordion-content" role="region">
+                    ${card.content}
+                </div>
+            </div>
+        `).join('');
+
+        modalDynamicContent.innerHTML = `
+            <div class="info-modal-content">
+                <h4>${data.title || 'Guia Rápido'}</h4>
+                <div class="accordion-container">${cardsHtml}</div>
+            </div>`;
     }
     
     /**
@@ -148,7 +163,7 @@ const ModalManager = (() => {
     }
 
     /**
-     * Adiciona listeners de eventos para o conteúdo dinâmico do modal.
+     * MODIFICADO: Adiciona listeners de eventos, incluindo a lógica para o acordeão de ajuda.
      */
     function _attachDynamicEventListeners() {
         // Lógica genérica para gerenciadores de lista (Substituições e Variáveis Globais)
@@ -198,36 +213,79 @@ const ModalManager = (() => {
             const infoIcon = modalDynamicContent.querySelector('#variable-info-icon');
             if (infoIcon) {
                 infoIcon.addEventListener('click', () => {
+                    // CONTEÚDO DO GUIA INTERATIVO DEFINIDO AQUI
+                    const helpContent = {
+                        title: 'Guia de Funcionalidades Avançadas',
+                        cards: [
+                            {
+                                title: '✨ Modelos Encadeados (Snippets)',
+                                content: `
+                                    <p>Pense nos snippets como <strong>"blocos de LEGO"</strong> de texto que você pode reutilizar. Crie um modelo pequeno e, em seguida, insira-o em outros modelos maiores.</p>
+                                    <h4>Como usar:</h4>
+                                    <p>Use a sintaxe <code>{{snippet:Nome_Exato_Do_Modelo}}</code>.</p>
+                                    <h4>Exemplo Prático:</h4>
+                                    <p>1. Crie um modelo chamado "Assinatura_Padrao" com seu texto de assinatura.</p>
+                                    <p>2. Em outro modelo, escreva:</p>
+                                    <pre><code>Prezado(a) {{nome_do_cliente}},<br><br>... corpo do e-mail ...<br><br>{{snippet:Assinatura_Padrao}}</code></pre>
+                                    <p><strong>Vantagem:</strong> Se precisar atualizar sua assinatura, edite apenas o modelo "Assinatura_Padrao" e a mudança será aplicada em todos os lugares que o utilizam!</p>
+                                `
+                            },
+                            {
+                                title: '🤖 Variáveis Inteligentes (com Opções)',
+                                content: `
+                                    <p>Em vez de um campo de texto livre, você pode criar variáveis que oferecem um <strong>menu de seleção com opções pré-definidas</strong>. Isso agiliza o preenchimento e evita erros de digitação.</p>
+                                    <h4>Como usar:</h4>
+                                    <p>Use a sintaxe <code>{{nome_da_variavel:choice(Opção1|Opção2|Opção3)}}</code>. Separe as opções com uma barra vertical ( | ).</p>
+                                    <h4>Exemplo Prático:</h4>
+                                    <pre><code>O status do processo é: {{status:choice(Pendente|Aprovado|Recusado)}}.</code></pre>
+                                    <p>Ao usar este modelo, o sistema exibirá um menu suspenso com as opções "Pendente", "Aprovado" e "Recusado" para você escolher.</p>
+                                `
+                            },
+                            {
+                                title: '⚡ Variáveis de Sistema e Preenchimento Rápido',
+                                content: `
+                                    <p>Automatize ainda mais seus documentos com variáveis que são preenchidas pelo próprio sistema ou através de uma pergunta rápida.</p>
+                                    <h4>Variáveis de Sistema:</h4>
+                                    <ul>
+                                        <li><code>{{data_atual}}</code> - Insere a data de hoje (ex: 26/07/2024).</li>
+                                        <li><code>{{hora_atual}}</code> - Insere a hora atual (ex: 14:30).</li>
+                                    </ul>
+                                    <h4>Preenchimento Rápido (Prompt):</h4>
+                                    <p>Para informações simples, use <code>{{nome_da_variavel:prompt}}</code>. O sistema fará uma pergunta rápida em vez de abrir o formulário completo.</p>
+                                    <pre><code>Contrato referente ao serviço prestado para {{cliente_nome:prompt}}.</code></pre>
+                                `
+                            }
+                        ]
+                    };
+
                     ModalManager.show({
                         type: 'info',
-                        title: 'Guia Rápido: Variáveis Dinâmicas',
-                        initialData: {
-                            content: `
-                                <h4>✨ Funcionalidade Nova: Memória de Variáveis</h4>
-                                <p>Para agilizar seu trabalho, o sistema agora <strong>lembra os valores</strong> que você preenche nos campos de um modelo. Na próxima vez que usar o mesmo modelo, os campos já virão pré-preenchidos. Você pode controlar esse comportamento com a caixa de seleção "Lembrar valores" que aparece no formulário.</p>
-                                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-
-                                <h4>Para que servem?</h4>
-                                <p>As variáveis permitem criar campos em seus modelos que serão preenchidos no momento do uso. Isso automatiza a inserção de informações como nomes, documentos ou datas.</p>
-                                
-                                <h4>Como usar:</h4>
-                                <p>Para definir uma variável, envolva um nome descritivo com chaves duplas, como abaixo:</p>
-                                <pre><code>{{nome_da_variavel}}</code></pre>
-                                
-                                <h4>Exemplo Prático:</h4>
-                                <pre><code>Despacho referente ao processo de {{nome_do_cliente}}, inscrito sob o CPF {{cpf_do_cliente}}.</code></pre>
-                                
-                                <h4>Regras de Nomenclatura (Variáveis Permitidas):</h4>
-                                <ul>
-                                    <li>Use apenas letras (a-z), números (0-9) e o caractere de sublinhado ( _ ).</li>
-                                    <li>Não use espaços, acentos ou caracteres especiais (ç, !, @, #, etc.).</li>
-                                    <li>O nome da variável não diferencia maiúsculas de minúsculas.</li>
-                                </ul>
-                            `
-                        }
+                        title: 'Guia Rápido: Funcionalidades Avançadas',
+                        initialData: helpContent
                     });
                 });
             }
+        }
+
+        // LÓGICA PARA CONTROLAR O ACORDEÃO NO MODAL DE INFORMAÇÕES
+        if (currentConfig.type === 'info' && modalDynamicContent.querySelector('.accordion-container')) {
+            const headers = modalDynamicContent.querySelectorAll('.accordion-header');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const isVisible = content.classList.contains('visible');
+
+                    if (!isVisible) {
+                        header.classList.add('active');
+                        content.classList.add('visible');
+                        header.setAttribute('aria-expanded', 'true');
+                    } else {
+                         header.classList.remove('active');
+                         content.classList.remove('visible');
+                         header.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            });
         }
     }
     
@@ -243,11 +301,10 @@ const ModalManager = (() => {
         return replacements;
     }
 
-    // NOVO: Coleta os dados do gerenciador de variáveis globais
     function _getGlobalVarData() {
         const globalVariables = [];
         modalDynamicContent.querySelectorAll('.global-var-row').forEach(row => {
-            const find = row.querySelector('.var-name-input').value.trim().replace(/[{}]/g, ''); // Garante que não tenha chaves
+            const find = row.querySelector('.var-name-input').value.trim().replace(/[{}]/g, '');
             const replace = row.querySelector('.var-value-input').value;
             if (find) {
                 globalVariables.push({ find, replace });
@@ -263,10 +320,6 @@ const ModalManager = (() => {
         };
     }
     
-    /**
-     * MODIFICADO: Coleta os dados do formulário de variáveis e o estado do checkbox.
-     * Retorna um objeto composto para que a lógica de negócio decida o que fazer.
-     */
     function _getVariableFormData() {
         const form = modalDynamicContent.querySelector('#variable-form');
         const rememberCheckbox = modalDynamicContent.querySelector('#modal-remember-vars');
@@ -307,7 +360,7 @@ const ModalManager = (() => {
             case 'variableForm':
                 _buildVariableFormContent(config.initialData);
                 break;
-            case 'globalVarManager': // NOVO TIPO DE MODAL
+            case 'globalVarManager':
                 _buildGlobalVarManagerContent(config.initialData);
                 break;
             case 'textFixer':
@@ -349,9 +402,9 @@ const ModalManager = (() => {
                 };
                 break;
             case 'variableForm':
-                dataToSave = _getVariableFormData(); // Retorna o objeto composto { values, shouldRemember }
+                dataToSave = _getVariableFormData();
                 break;
-            case 'globalVarManager': // NOVO
+            case 'globalVarManager':
                  dataToSave = {
                     globalVariables: _getGlobalVarData()
                 };
