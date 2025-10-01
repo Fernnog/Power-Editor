@@ -128,7 +128,7 @@ const ModalManager = (() => {
     }
     
     /**
-     * MODIFICADO: Constrói o HTML para um modal informativo com estrutura de acordeão.
+     * Constrói o HTML para um modal informativo com estrutura de acordeão.
      * @param {object} data - Dados iniciais { title, cards }.
      */
     function _buildInfoContent(data = {}) {
@@ -163,7 +163,7 @@ const ModalManager = (() => {
     }
 
     /**
-     * MODIFICADO: Adiciona listeners de eventos, incluindo a lógica para o acordeão de ajuda.
+     * Adiciona listeners de eventos, incluindo a lógica para o acordeão de ajuda.
      */
     function _attachDynamicEventListeners() {
         // Lógica genérica para gerenciadores de lista (Substituições e Variáveis Globais)
@@ -242,10 +242,11 @@ const ModalManager = (() => {
                                 `
                             },
                             {
-                                title: '⚡ Variáveis de Sistema e Preenchimento Rápido',
+                                title: '⚡ Variáveis Automáticas e de Preenchimento Rápido',
                                 content: `
-                                    <p>Automatize ainda mais seus documentos com variáveis que são preenchidas pelo próprio sistema ou através de uma pergunta rápida.</p>
-                                    <h4>Variáveis de Sistema:</h4>
+                                    <p>Automatize seus documentos com variáveis que são preenchidas pelo próprio sistema ou através de uma pergunta rápida. Elas são 'mágicas': o sistema as insere no último segundo, por isso <strong>nunca aparecem no formulário de perguntas.</strong></p>
+                                    <h4>Variáveis de Sistema (Automáticas):</h4>
+                                    <p>São preenchidas no momento do uso, sem que você precise digitar nada.</p>
                                     <ul>
                                         <li><code>{{data_atual}}</code> - Insere a data de hoje (ex: 26/07/2024).</li>
                                         <li><code>{{hora_atual}}</code> - Insere a hora atual (ex: 14:30).</li>
