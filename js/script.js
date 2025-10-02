@@ -30,7 +30,7 @@ const defaultModels = [
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
 const searchBox = document.getElementById('search-box');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
-const addNewFolderBtn = document.getElementById('add-new-folder-btn'); // <<< CORREÇÃO 1: Variável movida para o escopo global.
+const addNewFolderBtn = document.getElementById('add-new-folder-btn');
 const addNewModelBtn = document.getElementById('add-new-model-btn');
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
@@ -133,7 +133,6 @@ function loadStateFromStorage() {
 
 // --- FUNÇÃO DE RENDERIZAÇÃO PRINCIPAL ---
 function render() {
-    // <<< CORREÇÃO 2: A declaração local do botão foi removida daqui. >>>
     const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
     
     if (addNewFolderBtn && activeTab) {
@@ -469,4 +468,211 @@ function addNewModelFromEditor() {
 function editModel(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     ModalManager.show({
-   
+        type: 'modelEditor',
+        title: 'Editar Modelo',
+        initialData: { name: model.name, content: model.content },
+        onSave: (data) => {
+            if (!data.name) {
+                NotificationService.show('O nome do modelo não pode ser vazio.', 'error'); return;
+            }
+            modifyStateAndBackup(() => {
+                model.name = data.name;
+                model.content = data.content;
+            });
+            NotificationService.show('Modelo atualizado!', 'success');
+        }
+    });
+}
+
+function deleteModel(modelId) {
+    const model = appState.models.find(m => m.id === modelId);
+    NotificationService.showConfirm({
+        message: `Tem certeza que deseja excluir o modelo "${model.name}"?`,
+        onConfirm: () => {
+            modifyStateAndBackup(() => {
+                appState.models = appState.models.filter(m => m.id !== modelId);
+            });
+            NotificationService.show('Modelo excluído com sucesso!', 'success');
+        }
+    });
+}
+
+function toggleFavorite(modelId) { 
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) model.isFavorite = !model.isFavorite;
+    });
+}
+
+function moveModelToAnotherTab(modelId) {
+    const model = appState.models.find(m => m.id === modelId);
+    const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId);
+    if (destinationOptions.length === 0) {
+        NotificationService.show("Não há outras abas para mover este modelo.", "info"); return;
+    }
+    const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
+    const choice = prompt(promptMessage);
+    const choiceIndex = parseInt(choice, 10) - 1;
+    if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
+        modifyStateAndBackup(() => {
+            model.tabId = destinationOptions[choiceIndex].id;
+        });
+        NotificationService.show(`Modelo movido para a aba "${destinationOptions[choiceIndex].name}".`, 'success');
+    } else if(choice) {
+        NotificationService.show("Seleção inválida.", "error");
+    }
+}
+
+function moveModelToTab(modelId, newTabId) {
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) {
+            if (newTabId === FAVORITES_TAB_ID) {
+                model.isFavorite = true;
+                NotificationService.show(`"${model.name}" adicionado aos Favoritos.`, 'success');
+            } else {
+                model.tabId = newTabId;
+                NotificationService.show(`Modelo movido para a nova aba.`, 'success');
+            }
+        }
+    });
+}
+
+function moveModelToFolder(modelId, folderId) {
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) {
+            model.folderId = folderId;
+        }
+    });
+}
+
+function reorderModel(modelId, newIndex) {
+    modifyStateAndBackup(() => {
+        const modelsInCurrentTab = filterModels();
+        const modelToMove = modelsInCurrentTab.find(m => m.id === modelId);
+        if (!modelToMove) return;
+        const globalIndex = appState.models.findIndex(m => m.id === modelId);
+        appState.models.splice(globalIndex, 1);
+        if (newIndex >= modelsInCurrentTab.length -1) {
+            let lastModelOfTabId = null;
+            for(let i = appState.models.length - 1; i >= 0; i--) {
+                if (appState.models[i].tabId === modelToMove.tabId) {
+                    lastModelOfTabId = appState.models[i].id;
+                    break;
+                }
+            }
+            if(lastModelOfTabId) {
+                 const targetGlobalIndex = appState.models.findIndex(m => m.id === lastModelOfTabId);
+                 appState.models.splice(targetGlobalIndex + 1, 0, modelToMove);
+            } else {
+                 appState.models.push(modelToMove);
+            }
+        } else {
+            const modelAfter = modelsInCurrentTab[newIndex];
+            const targetGlobalIndex = appState.models.findIndex(m => m.id === modelAfter.id);
+            appState.models.splice(targetGlobalIndex, 0, modelToMove);
+        }
+    });
+}
+
+function exportModels() {
+    const dataStr = JSON.stringify(appState, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'modelos_backup.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        NotificationService.showConfirm({
+            message: "Atenção: A importação substituirá todos os seus modelos e abas atuais. Deseja continuar?",
+            onConfirm: () => {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState.models && importedState.tabs && importedState.activeTabId) {
+                        appState = importedState;
+                        const filename = file.name;
+                        const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                        let fileDate = null;
+                        if (match) {
+                            const [, year, month, day, hours, minutes] = match;
+                            fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
+                            if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
+                        }
+                        saveStateToStorage();
+                        render();
+                        BackupManager.updateStatus(fileDate);
+                        NotificationService.show('Modelos importados com sucesso!', 'success');
+                    } else { throw new Error('Formato de arquivo inválido.'); }
+                } catch (error) {
+                    NotificationService.show('Erro ao importar o arquivo. Verifique se é um JSON válido.', 'error');
+                } finally { importFileInput.value = ''; }
+            },
+            onCancel: () => { importFileInput.value = ''; }
+        });
+    };
+    reader.readAsText(file);
+}
+
+// --- INICIALIZAÇÃO DA APLICAÇÃO ---
+window.addEventListener('DOMContentLoaded', () => { 
+    const backupStatusEl = document.getElementById('backup-status-text');
+    BackupManager.init({ statusElement: backupStatusEl });
+
+    loadStateFromStorage(); 
+
+    if (typeof TINYMCE_CONFIG !== 'undefined') {
+        tinymce.init(TINYMCE_CONFIG);
+    } else {
+        console.error('A configuração do TinyMCE (TINYMCE_CONFIG) não foi encontrada.');
+    }
+
+    CommandPalette.init();
+    
+    SidebarManager.init({
+        filterModels,
+        getFavoritesTabId: () => FAVORITES_TAB_ID,
+        getPowerTabId: () => POWER_TAB_ID,
+        getTabColors: () => TAB_COLORS,
+        onTabChange: (tabId) => { appState.activeTabId = tabId; searchBox.value = ''; render(); },
+        onTabReorder: (oldIndex, newIndex) => modifyStateAndBackup(() => {
+            const movedItem = appState.tabs.splice(oldIndex, 1)[0];
+            appState.tabs.splice(newIndex, 0, movedItem);
+        }),
+        onTabDelete: deleteTab,
+        onTabRename: renameTab,
+        onTabColorChange: changeTabColor,
+        onModelInsert: insertModelContent,
+        onModelEdit: editModel,
+        onModelDelete: deleteModel,
+        onModelMove: moveModelToAnotherTab,
+        onModelFavoriteToggle: toggleFavorite,
+        onModelReorder: reorderModel,
+        onModelDropOnTab: moveModelToTab,
+        onModelMoveToFolder: moveModelToFolder,
+        onFolderDelete: deleteFolder,
+        onFolderRename: renameFolder
+    });
+    
+    render();
+
+    searchInTabCheckbox.addEventListener('change', debouncedFilter);
+    searchBox.addEventListener('input', debouncedFilter);
+    searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); render(); } });
+    addNewTabBtn.addEventListener('click', addNewTab);
+    addNewFolderBtn.addEventListener('click', addNewFolder);
+    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    searchBtn.addEventListener('click', render);
+    clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; render(); });
+    exportBtn.addEventListener('click', exportModels);
+    importBtn.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', handleImportFile);
+});
