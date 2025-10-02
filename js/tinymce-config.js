@@ -5,7 +5,7 @@ const TINYMCE_CONFIG = {
     
     plugins: 'lists pagebreak visualblocks wordcount',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton | customPasteMarkdown customCopyFormatted customOdtButton | customDeleteButton',
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton | customPasteMarkdown customCopyFormatted customOdtButton | customThemeButton customDeleteButton',
     
     menubar: false,
     statusbar: true,
@@ -16,12 +16,27 @@ const TINYMCE_CONFIG = {
         underline: { inline: 'u', exact: true },
     },
     
-    content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
+    content_style: 'body { font-family:Arial,sans-serif; font-size:16px; line-height: 1.5; text-align: justify; color: var(--editor-text-color); } p { margin-bottom: 1em; } blockquote { margin-left: 7cm; margin-right: 0; padding-left: 15px; border-left: 3px solid #ccc; color: #333; font-style: italic; } blockquote p { text-indent: 0 !important; }',
     
     height: "100%",
     autoresize_bottom_margin: 30,
 
     setup: function(editor) {
+        // --- Função Auxiliar para Gerenciar Temas ---
+        const applyTheme = (themeName) => {
+            const body = document.body;
+            // Limpa temas antigos
+            body.classList.remove('theme-dark', 'theme-custom-yellow');
+            
+            // Adiciona o novo tema, se não for o padrão 'claro'
+            if (themeName && themeName !== 'light') {
+                body.classList.add(themeName);
+            }
+            
+            // Salva a escolha do usuário
+            localStorage.setItem('editorTheme', themeName);
+        };
+        
         // --- Registro de Ícones Customizados ---
         editor.ui.registry.addIcon('custom-mic', ICON_MIC);
         editor.ui.registry.addIcon('custom-ai-brain', ICON_AI_BRAIN);
@@ -31,7 +46,8 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-spinner', ICON_SPINNER);
         editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
         editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN);
-        editor.ui.registry.addIcon('custom-join-lines', ICON_JOIN_LINES); // NOVO ÍCONE REGISTRADO
+        editor.ui.registry.addIcon('custom-join-lines', ICON_JOIN_LINES);
+        editor.ui.registry.addIcon('custom-paintbrush', ICON_PAINTBRUSH); // NOVO ÍCONE REGISTRADO
 
         // --- Definição dos Botões ---
 
@@ -184,6 +200,32 @@ const TINYMCE_CONFIG = {
                 }
             }
         });
+
+        // NOVO BOTÃO: Seletor de Tema
+        editor.ui.registry.addMenuButton('customThemeButton', {
+            icon: 'custom-paintbrush',
+            tooltip: 'Mudar Tema do Editor',
+            fetch: function (callback) {
+                const items = [
+                    {
+                        type: 'menuitem',
+                        text: 'Modo Claro (Padrão)',
+                        onAction: () => applyTheme('light')
+                    },
+                    {
+                        type: 'menuitem',
+                        text: 'Modo Escuro',
+                        onAction: () => applyTheme('theme-dark')
+                    },
+                    {
+                        type: 'menuitem',
+                        text: 'Amarelo Suave',
+                        onAction: () => applyTheme('theme-custom-yellow')
+                    }
+                ];
+                callback(items);
+            }
+        });
         
         // BOTÃO DE APAGAR DOCUMENTO
         editor.ui.registry.addButton('customDeleteButton', {
@@ -212,6 +254,12 @@ const TINYMCE_CONFIG = {
         });
 
         editor.on('init', () => {
+            // Carrega e aplica o tema salvo no LocalStorage
+            const savedTheme = localStorage.getItem('editorTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+        
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
                     micIcon: document.getElementById('dictation-mic-icon'), 
