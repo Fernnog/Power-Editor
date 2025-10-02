@@ -153,11 +153,13 @@ const SidebarManager = (() => {
     
         const renderFolder = (folder) => {
             const li = document.createElement('li');
-            li.className = 'folder-item'; 
+            li.className = 'folder-item';
             li.dataset.folderId = folder.id;
             const modelInFolderCount = itemsToRender.filter(m => m.type === 'model' && m.folderId === folder.id).length;
-            li.innerHTML = `<span class="folder-toggle">${folder.isExpanded ? '▼' : '▶'}</span><span class="folder-icon">📁</span><span class="folder-name">${folder.name}</span><span class="folder-counter">(${modelInFolderCount})</span>`;
-            li.addEventListener('click', () => {
+            li.innerHTML = `<span class="folder-toggle">${folder.isExpanded ? '▼' : '▶'}</span><span class="folder-icon">${ICON_FOLDER}</span><span class="folder-name">${folder.name}</span><span class="folder-counter">(${modelInFolderCount})</span>`;
+            
+            li.addEventListener('click', (e) => {
+                 e.stopPropagation();
                  const folderInState = appState.folders.find(f => f.id === folder.id);
                  if (folderInState) {
                      modifyStateAndBackup(() => {
@@ -165,6 +167,13 @@ const SidebarManager = (() => {
                      });
                  }
             });
+
+            li.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                _showFolderContextMenu(e.clientX, e.clientY, folder);
+            });
+    
             return li;
         };
     
@@ -311,6 +320,31 @@ const SidebarManager = (() => {
 
         menu.appendChild(renameOpt);
         menu.appendChild(colorOpt);
+        menu.appendChild(deleteOpt);
+        
+        document.body.appendChild(menu);
+        setTimeout(() => document.addEventListener('click', _closeContextMenu), 0);
+    }
+
+    function _showFolderContextMenu(x, y, folder) {
+        _closeContextMenu(); 
+
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+
+        const renameOpt = document.createElement('button');
+        renameOpt.className = 'context-menu-item';
+        renameOpt.innerHTML = `${ICON_PENCIL} Renomear`;
+        renameOpt.onclick = () => callbacks.onFolderRename(folder.id);
+
+        const deleteOpt = document.createElement('button');
+        deleteOpt.className = 'context-menu-item delete';
+        deleteOpt.innerHTML = `${ICON_TRASH} Excluir Pasta`;
+        deleteOpt.onclick = () => callbacks.onFolderDelete(folder.id);
+
+        menu.appendChild(renameOpt);
         menu.appendChild(deleteOpt);
         
         document.body.appendChild(menu);
