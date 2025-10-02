@@ -30,7 +30,6 @@ const defaultModels = [
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
 const searchBox = document.getElementById('search-box');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
-const addNewFolderBtn = document.getElementById('add-new-folder-btn'); // NOVO
 const addNewModelBtn = document.getElementById('add-new-model-btn');
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
@@ -58,13 +57,13 @@ function loadStateFromStorage() {
         const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
-            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false, folderId: null })),
-            folders: [], // NOVO
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
             tabs: [
                 { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
                 { id: POWER_TAB_ID, name: 'Power ⚡', color: '#ce2a66' },
                 { id: defaultTabId, name: 'Geral', color: getNextColor() }
             ],
+            folders: [], // INICIALIZA A ESTRUTURA DE PASTAS
             activeTabId: defaultTabId,
             replacements: [],
             variableMemory: {},
@@ -78,15 +77,6 @@ function loadStateFromStorage() {
             const parsedState = JSON.parse(savedState);
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
-
-                // --- Garantir compatibilidade com backups antigos ---
-                appState.folders = parsedState.folders || []; // NOVO
-                appState.models.forEach(model => {
-                    if (typeof model.folderId === 'undefined') {
-                        model.folderId = null;
-                    }
-                });
-                // --- Fim da compatibilidade ---
                 
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
@@ -112,6 +102,7 @@ function loadStateFromStorage() {
                     }
                 });
 
+                appState.folders = parsedState.folders || []; // GARANTE COMPATIBILIDADE
                 appState.replacements = parsedState.replacements || [];
                 appState.variableMemory = parsedState.variableMemory || {};
                 appState.globalVariables = parsedState.globalVariables || [];
@@ -179,14 +170,9 @@ function _resolveSnippets(content, recursionDepth = 0) {
 function _processSystemVariables(content) {
     const now = new Date();
     
-    // Formato DD/MM/AAAA
     const dataSimples = now.toLocaleDateString('pt-BR');
-    
-    // Formato "terça-feira, 01 de outubro de 2025"
     const optionsExtenso = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const dataExtenso = now.toLocaleDateString('pt-BR', optionsExtenso);
-
-    // Formato HH:MM
     const horaSimples = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     let processedContent = content;
@@ -209,10 +195,8 @@ async function insertModelContent(model) {
         render();
     }
 
-    // --- ETAPA 1: Resolver todos os snippets primeiro ---
     let processedContent = _resolveSnippets(model.content);
 
-    // Processar variáveis globais
     if (appState.globalVariables && appState.globalVariables.length > 0) {
         appState.globalVariables.forEach(gVar => {
             const globalVarRegex = new RegExp(`{{\\s*${gVar.find}\\s*}}`, 'gi');
@@ -220,24 +204,18 @@ async function insertModelContent(model) {
         });
     }
 
-    // --- ETAPA 2: Processar variáveis de preenchimento rápido (:prompt) ---
     const promptRegex = /{{\s*([^:]+?):prompt\s*}}/g;
     let promptMatches;
-    // Usamos um loop while para garantir que todos os prompts sejam processados sequencialmente
     while ((promptMatches = promptRegex.exec(processedContent)) !== null) {
         const variableName = promptMatches[1];
         const userValue = prompt(`Por favor, insira o valor para "${variableName.replace(/_/g, ' ')}":`);
-        
-        // Substitui todas as ocorrências desta variável de prompt específica
         const replaceRegex = new RegExp(`{{\\s*${variableName}:prompt\\s*}}`, 'g');
         processedContent = processedContent.replace(replaceRegex, userValue || '');
     }
 
-    // --- ETAPA 3: Coletar variáveis restantes para o modal ---
     const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...processedContent.matchAll(variableRegex)];
     
-    // Filtra para não incluir snippets, prompts ou variáveis de sistema
     const uniqueVariablesForModal = [...new Set(matches
         .map(match => match[1])
         .filter(v => 
@@ -249,7 +227,6 @@ async function insertModelContent(model) {
         )
     )];
 
-    // --- ETAPA 4: Exibir o modal se houver variáveis ---
     if (uniqueVariablesForModal.length > 0) {
         ModalManager.show({
             type: 'variableForm',
@@ -259,27 +236,20 @@ async function insertModelContent(model) {
             onSave: (data) => {
                 let finalContent = processedContent;
                 
-                // Substitui variáveis do modal
                 for (const key in data.values) {
                     const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(:choice\\(.*?\\))?\\s*}}`, 'g');
                     finalContent = finalContent.replace(placeholder, data.values[key] || '');
                 }
                 
-                // ETAPA FINAL: Processa TODAS as variáveis de sistema de uma vez
                 finalContent = _processSystemVariables(finalContent);
 
                 if(tinymce.activeEditor) {
                     tinymce.activeEditor.execCommand('mceInsertContent', false, finalContent);
                     tinymce.activeEditor.focus();
                 }
-
-                // CORREÇÃO: A chamada modifyStateAndBackup foi completamente removida daqui para não acionar o backup.
             }
         });
     } else {
-        // --- ETAPA 5: Inserir diretamente se não houver mais variáveis de usuário ---
-        
-        // ETAPA FINAL: Processa TODAS as variáveis de sistema de uma vez
         processedContent = _processSystemVariables(processedContent);
     
         if(tinymce.activeEditor) {
@@ -294,45 +264,66 @@ async function insertModelContent(model) {
 let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(render, 250); }
 
+// ======================= FUNÇÃO SUBSTITUÍDA =======================
 function filterModels() {
     const query = searchBox.value.toLowerCase().trim();
     const searchInCurrentTab = searchInTabCheckbox.checked;
 
-    let searchPoolModels = appState.models;
-    let searchPoolFolders = appState.folders;
+    let sourceModels;
+    let sourceFolders;
 
-    if (searchInCurrentTab) {
+    if (searchInCurrentTab || !query) {
+        // CORREÇÃO PRINCIPAL: Sempre filtrar pela aba ativa se não houver busca
         if (appState.activeTabId === FAVORITES_TAB_ID) {
-            searchPoolModels = appState.models.filter(m => m.isFavorite);
-            const visibleFolderIds = new Set(searchPoolModels.map(m => m.folderId).filter(Boolean));
-            searchPoolFolders = appState.folders.filter(f => visibleFolderIds.has(f.id));
+            sourceModels = appState.models.filter(m => m.isFavorite);
+            sourceFolders = []; // Pastas não aparecem nos favoritos
         } else {
-            searchPoolModels = appState.models.filter(m => m.tabId === appState.activeTabId);
-            searchPoolFolders = appState.folders.filter(f => f.tabId === appState.activeTabId);
+            sourceModels = appState.models.filter(m => m.tabId === appState.activeTabId);
+            sourceFolders = (appState.folders || []).filter(f => f.tabId === appState.activeTabId);
         }
+    } else {
+        // Busca global
+        sourceModels = appState.models;
+        sourceFolders = appState.folders || [];
     }
 
-    // Se não houver busca, retorna todos os itens raiz (modelos sem pasta) e todas as pastas da pool.
+    // Se não houver consulta de pesquisa, retorna todos os itens da fonte definida.
     if (!query) {
-        const rootItems = searchPoolModels.filter(m => !m.folderId);
-        return [...searchPoolFolders, ...rootItems].sort((a, b) => a.name.localeCompare(b.name));
+        const foldersWithType = sourceFolders.map(f => ({ ...f, type: 'folder' }));
+        const modelsWithType = sourceModels.map(m => ({ ...m, type: 'model' }));
+        return [...foldersWithType, ...modelsWithType].sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    const matchQuery = (text) => text.toLowerCase().includes(query);
+    // Se houver uma consulta de pesquisa, aplica a lógica de filtro.
+    let matchedModels;
+    if (query.includes(' ou ')) {
+        const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
+        matchedModels = sourceModels.filter(model => {
+            const modelText = (model.name + ' ' + (model.content || '')).toLowerCase();
+            return terms.some(term => modelText.includes(term));
+        });
+    } else if (query.includes(' e ')) {
+        const terms = query.split(' e ').map(t => t.trim()).filter(Boolean);
+        matchedModels = sourceModels.filter(model => {
+            const modelText = (model.name + ' ' + (model.content || '')).toLowerCase();
+            return terms.every(term => modelText.includes(term));
+        });
+    } else {
+        matchedModels = sourceModels.filter(model =>
+            model.name.toLowerCase().includes(query) || (model.content && model.content.toLowerCase().includes(query))
+        );
+    }
 
-    const matchingModels = searchPoolModels.filter(m => matchQuery(m.name) || matchQuery(m.content));
-    const matchingFolders = searchPoolFolders.filter(f => matchQuery(f.name));
+    // Inclui as pastas-pai dos modelos encontrados e pastas que correspondem à busca.
+    const matchedFolderIds = new Set(matchedModels.map(m => m.folderId).filter(Boolean));
+    const matchedFolders = sourceFolders.filter(f => matchedFolderIds.has(f.id) || f.name.toLowerCase().includes(query));
 
-    // Inclui as pastas-pai dos modelos encontrados
-    const parentFolderIds = new Set(matchingModels.map(m => m.folderId).filter(Boolean));
-    const parentFolders = appState.folders.filter(f => parentFolderIds.has(f.id));
-    
-    // Une todos os resultados (modelos, pastas que deram match, e pastas-pai)
-    const resultSet = new Map();
-    [...matchingModels, ...matchingFolders, ...parentFolders].forEach(item => resultSet.set(item.id, item));
+    const foldersWithType = matchedFolders.map(f => ({ ...f, type: 'folder', isExpanded: true })); // Expande pastas na busca
+    const modelsWithType = matchedModels.map(m => ({ ...m, type: 'model' }));
 
-    return Array.from(resultSet.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return [...foldersWithType, ...modelsWithType].sort((a, b) => a.name.localeCompare(b.name));
 }
+// =================================================================
 
 
 // --- MANIPULAÇÃO DE DADOS ---
@@ -346,91 +337,6 @@ function addNewTab() {
         }); 
     } 
 }
-
-// --- NOVAS FUNÇÕES DE CRUD PARA PASTAS ---
-function addNewFolder() {
-    let targetTabId = appState.activeTabId;
-    if (targetTabId === FAVORITES_TAB_ID || targetTabId === POWER_TAB_ID) {
-        NotificationService.show("Não é possível criar pastas nas abas especiais.", "info");
-        return;
-    }
-    const name = prompt("Digite o nome da nova pasta:");
-    if (name && name.trim()) {
-        modifyStateAndBackup(() => {
-            const newFolder = {
-                id: `folder-${Date.now()}`,
-                name: name.trim(),
-                tabId: targetTabId,
-                isExpanded: false
-            };
-            appState.folders.push(newFolder);
-        });
-    }
-}
-
-function renameFolder(folderId) {
-    const folder = appState.folders.find(f => f.id === folderId);
-    if (!folder) return;
-    const newName = prompt('Digite o novo nome para a pasta:', folder.name);
-    if (newName && newName.trim()) {
-        modifyStateAndBackup(() => {
-            folder.name = newName.trim();
-        });
-    }
-}
-
-function deleteFolder(folderId) {
-    const folder = appState.folders.find(f => f.id === folderId);
-    if (!folder) return;
-
-    NotificationService.showConfirm({
-        message: `O que fazer com os modelos dentro da pasta "${folder.name}"?`,
-        onConfirm: () => { // Botão "Confirmar" agora significa Mover para a raiz
-            modifyStateAndBackup(() => {
-                appState.models.forEach(model => {
-                    if (model.folderId === folderId) {
-                        model.folderId = null;
-                    }
-                });
-                appState.folders = appState.folders.filter(f => f.id !== folderId);
-            });
-            NotificationService.show('Pasta excluída e modelos movidos para a raiz da aba.', 'success');
-        },
-        onCancel: () => { // Botão "Cancelar" é usado para a segunda opção
-             NotificationService.showConfirm({
-                message: `Tem certeza que deseja EXCLUIR PERMANENTEMENTE a pasta "${folder.name}" E todos os modelos contidos nela? Esta ação não pode ser desfeita.`,
-                onConfirm: () => {
-                    modifyStateAndBackup(() => {
-                        appState.models = appState.models.filter(model => model.folderId !== folderId);
-                        appState.folders = appState.folders.filter(f => f.id !== folderId);
-                    });
-                     NotificationService.show('Pasta e seus modelos foram excluídos permanentemente.', 'success');
-                }
-            });
-        }
-    });
-}
-
-function toggleFolderExpansion(folderId) {
-    // Não precisa de modifyStateAndBackup pois é uma alteração de UI temporária
-    const folder = appState.folders.find(f => f.id === folderId);
-    if (folder) {
-        folder.isExpanded = !folder.isExpanded;
-        saveStateToStorage(); // Salva o estado de expansão, mas sem acionar backup
-        render();
-    }
-}
-
-function moveModelToFolder(modelId, folderId) {
-    modifyStateAndBackup(() => {
-        const model = appState.models.find(m => m.id === modelId);
-        if (model) {
-            model.folderId = folderId;
-        }
-    });
-}
-// --- FIM DAS FUNÇÕES DE PASTA ---
-
 
 function deleteTab(tabId) {
     const tabToDelete = appState.tabs.find(t => t.id === tabId);
@@ -448,15 +354,7 @@ function deleteTab(tabId) {
             }
             modifyStateAndBackup(() => {
                 const destinationTabId = destinationOptions[choiceIndex].id;
-                // Move os modelos para a nova aba e para a raiz (remove de pastas)
-                appState.models.forEach(model => { 
-                    if (model.tabId === tabId) {
-                        model.tabId = destinationTabId;
-                        model.folderId = null; 
-                    }
-                });
-                // Exclui as pastas da aba removida
-                appState.folders = appState.folders.filter(f => f.tabId !== tabId);
+                appState.models.forEach(model => { if (model.tabId === tabId) model.tabId = destinationTabId; });
                 appState.tabs = appState.tabs.filter(t => t.id !== tabId);
                 appState.activeTabId = destinationTabId;
             });
@@ -505,7 +403,7 @@ function addNewModelFromEditor() {
                 return;
             }
             modifyStateAndBackup(() => {
-                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false, folderId: null };
+                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false };
                 appState.models.push(newModel);
                 searchBox.value = '';
             });
@@ -567,7 +465,6 @@ function moveModelToAnotherTab(modelId) {
     if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
         modifyStateAndBackup(() => {
             model.tabId = destinationOptions[choiceIndex].id;
-            model.folderId = null; // Move para a raiz da nova aba
         });
         NotificationService.show(`Modelo movido para a aba "${destinationOptions[choiceIndex].name}".`, 'success');
     } else if(choice) {
@@ -584,7 +481,6 @@ function moveModelToTab(modelId, newTabId) {
                 NotificationService.show(`"${model.name}" adicionado aos Favoritos.`, 'success');
             } else {
                 model.tabId = newTabId;
-                model.folderId = null; // Move para a raiz da nova aba
                 NotificationService.show(`Modelo movido para a nova aba.`, 'success');
             }
         }
@@ -648,7 +544,6 @@ function handleImportFile(event) {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
                         
-                        // --- LÓGICA MANUAL PARA EVITAR BACKUP AUTOMÁTICO ---
                         appState = importedState;
                         
                         const filename = file.name;
@@ -664,9 +559,8 @@ function handleImportFile(event) {
                         
                         saveStateToStorage();
                         render();
-                        BackupManager.updateStatus(fileDate); // Atualiza o card com a data do arquivo
+                        BackupManager.updateStatus(fileDate);
                         NotificationService.show('Modelos importados com sucesso!', 'success');
-                        // FIM DA LÓGICA MANUAL
 
                     } else {
                         throw new Error('Formato de arquivo inválido.');
@@ -717,21 +611,15 @@ window.addEventListener('DOMContentLoaded', () => {
         onModelMove: moveModelToAnotherTab,
         onModelFavoriteToggle: toggleFavorite,
         onModelReorder: reorderModel,
-        onModelDropOnTab: moveModelToTab,
-        // --- NOVOS CALLBACKS PARA PASTAS ---
-        onFolderToggleExpand: toggleFolderExpansion,
-        onFolderRename: renameFolder,
-        onFolderDelete: deleteFolder,
-        onModelDropOnFolder: moveModelToFolder,
+        onModelDropOnTab: moveModelToTab
     });
     
-    render(); // Primeira renderização
+    render();
 
     searchInTabCheckbox.addEventListener('change', debouncedFilter);
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); render(); } });
     addNewTabBtn.addEventListener('click', addNewTab);
-    addNewFolderBtn.addEventListener('click', addNewFolder); // NOVO
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
     searchBtn.addEventListener('click', render);
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; render(); });
