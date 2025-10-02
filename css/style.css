@@ -1039,3 +1039,17 @@ blockquote p {
     font-family: 'Courier New', Courier, monospace;
     color: #c82333;
 }
+
+/* Adicionar estas novas regras ao final do arquivo style.css */
+.model-item .model-name {
+    cursor: copy; /* Muda o cursor para indicar uma ação de cópia */
+    transition: color 0.2s ease-in-out;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px; /* Compensa o padding para manter o alinhamento */
+}
+
+.model-item .model-name:hover {
+    color: var(--primary-color);
+    background-color: rgba(206, 42, 102, 0.1);
+}
