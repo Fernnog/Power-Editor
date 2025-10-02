@@ -217,6 +217,70 @@ body, html {
 #add-new-tab-btn { background-color: #6c757d; color: white; border-color: #5a6268; }
 #add-new-tab-btn:hover { background-color: #5a6268; }
 
+/* NOVO: Estilo para o botão "Pasta" */
+#add-new-folder-btn {
+    background-color: #17a2b8; /* Ciano para diferenciar */
+    color: white;
+    border-color: #138496;
+}
+#add-new-folder-btn:hover {
+    background-color: #138496;
+}
+
+/* --- ESTILOS PARA PASTAS E MODELOS ANINHADOS (NOVA FUNCIONALIDADE) --- */
+.folder-item {
+    background-color: #f0f2f5;
+    border: 1px solid #dfe3e8;
+    border-radius: 5px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #495057;
+    transition: background-color 0.2s, outline 0.2s;
+}
+.folder-item:hover {
+    background-color: #e4e8ed;
+}
+.folder-item .folder-toggle {
+    font-size: 12px;
+    width: 16px;
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+}
+.folder-item.expanded .folder-toggle {
+    transform: rotate(90deg);
+}
+.folder-item .folder-icon {
+    font-size: 1.2em; /* Ícone de pasta um pouco maior */
+}
+.folder-item .folder-name {
+    flex-grow: 1; /* Ocupa o espaço restante */
+}
+.folder-item .folder-counter {
+    background-color: #6c757d;
+    color: white;
+    font-size: 11px;
+    border-radius: 10px;
+    padding: 2px 7px;
+    font-weight: normal; /* Contador não precisa ser negrito */
+}
+.model-item-child {
+    margin-left: 25px; /* Indentação para modelos aninhados */
+    border-left: 2px solid #e9ecef;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+/* Feedback visual para alvo de drop na pasta */
+.folder-item.drop-target-active {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    background-color: rgba(206, 42, 102, 0.1);
+}
+
 /* --- ESTILOS DO MODAL UNIFICADO --- */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
 .modal-overlay.visible { display: flex; }
