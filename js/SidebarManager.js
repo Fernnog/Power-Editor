@@ -1,26 +1,19 @@
 // js/SidebarManager.js
 
 const SidebarManager = (() => {
-    // Referências ao DOM
     let tabsContainer, modelList, tabActionsContainer, activeContentArea;
-
-    // Instâncias do SortableJS
     let sortableTabsInstance = null;
     let sortableModelsInstance = null;
-
-    // Callbacks para o state manager
     let callbacks = {};
 
     function init(callbackFunctions) {
         callbacks = callbackFunctions;
-
         tabsContainer = document.getElementById('tabs-container');
         modelList = document.getElementById('model-list');
         tabActionsContainer = document.getElementById('tab-actions-container');
         activeContentArea = document.getElementById('active-content-area');
-
         if (!tabsContainer || !modelList || !tabActionsContainer || !activeContentArea) {
-            console.error("Elementos da UI da Sidebar não encontrados. O módulo não funcionará.");
+            console.error("Elementos da UI da Sidebar não encontrados.");
             return;
         }
     }
@@ -31,13 +24,10 @@ const SidebarManager = (() => {
         _renderTabActions(appState);
     }
 
-    // --- FUNÇÕES DE RENDERIZAÇÃO PRIVADAS ---
-
     function _renderTabs(appState) {
         if (sortableTabsInstance) {
             sortableTabsInstance.destroy();
         }
-
         tabsContainer.innerHTML = '';
         let activeTabColor = '#ccc';
 
@@ -45,7 +35,6 @@ const SidebarManager = (() => {
             const tabEl = document.createElement('button');
             tabEl.className = 'tab-item';
             tabEl.dataset.tabId = tab.id;
-            
             const tabColor = tab.color || '#6c757d';
             tabEl.style.setProperty('--tab-color', tabColor);
 
@@ -86,7 +75,6 @@ const SidebarManager = (() => {
                 e.preventDefault();
                 _showTabContextMenu(e.clientX, e.clientY, tab, appState);
             });
-
             return tabEl;
         };
 
@@ -101,7 +89,6 @@ const SidebarManager = (() => {
         });
     }
 
-    // ======================= FUNÇÃO SUBSTITUÍDA =======================
     function _renderModels(itemsToRender, appState) {
         if (sortableModelsInstance) {
             sortableModelsInstance.destroy();
@@ -110,7 +97,6 @@ const SidebarManager = (() => {
     
         const rootItems = itemsToRender.filter(item => !item.folderId);
     
-        // Função auxiliar para renderizar um item de modelo
         const renderModel = (model, isChild = false) => {
             const li = document.createElement('li');
             li.className = 'model-item' + (isChild ? ' model-item-child' : '');
@@ -120,25 +106,19 @@ const SidebarManager = (() => {
             headerDiv.className = 'model-header';
             const nameSpan = document.createElement('span');
             nameSpan.className = 'model-name';
-            
             nameSpan.title = `Clique para copiar o snippet: {{snippet:${model.name}}}`;
             nameSpan.addEventListener('click', (e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 const snippetText = `{{snippet:${model.name}}}`;
                 navigator.clipboard.writeText(snippetText).then(() => {
                     NotificationService.show(`Snippet "${model.name}" copiado!`, 'success', 2500);
-                }).catch(err => {
-                    console.error('Falha ao copiar snippet do modelo:', err);
-                    NotificationService.show('Não foi possível copiar o snippet.', 'error');
                 });
             });
-    
             const colorIndicator = document.createElement('span');
             colorIndicator.className = 'model-color-indicator';
             const parentTab = appState.tabs.find(t => t.id === model.tabId);
             colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
             nameSpan.appendChild(colorIndicator);
-            
             if (model.content && model.content.includes('{{')) {
                 const variableIndicator = document.createElement('span');
                 variableIndicator.className = 'model-variable-indicator';
@@ -146,14 +126,11 @@ const SidebarManager = (() => {
                 variableIndicator.textContent = '🤖';
                 nameSpan.appendChild(variableIndicator);
             }
-    
             const textNode = document.createTextNode(" " + model.name);
             nameSpan.appendChild(textNode);
             headerDiv.appendChild(nameSpan);
-    
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'model-actions';
-            
             const actionButtons = [
                 { icon: ICON_PLUS, title: 'Inserir modelo', action: () => callbacks.onModelInsert(model) },
                 { icon: ICON_PENCIL, title: 'Editar modelo', action: () => callbacks.onModelEdit(model.id) },
@@ -161,7 +138,6 @@ const SidebarManager = (() => {
                 { icon: ICON_TRASH, title: 'Excluir modelo', action: () => callbacks.onModelDelete(model.id) },
                 { icon: model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE, title: model.isFavorite ? 'Desfavoritar' : 'Favoritar', action: () => callbacks.onModelFavoriteToggle(model.id) }
             ];
-    
             actionButtons.forEach(btnInfo => {
                 const button = document.createElement('button');
                 button.className = 'action-btn';
@@ -170,50 +146,39 @@ const SidebarManager = (() => {
                 button.onclick = btnInfo.action;
                 actionsDiv.appendChild(button);
             });
-    
             li.appendChild(headerDiv);
             li.appendChild(actionsDiv);
             return li;
         };
     
-        // Função auxiliar para renderizar um item de pasta
         const renderFolder = (folder) => {
             const li = document.createElement('li');
             li.className = 'folder-item'; 
             li.dataset.folderId = folder.id;
             const modelInFolderCount = itemsToRender.filter(m => m.type === 'model' && m.folderId === folder.id).length;
-    
-            li.innerHTML = `
-                <span class="folder-toggle">${folder.isExpanded ? '▼' : '▶'}</span>
-                <span class="folder-icon">📁</span>
-                <span class="folder-name">${folder.name}</span>
-                <span class="folder-counter">(${modelInFolderCount})</span>
-            `;
-            
+            li.innerHTML = `<span class="folder-toggle">${folder.isExpanded ? '▼' : '▶'}</span><span class="folder-icon">📁</span><span class="folder-name">${folder.name}</span><span class="folder-counter">(${modelInFolderCount})</span>`;
             li.addEventListener('click', () => {
-                // A arquitetura ideal seria chamar um callback: callbacks.onFolderToggle(folder.id);
-                // Por simplicidade, alteramos o estado e re-renderizamos
-                const folderInState = appState.folders.find(f => f.id === folder.id);
-                if (folderInState) {
-                    folderInState.isExpanded = !folderInState.isExpanded;
-                    render(appState); 
-                }
+                 const folderInState = appState.folders.find(f => f.id === folder.id);
+                 if (folderInState) {
+                     modifyStateAndBackup(() => {
+                        folderInState.isExpanded = !folderInState.isExpanded;
+                     });
+                 }
             });
             return li;
         };
     
-        // Lógica principal de renderização
         rootItems.forEach(item => {
             if (item.type === 'folder') {
                 modelList.appendChild(renderFolder(item));
                 if (item.isExpanded) {
                     const children = itemsToRender.filter(m => m.type === 'model' && m.folderId === item.id);
                     children.forEach(childModel => {
-                        modelList.appendChild(renderModel(childModel, true)); // true indica que é filho
+                        modelList.appendChild(renderModel(childModel, true));
                     });
                 }
             } else if (item.type === 'model') {
-                modelList.appendChild(renderModel(item)); // false (padrão) indica que não é filho
+                modelList.appendChild(renderModel(item));
             }
         });
     
@@ -221,51 +186,52 @@ const SidebarManager = (() => {
             animation: 150,
             ghostClass: 'model-item-ghost',
             dragClass: 'model-item-drag',
-            
             onMove: function (evt) {
-                document.querySelectorAll('.tab-item.drop-target-active').forEach(tab => {
-                    tab.classList.remove('drop-target-active');
+                document.querySelectorAll('.tab-item.drop-target-active, .folder-item.drop-target-active').forEach(el => {
+                    el.classList.remove('drop-target-active');
                 });
-    
                 const dropTarget = document.elementFromPoint(evt.originalEvent.clientX, evt.originalEvent.clientY);
                 if (!dropTarget) return;
-    
-                const targetTab = dropTarget.closest('.tab-item');
+
+                const targetFolder = dropTarget.closest('.folder-item');
+                if (targetFolder) {
+                    targetFolder.classList.add('drop-target-active');
+                    return;
+                }
                 
+                const targetTab = dropTarget.closest('.tab-item');
                 if (targetTab && targetTab.dataset.tabId !== appState.activeTabId) {
                     targetTab.classList.add('drop-target-active');
                 }
             },
-    
             onEnd: (evt) => {
                 const modelId = evt.item.dataset.modelId;
-                const activeDropTarget = document.querySelector('.tab-item.drop-target-active');
-                
-                if (activeDropTarget) {
-                    const newTabId = activeDropTarget.dataset.tabId;
-                    activeDropTarget.classList.remove('drop-target-active');
-                    callbacks.onModelDropOnTab(modelId, newTabId);
-                } else if (evt.oldIndex !== evt.newIndex) {
-                    callbacks.onModelReorder(modelId, evt.newIndex);
-                }
+                if (!modelId) return;
     
-                document.querySelectorAll('.tab-item.drop-target-active').forEach(tab => {
-                    tab.classList.remove('drop-target-active');
-                });
+                const activeFolderTarget = document.querySelector('.folder-item.drop-target-active');
+                const activeTabTarget = document.querySelector('.tab-item.drop-target-active');
+    
+                if (activeFolderTarget) {
+                    callbacks.onModelMoveToFolder(modelId, activeFolderTarget.dataset.folderId);
+                } else if (activeTabTarget) {
+                    callbacks.onModelDropOnTab(modelId, activeTabTarget.dataset.tabId);
+                } else {
+                    const model = appState.models.find(m => m.id === modelId);
+                    if (model && model.folderId && evt.item.parentElement === modelList) {
+                        callbacks.onModelMoveToFolder(modelId, null);
+                    }
+                }
+                document.querySelectorAll('.drop-target-active').forEach(el => el.classList.remove('drop-target-active'));
             }
         });
     }
-    // =================================================================
 
     function _renderTabActions(appState) {
         tabActionsContainer.innerHTML = '';
         const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
-
         if (!activeTab || activeTab.id === callbacks.getFavoritesTabId() || activeTab.id === callbacks.getPowerTabId()) {
-            tabActionsContainer.classList.remove('visible');
-            return;
+            tabActionsContainer.classList.remove('visible'); return;
         }
-
         const regularTabsCount = appState.tabs.filter(t => t.id !== callbacks.getFavoritesTabId() && t.id !== callbacks.getPowerTabId()).length;
 
         const deleteBtn = document.createElement('button');
@@ -279,10 +245,7 @@ const SidebarManager = (() => {
         colorBtn.className = 'tab-action-btn';
         colorBtn.innerHTML = ICON_PALETTE;
         colorBtn.title = 'Alterar cor da aba';
-        colorBtn.onclick = (e) => {
-            e.stopPropagation();
-            _toggleColorPalette(tabActionsContainer, activeTab);
-        };
+        colorBtn.onclick = (e) => { e.stopPropagation(); _toggleColorPalette(tabActionsContainer, activeTab); };
         
         const renameBtn = document.createElement('button');
         renameBtn.className = 'tab-action-btn';
@@ -299,25 +262,16 @@ const SidebarManager = (() => {
     function _toggleColorPalette(anchorElement, tab) {
         _closeContextMenu();
         const existingPalette = document.querySelector('.color-palette-popup');
-        if (existingPalette) {
-            existingPalette.remove();
-            return;
-        }
-
+        if (existingPalette) { existingPalette.remove(); return; }
         const palette = document.createElement('div');
         palette.className = 'color-palette-popup';
-        
         callbacks.getTabColors().forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
-            swatch.onclick = () => {
-                callbacks.onTabColorChange(tab, color);
-                palette.remove();
-            };
+            swatch.onclick = () => { callbacks.onTabColorChange(tab, color); palette.remove(); };
             palette.appendChild(swatch);
         });
-
         anchorElement.appendChild(palette);
         setTimeout(() => document.addEventListener('click', () => palette.remove(), { once: true }), 0);
     }
@@ -347,10 +301,7 @@ const SidebarManager = (() => {
         const colorOpt = document.createElement('button');
         colorOpt.className = 'context-menu-item';
         colorOpt.innerHTML = `${ICON_PALETTE} Alterar Cor`;
-        colorOpt.onclick = (e) => {
-            e.stopPropagation();
-            _toggleColorPalette(colorOpt, tab);
-        };
+        colorOpt.onclick = (e) => { e.stopPropagation(); _toggleColorPalette(colorOpt, tab); };
 
         const deleteOpt = document.createElement('button');
         deleteOpt.className = 'context-menu-item delete';
