@@ -30,6 +30,7 @@ const defaultModels = [
 // --- REFERÊNCIAS AOS ELEMENTOS DO HTML ---
 const searchBox = document.getElementById('search-box');
 const addNewTabBtn = document.getElementById('add-new-tab-btn');
+const addNewFolderBtn = document.getElementById('add-new-folder-btn'); // NOVO
 const addNewModelBtn = document.getElementById('add-new-model-btn');
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
@@ -57,7 +58,8 @@ function loadStateFromStorage() {
         const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
-            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false, folderId: null })),
+            folders: [], // NOVO
             tabs: [
                 { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
                 { id: POWER_TAB_ID, name: 'Power ⚡', color: '#ce2a66' },
@@ -76,6 +78,15 @@ function loadStateFromStorage() {
             const parsedState = JSON.parse(savedState);
             if (Array.isArray(parsedState.models) && Array.isArray(parsedState.tabs)) {
                 appState = parsedState;
+
+                // --- Garantir compatibilidade com backups antigos ---
+                appState.folders = parsedState.folders || []; // NOVO
+                appState.models.forEach(model => {
+                    if (typeof model.folderId === 'undefined') {
+                        model.folderId = null;
+                    }
+                });
+                // --- Fim da compatibilidade ---
                 
                 if (!appState.tabs.find(t => t.id === FAVORITES_TAB_ID)) {
                     appState.tabs.unshift({ id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' });
@@ -287,37 +298,42 @@ function filterModels() {
     const query = searchBox.value.toLowerCase().trim();
     const searchInCurrentTab = searchInTabCheckbox.checked;
 
-    if (!query) {
+    let searchPoolModels = appState.models;
+    let searchPoolFolders = appState.folders;
+
+    if (searchInCurrentTab) {
         if (appState.activeTabId === FAVORITES_TAB_ID) {
-            return appState.models.filter(m => m.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
+            searchPoolModels = appState.models.filter(m => m.isFavorite);
+            const visibleFolderIds = new Set(searchPoolModels.map(m => m.folderId).filter(Boolean));
+            searchPoolFolders = appState.folders.filter(f => visibleFolderIds.has(f.id));
+        } else {
+            searchPoolModels = appState.models.filter(m => m.tabId === appState.activeTabId);
+            searchPoolFolders = appState.folders.filter(f => f.tabId === appState.activeTabId);
         }
-        return appState.models.filter(m => m.tabId === appState.activeTabId).sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    let searchPool = searchInCurrentTab
-        ? (appState.activeTabId === FAVORITES_TAB_ID ? appState.models.filter(m => m.isFavorite) : appState.models.filter(m => m.tabId === appState.activeTabId))
-        : appState.models;
-
-    let filteredModels;
-    if (query.includes(' ou ')) {
-        const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
-        filteredModels = searchPool.filter(model => {
-            const modelText = (model.name + ' ' + model.content).toLowerCase();
-            return terms.some(term => modelText.includes(term));
-        });
-    } else if (query.includes(' e ')) {
-        const terms = query.split(' e ').map(t => t.trim()).filter(Boolean);
-        filteredModels = searchPool.filter(model => {
-            const modelText = (model.name + ' ' + model.content).toLowerCase();
-            return terms.every(term => modelText.includes(term));
-        });
-    } else {
-        filteredModels = searchPool.filter(model =>
-            model.name.toLowerCase().includes(query) || model.content.toLowerCase().includes(query)
-        );
+    // Se não houver busca, retorna todos os itens raiz (modelos sem pasta) e todas as pastas da pool.
+    if (!query) {
+        const rootItems = searchPoolModels.filter(m => !m.folderId);
+        return [...searchPoolFolders, ...rootItems].sort((a, b) => a.name.localeCompare(b.name));
     }
-    return filteredModels.sort((a, b) => a.name.localeCompare(b.name));
+
+    const matchQuery = (text) => text.toLowerCase().includes(query);
+
+    const matchingModels = searchPoolModels.filter(m => matchQuery(m.name) || matchQuery(m.content));
+    const matchingFolders = searchPoolFolders.filter(f => matchQuery(f.name));
+
+    // Inclui as pastas-pai dos modelos encontrados
+    const parentFolderIds = new Set(matchingModels.map(m => m.folderId).filter(Boolean));
+    const parentFolders = appState.folders.filter(f => parentFolderIds.has(f.id));
+    
+    // Une todos os resultados (modelos, pastas que deram match, e pastas-pai)
+    const resultSet = new Map();
+    [...matchingModels, ...matchingFolders, ...parentFolders].forEach(item => resultSet.set(item.id, item));
+
+    return Array.from(resultSet.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
+
 
 // --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { 
@@ -330,6 +346,91 @@ function addNewTab() {
         }); 
     } 
 }
+
+// --- NOVAS FUNÇÕES DE CRUD PARA PASTAS ---
+function addNewFolder() {
+    let targetTabId = appState.activeTabId;
+    if (targetTabId === FAVORITES_TAB_ID || targetTabId === POWER_TAB_ID) {
+        NotificationService.show("Não é possível criar pastas nas abas especiais.", "info");
+        return;
+    }
+    const name = prompt("Digite o nome da nova pasta:");
+    if (name && name.trim()) {
+        modifyStateAndBackup(() => {
+            const newFolder = {
+                id: `folder-${Date.now()}`,
+                name: name.trim(),
+                tabId: targetTabId,
+                isExpanded: false
+            };
+            appState.folders.push(newFolder);
+        });
+    }
+}
+
+function renameFolder(folderId) {
+    const folder = appState.folders.find(f => f.id === folderId);
+    if (!folder) return;
+    const newName = prompt('Digite o novo nome para a pasta:', folder.name);
+    if (newName && newName.trim()) {
+        modifyStateAndBackup(() => {
+            folder.name = newName.trim();
+        });
+    }
+}
+
+function deleteFolder(folderId) {
+    const folder = appState.folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    NotificationService.showConfirm({
+        message: `O que fazer com os modelos dentro da pasta "${folder.name}"?`,
+        onConfirm: () => { // Botão "Confirmar" agora significa Mover para a raiz
+            modifyStateAndBackup(() => {
+                appState.models.forEach(model => {
+                    if (model.folderId === folderId) {
+                        model.folderId = null;
+                    }
+                });
+                appState.folders = appState.folders.filter(f => f.id !== folderId);
+            });
+            NotificationService.show('Pasta excluída e modelos movidos para a raiz da aba.', 'success');
+        },
+        onCancel: () => { // Botão "Cancelar" é usado para a segunda opção
+             NotificationService.showConfirm({
+                message: `Tem certeza que deseja EXCLUIR PERMANENTEMENTE a pasta "${folder.name}" E todos os modelos contidos nela? Esta ação não pode ser desfeita.`,
+                onConfirm: () => {
+                    modifyStateAndBackup(() => {
+                        appState.models = appState.models.filter(model => model.folderId !== folderId);
+                        appState.folders = appState.folders.filter(f => f.id !== folderId);
+                    });
+                     NotificationService.show('Pasta e seus modelos foram excluídos permanentemente.', 'success');
+                }
+            });
+        }
+    });
+}
+
+function toggleFolderExpansion(folderId) {
+    // Não precisa de modifyStateAndBackup pois é uma alteração de UI temporária
+    const folder = appState.folders.find(f => f.id === folderId);
+    if (folder) {
+        folder.isExpanded = !folder.isExpanded;
+        saveStateToStorage(); // Salva o estado de expansão, mas sem acionar backup
+        render();
+    }
+}
+
+function moveModelToFolder(modelId, folderId) {
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) {
+            model.folderId = folderId;
+        }
+    });
+}
+// --- FIM DAS FUNÇÕES DE PASTA ---
+
 
 function deleteTab(tabId) {
     const tabToDelete = appState.tabs.find(t => t.id === tabId);
@@ -347,7 +448,15 @@ function deleteTab(tabId) {
             }
             modifyStateAndBackup(() => {
                 const destinationTabId = destinationOptions[choiceIndex].id;
-                appState.models.forEach(model => { if (model.tabId === tabId) model.tabId = destinationTabId; });
+                // Move os modelos para a nova aba e para a raiz (remove de pastas)
+                appState.models.forEach(model => { 
+                    if (model.tabId === tabId) {
+                        model.tabId = destinationTabId;
+                        model.folderId = null; 
+                    }
+                });
+                // Exclui as pastas da aba removida
+                appState.folders = appState.folders.filter(f => f.tabId !== tabId);
                 appState.tabs = appState.tabs.filter(t => t.id !== tabId);
                 appState.activeTabId = destinationTabId;
             });
@@ -396,7 +505,7 @@ function addNewModelFromEditor() {
                 return;
             }
             modifyStateAndBackup(() => {
-                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false };
+                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false, folderId: null };
                 appState.models.push(newModel);
                 searchBox.value = '';
             });
@@ -458,6 +567,7 @@ function moveModelToAnotherTab(modelId) {
     if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
         modifyStateAndBackup(() => {
             model.tabId = destinationOptions[choiceIndex].id;
+            model.folderId = null; // Move para a raiz da nova aba
         });
         NotificationService.show(`Modelo movido para a aba "${destinationOptions[choiceIndex].name}".`, 'success');
     } else if(choice) {
@@ -474,6 +584,7 @@ function moveModelToTab(modelId, newTabId) {
                 NotificationService.show(`"${model.name}" adicionado aos Favoritos.`, 'success');
             } else {
                 model.tabId = newTabId;
+                model.folderId = null; // Move para a raiz da nova aba
                 NotificationService.show(`Modelo movido para a nova aba.`, 'success');
             }
         }
@@ -606,7 +717,12 @@ window.addEventListener('DOMContentLoaded', () => {
         onModelMove: moveModelToAnotherTab,
         onModelFavoriteToggle: toggleFavorite,
         onModelReorder: reorderModel,
-        onModelDropOnTab: moveModelToTab
+        onModelDropOnTab: moveModelToTab,
+        // --- NOVOS CALLBACKS PARA PASTAS ---
+        onFolderToggleExpand: toggleFolderExpansion,
+        onFolderRename: renameFolder,
+        onFolderDelete: deleteFolder,
+        onModelDropOnFolder: moveModelToFolder,
     });
     
     render(); // Primeira renderização
@@ -615,6 +731,7 @@ window.addEventListener('DOMContentLoaded', () => {
     searchBox.addEventListener('input', debouncedFilter);
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); render(); } });
     addNewTabBtn.addEventListener('click', addNewTab);
+    addNewFolderBtn.addEventListener('click', addNewFolder); // NOVO
     addNewModelBtn.addEventListener('click', addNewModelFromEditor);
     searchBtn.addEventListener('click', render);
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; render(); });
