@@ -2,10 +2,36 @@
 :root {
     --primary-color: #ce2a66;
     --primary-color-dark: #a12050;
+    --editor-bg-color: #FFFFFF;
+    --editor-text-color: #111827;
+    --editor-border-color: #e0e0e0;
     /* Melhoria de Arquitetura: Variáveis para o layout da página */
     --page-width: 21cm;
     --page-height: 29.7cm;
     --page-margin: 2cm;
+}
+
+body.theme-dark {
+    --editor-bg-color: #2d3748; /* Cinza escuro */
+    --editor-text-color: #e2e8f0; /* Cinza claro */
+    --editor-border-color: #4a5568;
+}
+
+body.theme-custom-yellow {
+    --editor-bg-color: #ffd480; /* Cor personalizada solicitada */
+    --editor-text-color: #374151; /* Texto escuro para bom contraste */
+    --editor-border-color: #FBBF24; /* CORREÇÃO: Removido '_' do código de cor */
+}
+
+/* Adicione estas novas regras para estilizar o editor usando as variáveis */
+.tox-tinymce {
+    border-color: var(--editor-border-color) !important;
+    transition: border-color 0.3s ease;
+}
+
+.tox-edit-area__iframe {
+    background-color: var(--editor-bg-color) !important;
+    transition: background-color 0.3s ease;
 }
 
 body, html {
