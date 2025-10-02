@@ -27,7 +27,7 @@ const SidebarManager = (() => {
 
     function render(appState) {
         _renderTabs(appState);
-        _renderModels(callbacks.filterModels(), appState);
+        _renderModelsAndFolders(callbacks.filterModels(), appState); // MODIFICADO
         _renderTabActions(appState);
     }
 
@@ -101,117 +101,198 @@ const SidebarManager = (() => {
         });
     }
 
-    function _renderModels(modelsToRender, appState) {
+    // --- NOVA LÓGICA DE RENDERIZAÇÃO HIERÁRQUICA ---
+    function _renderModelsAndFolders(itemsToRender, appState) {
         if (sortableModelsInstance) {
             sortableModelsInstance.destroy();
         }
         modelList.innerHTML = '';
+        
+        const foldersInView = itemsToRender.filter(item => item.tabId); // Filtra para pegar apenas pastas
+        const modelsInView = itemsToRender.filter(item => !item.tabId || item.tabId); // Pega modelos
 
-        modelsToRender.forEach(model => {
-            const li = document.createElement('li');
-            li.className = 'model-item';
-            li.dataset.modelId = model.id;
-
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'model-header';
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'model-name';
-            
-            // MELHORIA UX: Implementa a funcionalidade de clicar para copiar o snippet formatado
-            nameSpan.title = `Clique para copiar o snippet: {{snippet:${model.name}}}`;
-            nameSpan.addEventListener('click', (e) => {
-                e.stopPropagation(); // Previne que outros eventos de clique sejam disparados
-                const snippetText = `{{snippet:${model.name}}}`;
-                navigator.clipboard.writeText(snippetText).then(() => {
-                    NotificationService.show(`Snippet "${model.name}" copiado!`, 'success', 2500);
-                }).catch(err => {
-                    console.error('Falha ao copiar snippet do modelo:', err);
-                    NotificationService.show('Não foi possível copiar o snippet.', 'error');
-                });
-            });
-
-            const colorIndicator = document.createElement('span');
-            colorIndicator.className = 'model-color-indicator';
-            const parentTab = appState.tabs.find(t => t.id === model.tabId);
-            colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
-            nameSpan.appendChild(colorIndicator);
-            
-            if (model.content && model.content.includes('{{')) {
-                const variableIndicator = document.createElement('span');
-                variableIndicator.className = 'model-variable-indicator';
-                variableIndicator.title = 'Este modelo contém variáveis dinâmicas';
-                variableIndicator.textContent = '🤖';
-                nameSpan.appendChild(variableIndicator);
-            }
-
-            const textNode = document.createTextNode(" " + model.name);
-            nameSpan.appendChild(textNode);
-            headerDiv.appendChild(nameSpan);
-
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'model-actions';
-            
-            const actionButtons = [
-                { icon: ICON_PLUS, title: 'Inserir modelo', action: () => callbacks.onModelInsert(model) },
-                { icon: ICON_PENCIL, title: 'Editar modelo', action: () => callbacks.onModelEdit(model.id) },
-                { icon: ICON_MOVE, title: 'Mover para outra aba', action: () => callbacks.onModelMove(model.id) },
-                { icon: ICON_TRASH, title: 'Excluir modelo', action: () => callbacks.onModelDelete(model.id) },
-                { icon: model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE, title: model.isFavorite ? 'Desfavoritar' : 'Favoritar', action: () => callbacks.onModelFavoriteToggle(model.id) }
-            ];
-
-            actionButtons.forEach(btnInfo => {
-                const button = document.createElement('button');
-                button.className = 'action-btn';
-                button.innerHTML = btnInfo.icon;
-                button.title = btnInfo.title;
-                button.onclick = btnInfo.action;
-                actionsDiv.appendChild(button);
-            });
-
-            li.appendChild(headerDiv);
-            li.appendChild(actionsDiv);
-            modelList.appendChild(li);
+        // Separa itens raiz de itens filhos
+        const rootItems = itemsToRender.filter(item => {
+            const isFolder = !!item.isExpanded;
+            const isRootModel = !item.folderId;
+            return isFolder || isRootModel;
         });
 
+        rootItems.forEach(item => {
+            const isFolder = 'isExpanded' in item;
+            if (isFolder) {
+                modelList.appendChild(_createFolderElement(item, modelsInView, appState));
+            } else {
+                modelList.appendChild(_createModelElement(item, appState, false));
+            }
+        });
+
+        // Configura o Drag and Drop
+        _setupSortableForModels(appState);
+    }
+    
+    function _createFolderElement(folder, allVisibleModels, appState) {
+        const li = document.createElement('li');
+        li.className = 'folder-item';
+        li.dataset.folderId = folder.id;
+
+        const modelCount = appState.models.filter(m => m.folderId === folder.id).length;
+        
+        li.innerHTML = `
+            <span class="folder-toggle">${folder.isExpanded ? '▼' : '▶'}</span>
+            <span class="folder-icon">📁</span>
+            <span class="folder-name">${folder.name}</span>
+            <span class="folder-counter">(${modelCount})</span>
+        `;
+
+        li.addEventListener('click', (e) => {
+            if (e.target.closest('.folder-item')) {
+                callbacks.onFolderToggleExpand(folder.id);
+            }
+        });
+
+        li.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            _showFolderContextMenu(e.clientX, e.clientY, folder);
+        });
+
+        if (folder.isExpanded) {
+            const childList = document.createElement('ul');
+            childList.className = 'folder-child-list';
+            const childModels = allVisibleModels.filter(m => m.folderId === folder.id);
+            
+            childModels.forEach(model => {
+                childList.appendChild(_createModelElement(model, appState, true));
+            });
+            li.appendChild(childList);
+        }
+        
+        return li;
+    }
+
+    function _createModelElement(model, appState, isChild) {
+        const li = document.createElement('li');
+        li.className = 'model-item';
+        if (isChild) {
+            li.classList.add('model-item-child');
+        }
+        li.dataset.modelId = model.id;
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'model-header';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'model-name';
+        
+        nameSpan.title = `Clique para copiar o snippet: {{snippet:${model.name}}}`;
+        nameSpan.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const snippetText = `{{snippet:${model.name}}}`;
+            navigator.clipboard.writeText(snippetText).then(() => {
+                NotificationService.show(`Snippet "${model.name}" copiado!`, 'success', 2500);
+            });
+        });
+
+        const colorIndicator = document.createElement('span');
+        colorIndicator.className = 'model-color-indicator';
+        const parentTab = appState.tabs.find(t => t.id === model.tabId);
+        colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
+        nameSpan.appendChild(colorIndicator);
+        
+        if (model.content && model.content.includes('{{')) {
+            const variableIndicator = document.createElement('span');
+            variableIndicator.className = 'model-variable-indicator';
+            variableIndicator.title = 'Este modelo contém variáveis dinâmicas';
+            variableIndicator.textContent = '🤖';
+            nameSpan.appendChild(variableIndicator);
+        }
+
+        const textNode = document.createTextNode(" " + model.name);
+        nameSpan.appendChild(textNode);
+        headerDiv.appendChild(nameSpan);
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'model-actions';
+        
+        const actionButtons = [
+            { icon: ICON_PLUS, title: 'Inserir modelo', action: () => callbacks.onModelInsert(model) },
+            { icon: ICON_PENCIL, title: 'Editar modelo', action: () => callbacks.onModelEdit(model.id) },
+            { icon: ICON_MOVE, title: 'Mover para outra aba', action: () => callbacks.onModelMove(model.id) },
+            { icon: ICON_TRASH, title: 'Excluir modelo', action: () => callbacks.onModelDelete(model.id) },
+            { icon: model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE, title: model.isFavorite ? 'Desfavoritar' : 'Favoritar', action: () => callbacks.onModelFavoriteToggle(model.id) }
+        ];
+
+        actionButtons.forEach(btnInfo => {
+            const button = document.createElement('button');
+            button.className = 'action-btn';
+            button.innerHTML = btnInfo.icon;
+            button.title = btnInfo.title;
+            button.onclick = btnInfo.action;
+            actionsDiv.appendChild(button);
+        });
+
+        li.appendChild(headerDiv);
+        li.appendChild(actionsDiv);
+        return li;
+    }
+
+    function _setupSortableForModels(appState) {
         sortableModelsInstance = Sortable.create(modelList, {
             animation: 150,
+            group: 'shared-models',
             ghostClass: 'model-item-ghost',
             dragClass: 'model-item-drag',
             
             onMove: function (evt) {
-                document.querySelectorAll('.tab-item.drop-target-active').forEach(tab => {
-                    tab.classList.remove('drop-target-active');
+                document.querySelectorAll('.tab-item.drop-target-active, .folder-item.drop-target-active').forEach(el => {
+                    el.classList.remove('drop-target-active');
                 });
 
-                const dropTarget = document.elementFromPoint(evt.originalEvent.clientX, evt.originalEvent.clientY);
-                if (!dropTarget) return;
+                const dropTargetEl = document.elementFromPoint(evt.originalEvent.clientX, evt.originalEvent.clientY);
+                if (!dropTargetEl) return;
 
-                const targetTab = dropTarget.closest('.tab-item');
+                const targetTab = dropTargetEl.closest('.tab-item');
+                const targetFolder = dropTargetEl.closest('.folder-item');
                 
                 if (targetTab && targetTab.dataset.tabId !== appState.activeTabId) {
                     targetTab.classList.add('drop-target-active');
+                } else if (targetFolder) {
+                    targetFolder.classList.add('drop-target-active');
                 }
             },
 
             onEnd: (evt) => {
                 const modelId = evt.item.dataset.modelId;
-                const activeDropTarget = document.querySelector('.tab-item.drop-target-active');
-                
-                if (activeDropTarget) {
-                    const newTabId = activeDropTarget.dataset.tabId;
-                    activeDropTarget.classList.remove('drop-target-active');
-                    callbacks.onModelDropOnTab(modelId, newTabId);
-                } else if (evt.oldIndex !== evt.newIndex) {
-                    callbacks.onModelReorder(modelId, evt.newIndex);
-                }
+                const activeTabTarget = document.querySelector('.tab-item.drop-target-active');
+                const activeFolderTarget = document.querySelector('.folder-item.drop-target-active');
 
-                document.querySelectorAll('.tab-item.drop-target-active').forEach(tab => {
-                    tab.classList.remove('drop-target-active');
+                document.querySelectorAll('.tab-item.drop-target-active, .folder-item.drop-target-active').forEach(el => {
+                    el.classList.remove('drop-target-active');
                 });
+                
+                if (activeTabTarget) {
+                    const newTabId = activeTabTarget.dataset.tabId;
+                    callbacks.onModelDropOnTab(modelId, newTabId);
+                } else if (activeFolderTarget) {
+                    const newFolderId = activeFolderTarget.dataset.folderId;
+                    callbacks.onModelDropOnFolder(modelId, newFolderId);
+                } else if (evt.from === evt.to && evt.oldIndex !== evt.newIndex) {
+                    // Lógica para reordenar (pode ser aprimorada no futuro)
+                    // Por enquanto, a mudança de pasta é a principal interação
+                }
+                 // Se um modelo for arrastado para a lista principal (fora de uma pasta)
+                 if (!activeFolderTarget && evt.to === modelList) {
+                    const model = appState.models.find(m => m.id === modelId);
+                    if (model && model.folderId) {
+                        callbacks.onModelDropOnFolder(modelId, null); // Move para a raiz
+                    }
+                }
             }
         });
     }
 
+    // --- FIM DA NOVA LÓGICA DE RENDERIZAÇÃO ---
+    
     function _renderTabActions(appState) {
         tabActionsContainer.innerHTML = '';
         const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
@@ -320,6 +401,32 @@ const SidebarManager = (() => {
         document.body.appendChild(menu);
         setTimeout(() => document.addEventListener('click', _closeContextMenu), 0);
     }
+
+    // NOVO MENU DE CONTEXTO PARA PASTAS
+    function _showFolderContextMenu(x, y, folder) {
+        _closeContextMenu();
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        
+        const renameOpt = document.createElement('button');
+        renameOpt.className = 'context-menu-item';
+        renameOpt.innerHTML = `${ICON_PENCIL} Renomear Pasta`;
+        renameOpt.onclick = () => callbacks.onFolderRename(folder.id);
+
+        const deleteOpt = document.createElement('button');
+        deleteOpt.className = 'context-menu-item delete';
+        deleteOpt.innerHTML = `${ICON_TRASH} Excluir Pasta...`;
+        deleteOpt.onclick = () => callbacks.onFolderDelete(folder.id);
+
+        menu.appendChild(renameOpt);
+        menu.appendChild(deleteOpt);
+        
+        document.body.appendChild(menu);
+        setTimeout(() => document.addEventListener('click', _closeContextMenu), 0);
+    }
+
 
     return {
         init,
