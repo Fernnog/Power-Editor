@@ -117,6 +117,19 @@ const SidebarManager = (() => {
             const nameSpan = document.createElement('span');
             nameSpan.className = 'model-name';
             
+            // MELHORIA UX: Implementa a funcionalidade de clicar para copiar o snippet formatado
+            nameSpan.title = `Clique para copiar o snippet: {{snippet:${model.name}}}`;
+            nameSpan.addEventListener('click', (e) => {
+                e.stopPropagation(); // Previne que outros eventos de clique sejam disparados
+                const snippetText = `{{snippet:${model.name}}}`;
+                navigator.clipboard.writeText(snippetText).then(() => {
+                    NotificationService.show(`Snippet "${model.name}" copiado!`, 'success', 2500);
+                }).catch(err => {
+                    console.error('Falha ao copiar snippet do modelo:', err);
+                    NotificationService.show('Não foi possível copiar o snippet.', 'error');
+                });
+            });
+
             const colorIndicator = document.createElement('span');
             colorIndicator.className = 'model-color-indicator';
             const parentTab = appState.tabs.find(t => t.id === model.tabId);
