@@ -97,7 +97,6 @@ A aplicação estará pronta para uso imediato.
 -   ✅ Paleta de Comandos Rápidos (Power Palette)
 
 ### Curto Prazo (Quick Wins & UX)
--   [ ] **Memória de Variáveis:** Salvar os valores preenchidos no `LocalStorage` para pré-preencher o formulário na próxima vez que o mesmo modelo for usado.
 -   [ ] **Criar um modal de "Configurações":** Um local central para o usuário gerenciar preferências, como chaves de API para futuras integrações, sem precisar editar arquivos de código.
 
 ### Médio Prazo (Arquitetura e Funcionalidades)
@@ -108,5 +107,3 @@ A aplicação estará pronta para uso imediato.
 ### Longo Prazo (Visão Futura)
 -   [ ] **Histórico de Versões:** Implementar um sistema que salva "snapshots" do documento no `LocalStorage` periodicamente, permitindo reverter para versões anteriores.
 -   [ ] **Sincronização entre Dispositivos (Cloud):** Explorar a possibilidade de usar serviços como Firebase (Firestore/Auth) para permitir que os usuários acessem seus modelos e documentos de qualquer lugar.
-```
---- END OF FILE README.md ---
