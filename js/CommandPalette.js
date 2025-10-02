@@ -178,8 +178,10 @@ const CommandPalette = (() => {
      */
     function selectResult(model) {
         if (model) {
-            // Reutiliza a função centralizada que já lida com variáveis dinâmicas
-            insertModelContent(model.content, model.tabId);
+            // CORREÇÃO: A função insertModelContent espera o objeto 'model' completo
+            // para processar snippets e variáveis corretamente. A chamada anterior
+            // passava apenas o conteúdo, causando o bug.
+            insertModelContent(model);
         }
         close();
     }
