@@ -23,11 +23,12 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 
 #### Identidade Visual e Experiência do Usuário
 -   **Interface Moderna:** A interface incorpora uma paleta de cores coesa e elementos de design modernos para uma experiência de usuário agradável.
+-   **<!-- NOVO --> Temas Visuais com Persistência:** Personalize sua área de trabalho com temas como **Modo Claro**, **Modo Escuro** e **Amarelo Suave**. Sua escolha é salva automaticamente no navegador, garantindo que o editor sempre abra com a sua aparência preferida.
 -   **Notificações "Toast" Não-Bloqueantes:** Todas as mensagens de feedback (sucesso, erro, confirmação) são exibidas através de um sistema de notificações "toast" que não interrompem o fluxo de trabalho.
 -   **Acesso Rápido com Botão Flutuante (FAB):** Um botão discreto com um ícone de raio (⚡) fica posicionado sobre a área do editor, garantindo acesso rápido à paleta de comandos.
 
 #### Área de Edição Avançada
--   **Barra de Ferramentas Otimizada:** Ações essenciais estão diretamente na barra de ferramentas do editor para acesso rápido.
+-   **Barra de Ferramentas Otimizada:** Ações essenciais, como o novo seletor de temas, estão diretamente na barra de ferramentas para acesso rápido.
 -   **Formatação de Texto e Parágrafo:** Suporte completo para **Negrito**, *Itálico*, <u>Sublinhado</u>, listas, citações e alinhamento.
 -   **Ferramentas de Produtividade:**
     -   **Ditado por Voz:** Utilize o microfone para transcrever sua fala diretamente no editor.
@@ -55,7 +56,7 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 -   **Navegação por Teclado:** Use as setas para cima/baixo e a tecla `Enter` para selecionar e inserir um modelo, mantendo o fluxo de trabalho focado no teclado.
 
 #### Persistência e Segurança de Dados
--   **Salvamento Automático no Navegador:** Todo o seu trabalho, incluindo a ordem das abas, modelos e regras de substituição, é salvo automaticamente no `LocalStorage`.
+-   **Salvamento Automático no Navegador:** Todo o seu trabalho, incluindo a ordem das abas, modelos, regras de substituição e **preferência de tema**, é salvo automaticamente no `LocalStorage`.
 -   **Backup e Restauração:** Exporte e importe todos os seus dados em um único arquivo `JSON`.
 -   **Backup Automático por Inatividade:** Para segurança extra, a aplicação inicia o download de um arquivo de backup após um breve período de inatividade.
 
@@ -71,9 +72,9 @@ A aplicação estará pronta para uso imediato.
 ## 5. Estrutura de Arquivos
 
 -   `index.html`: Define a estrutura da página, incluindo os containers para a **Paleta de Comandos** e o **botão flutuante (FAB)**.
--   `css/style.css`: Contém todas as regras de estilização, incluindo os estilos de feedback visual para o **arrastar e soltar (Drag and Drop)** das abas.
+-   `css/style.css`: Contém todas as regras de estilização, incluindo os estilos de feedback visual para o **arrastar e soltar (Drag and Drop)** das abas e as **variáveis para os temas visuais (Modo Claro/Escuro)**.
 -   `js/script.js`: O cérebro da aplicação. Gerencia o estado (`appState`), eventos principais e a **lógica de processamento de modelos (snippets, variáveis)**.
--   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE, incluindo a definição do novo botão para **ajustar texto quebrado**.
+-   `js/tinymce-config.js`: Centraliza a configuração do editor TinyMCE, incluindo a definição do novo botão para **ajustar texto quebrado** e o novo **seletor de temas**.
 -   `js/editor-actions.js`: Contém funções de ações específicas do editor.
 -   `js/ModalManager.js`: Módulo para gerenciamento de janelas modais dinâmicas, **incluindo o novo guia interativo de ajuda**.
 -   `js/NotificationService.js`: Módulo dedicado que encapsula a lógica para notificações "toast".
@@ -89,7 +90,8 @@ A aplicação estará pronta para uso imediato.
 ## 6. Roadmap de Desenvolvimento
 
 ### Recém-Implementado
--   ✅ **<!-- NOVO --> Sistema de Automação com Snippets e Variáveis Avançadas:** Implementação de modelos encadeados (`{{snippet}}`), variáveis de escolha (`{{var:choice()}}`) e a nova data por extenso (`{{data_por_extenso}}`).
+-   ✅ **<!-- NOVO --> Temas Visuais (Claro/Escuro/Amarelo) com Persistência:** Adicionado um seletor de tema na barra de ferramentas do editor.
+-   ✅ Sistema de Automação com Snippets e Variáveis Avançadas
 -   ✅ Ferramenta de Ajuste de Texto Quebrado (PDF)
 -   ✅ Reorganização Total das Abas com Arrastar e Soltar (Drag and Drop)
 -   ✅ Otimização de Busca com "Debounce"
@@ -97,9 +99,11 @@ A aplicação estará pronta para uso imediato.
 -   ✅ Paleta de Comandos Rápidos (Power Palette)
 
 ### Curto Prazo (Quick Wins & UX)
+-   [ ] **<!-- NOVO --> Expandir Temas para a Interface Completa:** Aplicar o tema selecionado (Claro/Escuro) também na sidebar e nos modais para uma experiência visual coesa.
 -   [ ] **Criar um modal de "Configurações":** Um local central para o usuário gerenciar preferências, como chaves de API para futuras integrações, sem precisar editar arquivos de código.
 
 ### Médio Prazo (Arquitetura e Funcionalidades)
+-   [ ] **<!-- NOVO --> Criador de Temas Personalizado:** Permitir que o usuário crie e salve seus próprios temas de editor (cor de fundo e texto) através de um modal de configuração.
 -   [ ] **<!-- MODIFICADO --> Expandir Variáveis e introduzir Condicionais:** Permitir que o usuário defina variáveis globais (ex: `{{meu_nome}}`) e introduzir lógica condicional nos modelos (ex: `{{#if:variavel}}...{{/if}}`).
 -   [ ] **Reintroduzir e expandir ferramentas de IA:** Adicionar novas ações inteligentes como "Resumir Texto", "Ajustar Tom" (formal, amigável), ou "Expandir Ideia" através de um menu de IA dedicado.
 -   [ ] **Refatorar `script.js`:** Desmembrar o arquivo principal em módulos menores e mais focados (ex: `TemplateProcessor.js`, `uiRenderer.js`, `eventHandlers.js`) para melhorar a manutenibilidade do código.
