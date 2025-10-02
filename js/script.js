@@ -132,6 +132,14 @@ function loadStateFromStorage() {
 
 // --- FUNÇÃO DE RENDERIZAÇÃO PRINCIPAL ---
 function render() {
+    const addNewFolderBtn = document.getElementById('add-new-folder-btn');
+    const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
+    
+    if (addNewFolderBtn && activeTab) {
+        addNewFolderBtn.style.backgroundColor = activeTab.color || '#17a2b8';
+        addNewFolderBtn.style.borderColor = activeTab.color ? 'rgba(0,0,0,0.2)' : '#138496';
+    }
+    
     SidebarManager.render(appState);
 }
 
@@ -336,6 +344,68 @@ function changeTabColor(tab, color) {
         const tabToUpdate = appState.tabs.find(t => t.id === tab.id);
         if(tabToUpdate) tabToUpdate.color = color;
     });
+}
+
+function renameFolder(folderId) {
+    const folder = appState.folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    const newName = prompt('Digite o novo nome para a pasta:', folder.name);
+
+    if (newName && newName.trim() && newName.trim() !== folder.name) {
+        modifyStateAndBackup(() => {
+            folder.name = newName.trim();
+        });
+        NotificationService.show('Pasta renomeada com sucesso!', 'success');
+    } else if (newName && newName.trim() === folder.name) {
+        // Não faz nada se o nome for o mesmo
+    } else if (newName !== null) {
+        NotificationService.show('O nome não pode ser vazio.', 'error');
+    }
+}
+
+function deleteFolder(folderId) {
+    const folder = appState.folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    const modelsInFolder = appState.models.filter(m => m.folderId === folderId);
+
+    if (modelsInFolder.length === 0) {
+        NotificationService.showConfirm({
+            message: `Tem certeza que deseja excluir a pasta vazia "${folder.name}"?`,
+            onConfirm: () => {
+                modifyStateAndBackup(() => {
+                    appState.folders = appState.folders.filter(f => f.id !== folderId);
+                });
+                NotificationService.show('Pasta excluída com sucesso!', 'success');
+            }
+        });
+    } else {
+        const choice = prompt(
+            `A pasta "${folder.name}" contém ${modelsInFolder.length} modelo(s).\n\nDigite '1' para MOVER os modelos para a raiz da aba.\nDigite '2' para EXCLUIR PERMANENTEMENTE a pasta e todos os seus modelos.`, '1'
+        );
+
+        if (choice === '1') {
+            modifyStateAndBackup(() => {
+                appState.models.forEach(m => { if (m.folderId === folderId) { m.folderId = null; } });
+                appState.folders = appState.folders.filter(f => f.id !== folderId);
+            });
+            NotificationService.show('Pasta excluída e modelos movidos!', 'success');
+        } else if (choice === '2') {
+             NotificationService.showConfirm({
+                message: `ATENÇÃO: Ação IRREVERSÍVEL. Confirma a exclusão da pasta "${folder.name}" E de todos os ${modelsInFolder.length} modelos dentro dela?`,
+                onConfirm: () => {
+                     modifyStateAndBackup(() => {
+                        appState.models = appState.models.filter(m => m.folderId !== folderId);
+                        appState.folders = appState.folders.filter(f => f.id !== folderId);
+                    });
+                    NotificationService.show('Pasta e modelos excluídos!', 'success');
+                }
+            });
+        } else if (choice) {
+            NotificationService.show('Ação cancelada.', 'info');
+        }
+    }
 }
 
 function addNewModelFromEditor() {
@@ -560,7 +630,9 @@ window.addEventListener('DOMContentLoaded', () => {
         onModelFavoriteToggle: toggleFavorite,
         onModelReorder: reorderModel,
         onModelDropOnTab: moveModelToTab,
-        onModelMoveToFolder: moveModelToFolder
+        onModelMoveToFolder: moveModelToFolder,
+        onFolderDelete: deleteFolder,
+        onFolderRename: renameFolder
     });
     
     render();
