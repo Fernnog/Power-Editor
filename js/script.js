@@ -57,13 +57,13 @@ function loadStateFromStorage() {
         const defaultTabId = `tab-${Date.now()}`;
         colorIndex = 0;
         appState = {
-            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false })),
+            models: defaultModels.map((m, i) => ({ id: `model-${Date.now() + i}`, name: m.name, content: m.content, tabId: defaultTabId, isFavorite: false, folderId: null })),
             tabs: [
                 { id: FAVORITES_TAB_ID, name: 'Favoritos', color: '#6c757d' },
                 { id: POWER_TAB_ID, name: 'Power ⚡', color: '#ce2a66' },
                 { id: defaultTabId, name: 'Geral', color: getNextColor() }
             ],
-            folders: [], // INICIALIZA A ESTRUTURA DE PASTAS
+            folders: [],
             activeTabId: defaultTabId,
             replacements: [],
             variableMemory: {},
@@ -102,7 +102,13 @@ function loadStateFromStorage() {
                     }
                 });
 
-                appState.folders = parsedState.folders || []; // GARANTE COMPATIBILIDADE
+                appState.folders = parsedState.folders || [];
+                // Garante que modelos antigos tenham a propriedade folderId
+                appState.models.forEach(m => {
+                    if (m.folderId === undefined) {
+                        m.folderId = null;
+                    }
+                });
                 appState.replacements = parsedState.replacements || [];
                 appState.variableMemory = parsedState.variableMemory || {};
                 appState.globalVariables = parsedState.globalVariables || [];
@@ -131,45 +137,29 @@ function render() {
 
 // --- LÓGICA DE PROCESSAMENTO DE MODELOS (SNIPPETS E VARIÁVEIS AVANÇADAS) ---
 
-/**
- * Função auxiliar para resolver snippets aninhados de forma recursiva.
- * @param {string} content - O conteúdo a ser processado.
- * @param {number} [recursionDepth=0] - Controle para evitar loops infinitos.
- * @returns {string} O conteúdo com todos os snippets substituídos.
- */
 function _resolveSnippets(content, recursionDepth = 0) {
-    if (recursionDepth > 10) { // Trava de segurança contra loops infinitos
-        console.error("Profundidade máxima de snippets aninhados atingida. Verifique se há referências circulares.");
-        NotificationService.show("Erro: Referência circular ou excesso de aninhamento nos snippets.", "error");
+    if (recursionDepth > 10) {
+        console.error("Profundidade máxima de snippets aninhados atingida.");
+        NotificationService.show("Erro: Referência circular nos snippets.", "error");
         return content;
     }
-
     const snippetRegex = /{{\s*snippet:([^}]+?)\s*}}/g;
     let requiresAnotherPass = false;
-    
     const resolvedContent = content.replace(snippetRegex, (match, modelName) => {
         const snippetModel = appState.models.find(m => m.name.toLowerCase() === modelName.trim().toLowerCase());
         if (snippetModel) {
-            requiresAnotherPass = true; // O snippet pode conter outros snippets
+            requiresAnotherPass = true;
             return snippetModel.content;
         } else {
             NotificationService.show(`Snippet "${modelName}" não encontrado.`, "error");
             return `[SNIPPET "${modelName}" NÃO ENCONTRADO]`;
         }
     });
-
-    // Se algum snippet foi substituído, faz outra passagem para resolver snippets aninhados
     return requiresAnotherPass ? _resolveSnippets(resolvedContent, recursionDepth + 1) : resolvedContent;
 }
 
-/**
- * Processa e substitui todas as variáveis de sistema em um bloco de texto.
- * @param {string} content O texto a ser processado.
- * @returns {string} O texto com as variáveis de sistema substituídas.
- */
 function _processSystemVariables(content) {
     const now = new Date();
-    
     const dataSimples = now.toLocaleDateString('pt-BR');
     const optionsExtenso = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const dataExtenso = now.toLocaleDateString('pt-BR', optionsExtenso);
@@ -179,22 +169,15 @@ function _processSystemVariables(content) {
     processedContent = processedContent.replace(/{{data_atual}}/gi, dataSimples);
     processedContent = processedContent.replace(/{{hora_atual}}/gi, horaSimples);
     processedContent = processedContent.replace(/{{data_por_extenso}}/gi, dataExtenso);
-    
     return processedContent;
 }
 
-/**
- * Função orquestradora para inserir o conteúdo de um modelo, processando
- * snippets, prompts, variáveis globais e variáveis de formulário em etapas.
- * @param {object} model - O objeto do modelo a ser inserido.
- */
 async function insertModelContent(model) {
     if (searchBox.value && appState.activeTabId !== model.tabId) {
         appState.activeTabId = model.tabId;
         searchBox.value = '';
         render();
     }
-
     let processedContent = _resolveSnippets(model.content);
 
     if (appState.globalVariables && appState.globalVariables.length > 0) {
@@ -215,17 +198,7 @@ async function insertModelContent(model) {
 
     const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...processedContent.matchAll(variableRegex)];
-    
-    const uniqueVariablesForModal = [...new Set(matches
-        .map(match => match[1])
-        .filter(v => 
-            !v.startsWith('snippet:') && 
-            !v.endsWith(':prompt') && 
-            v !== 'data_atual' && 
-            v !== 'hora_atual' &&
-            v !== 'data_por_extenso'
-        )
-    )];
+    const uniqueVariablesForModal = [...new Set(matches.map(match => match[1]).filter(v => !v.startsWith('snippet:') && !v.endsWith(':prompt') && v !== 'data_atual' && v !== 'hora_atual' && v !== 'data_por_extenso'))];
 
     if (uniqueVariablesForModal.length > 0) {
         ModalManager.show({
@@ -235,15 +208,12 @@ async function insertModelContent(model) {
             saveButtonText: 'Inserir Texto',
             onSave: (data) => {
                 let finalContent = processedContent;
-                
                 for (const key in data.values) {
                     const placeholder = new RegExp(`{{\\s*${key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(:choice\\(.*?\\))?\\s*}}`, 'g');
                     finalContent = finalContent.replace(placeholder, data.values[key] || '');
                 }
-                
                 finalContent = _processSystemVariables(finalContent);
-
-                if(tinymce.activeEditor) {
+                if (tinymce.activeEditor) {
                     tinymce.activeEditor.execCommand('mceInsertContent', false, finalContent);
                     tinymce.activeEditor.focus();
                 }
@@ -251,20 +221,17 @@ async function insertModelContent(model) {
         });
     } else {
         processedContent = _processSystemVariables(processedContent);
-    
-        if(tinymce.activeEditor) {
+        if (tinymce.activeEditor) {
             tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
             tinymce.activeEditor.focus();
         }
     }
 }
 
-
 // --- FUNÇÕES DE FILTRAGEM ---
 let debounceTimer;
 function debouncedFilter() { clearTimeout(debounceTimer); debounceTimer = setTimeout(render, 250); }
 
-// ======================= FUNÇÃO SUBSTITUÍDA =======================
 function filterModels() {
     const query = searchBox.value.toLowerCase().trim();
     const searchInCurrentTab = searchInTabCheckbox.checked;
@@ -273,28 +240,24 @@ function filterModels() {
     let sourceFolders;
 
     if (searchInCurrentTab || !query) {
-        // CORREÇÃO PRINCIPAL: Sempre filtrar pela aba ativa se não houver busca
         if (appState.activeTabId === FAVORITES_TAB_ID) {
             sourceModels = appState.models.filter(m => m.isFavorite);
-            sourceFolders = []; // Pastas não aparecem nos favoritos
+            sourceFolders = [];
         } else {
             sourceModels = appState.models.filter(m => m.tabId === appState.activeTabId);
             sourceFolders = (appState.folders || []).filter(f => f.tabId === appState.activeTabId);
         }
     } else {
-        // Busca global
         sourceModels = appState.models;
         sourceFolders = appState.folders || [];
     }
 
-    // Se não houver consulta de pesquisa, retorna todos os itens da fonte definida.
     if (!query) {
         const foldersWithType = sourceFolders.map(f => ({ ...f, type: 'folder' }));
         const modelsWithType = sourceModels.map(m => ({ ...m, type: 'model' }));
         return [...foldersWithType, ...modelsWithType].sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    // Se houver uma consulta de pesquisa, aplica a lógica de filtro.
     let matchedModels;
     if (query.includes(' ou ')) {
         const terms = query.split(' ou ').map(t => t.trim()).filter(Boolean);
@@ -314,17 +277,14 @@ function filterModels() {
         );
     }
 
-    // Inclui as pastas-pai dos modelos encontrados e pastas que correspondem à busca.
     const matchedFolderIds = new Set(matchedModels.map(m => m.folderId).filter(Boolean));
     const matchedFolders = sourceFolders.filter(f => matchedFolderIds.has(f.id) || f.name.toLowerCase().includes(query));
 
-    const foldersWithType = matchedFolders.map(f => ({ ...f, type: 'folder', isExpanded: true })); // Expande pastas na busca
+    const foldersWithType = matchedFolders.map(f => ({ ...f, type: 'folder', isExpanded: true }));
     const modelsWithType = matchedModels.map(m => ({ ...m, type: 'model' }));
 
     return [...foldersWithType, ...modelsWithType].sort((a, b) => a.name.localeCompare(b.name));
 }
-// =================================================================
-
 
 // --- MANIPULAÇÃO DE DADOS ---
 function addNewTab() { 
@@ -349,8 +309,7 @@ function deleteTab(tabId) {
             const choice = prompt(promptMessage);
             const choiceIndex = parseInt(choice, 10) - 1;
             if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) {
-                NotificationService.show("Seleção inválida. A exclusão foi cancelada.", "error");
-                return;
+                NotificationService.show("Seleção inválida. A exclusão foi cancelada.", "error"); return;
             }
             modifyStateAndBackup(() => {
                 const destinationTabId = destinationOptions[choiceIndex].id;
@@ -382,15 +341,13 @@ function changeTabColor(tab, color) {
 function addNewModelFromEditor() {
     const content = tinymce.activeEditor.getContent();
     if (!content) {
-        NotificationService.show('O editor está vazio. Escreva algo para salvar como modelo.', 'error');
-        return;
+        NotificationService.show('O editor está vazio. Escreva algo para salvar como modelo.', 'error'); return;
     }
     let targetTabId = appState.activeTabId;
     if (targetTabId === FAVORITES_TAB_ID || targetTabId === POWER_TAB_ID) {
         targetTabId = appState.tabs.find(t => t.id !== FAVORITES_TAB_ID && t.id !== POWER_TAB_ID)?.id;
         if (!targetTabId) {
-            NotificationService.show("Crie uma aba regular primeiro para poder adicionar modelos.", "error");
-            return;
+            NotificationService.show("Crie uma aba regular primeiro para poder adicionar modelos.", "error"); return;
         }
     }
     ModalManager.show({
@@ -399,11 +356,10 @@ function addNewModelFromEditor() {
         initialData: { name: '' },
         onSave: (data) => {
             if (!data.name) {
-                NotificationService.show('O nome do modelo não pode ser vazio.', 'error');
-                return;
+                NotificationService.show('O nome do modelo não pode ser vazio.', 'error'); return;
             }
             modifyStateAndBackup(() => {
-                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false };
+                const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false, folderId: null };
                 appState.models.push(newModel);
                 searchBox.value = '';
             });
@@ -420,8 +376,7 @@ function editModel(modelId) {
         initialData: { name: model.name, content: model.content },
         onSave: (data) => {
             if (!data.name) {
-                NotificationService.show('O nome do modelo não pode ser vazio.', 'error');
-                return;
+                NotificationService.show('O nome do modelo não pode ser vazio.', 'error'); return;
             }
             modifyStateAndBackup(() => {
                 model.name = data.name;
@@ -456,8 +411,7 @@ function moveModelToAnotherTab(modelId) {
     const model = appState.models.find(m => m.id === modelId);
     const destinationOptions = appState.tabs.filter(t => t.id !== FAVORITES_TAB_ID && t.id !== model.tabId);
     if (destinationOptions.length === 0) {
-        NotificationService.show("Não há outras abas para mover este modelo.", "info");
-        return;
+        NotificationService.show("Não há outras abas para mover este modelo.", "info"); return;
     }
     const promptMessage = `Para qual aba deseja mover "${model.name}"?\n` + destinationOptions.map((t, i) => `${i + 1}: ${t.name}`).join('\n');
     const choice = prompt(promptMessage);
@@ -487,15 +441,22 @@ function moveModelToTab(modelId, newTabId) {
     });
 }
 
+function moveModelToFolder(modelId, folderId) {
+    modifyStateAndBackup(() => {
+        const model = appState.models.find(m => m.id === modelId);
+        if (model) {
+            model.folderId = folderId;
+        }
+    });
+}
+
 function reorderModel(modelId, newIndex) {
     modifyStateAndBackup(() => {
         const modelsInCurrentTab = filterModels();
         const modelToMove = modelsInCurrentTab.find(m => m.id === modelId);
         if (!modelToMove) return;
-
         const globalIndex = appState.models.findIndex(m => m.id === modelId);
         appState.models.splice(globalIndex, 1);
-
         if (newIndex >= modelsInCurrentTab.length -1) {
             let lastModelOfTabId = null;
             for(let i = appState.models.length - 1; i >= 0; i--) {
@@ -518,7 +479,6 @@ function reorderModel(modelId, newIndex) {
     });
 }
 
-
 function exportModels() {
     const dataStr = JSON.stringify(appState, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -526,9 +486,7 @@ function exportModels() {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'modelos_backup.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
 
@@ -543,33 +501,23 @@ function handleImportFile(event) {
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (importedState.models && importedState.tabs && importedState.activeTabId) {
-                        
                         appState = importedState;
-                        
                         const filename = file.name;
                         const match = filename.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
                         let fileDate = null;
                         if (match) {
                             const [, year, month, day, hours, minutes] = match;
                             fileDate = new Date(year, parseInt(month, 10) - 1, day, hours, minutes);
-                            if (!isNaN(fileDate)) { 
-                                appState.lastBackupTimestamp = fileDate.toISOString(); 
-                            }
+                            if (!isNaN(fileDate)) { appState.lastBackupTimestamp = fileDate.toISOString(); }
                         }
-                        
                         saveStateToStorage();
                         render();
                         BackupManager.updateStatus(fileDate);
                         NotificationService.show('Modelos importados com sucesso!', 'success');
-
-                    } else {
-                        throw new Error('Formato de arquivo inválido.');
-                    }
+                    } else { throw new Error('Formato de arquivo inválido.'); }
                 } catch (error) {
                     NotificationService.show('Erro ao importar o arquivo. Verifique se é um JSON válido.', 'error');
-                } finally {
-                    importFileInput.value = '';
-                }
+                } finally { importFileInput.value = ''; }
             },
             onCancel: () => { importFileInput.value = ''; }
         });
@@ -611,7 +559,8 @@ window.addEventListener('DOMContentLoaded', () => {
         onModelMove: moveModelToAnotherTab,
         onModelFavoriteToggle: toggleFavorite,
         onModelReorder: reorderModel,
-        onModelDropOnTab: moveModelToTab
+        onModelDropOnTab: moveModelToTab,
+        onModelMoveToFolder: moveModelToFolder
     });
     
     render();
