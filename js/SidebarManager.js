@@ -156,13 +156,28 @@ const SidebarManager = (() => {
             li.className = 'folder-item';
             li.dataset.folderId = folder.id;
             const modelInFolderCount = itemsToRender.filter(m => m.type === 'model' && m.folderId === folder.id).length;
+        
+            // Aplicação da cor dinâmica com transparência
+            const parentTabForFolder = appState.tabs.find(t => t.id === folder.tabId);
+            if (parentTabForFolder && parentTabForFolder.color) {
+                const hex = parentTabForFolder.color.replace('#', '');
+                if (hex.length === 6) { // Garante que a cor é um hex válido
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    li.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 0.5)`; // 50% de transparência
+                    li.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                }
+            }
+        
             li.innerHTML = `<span class="folder-toggle">${folder.isExpanded ? '▼' : '▶'}</span><span class="folder-icon">${ICON_FOLDER}</span><span class="folder-name">${folder.name}</span><span class="folder-counter">(${modelInFolderCount})</span>`;
             
+            // Usa a nova função `modifyUIState` para não acionar o backup
             li.addEventListener('click', (e) => {
                  e.stopPropagation();
                  const folderInState = appState.folders.find(f => f.id === folder.id);
                  if (folderInState) {
-                     modifyStateAndBackup(() => {
+                     modifyUIState(() => {
                         folderInState.isExpanded = !folderInState.isExpanded;
                      });
                  }
@@ -262,9 +277,23 @@ const SidebarManager = (() => {
         renameBtn.title = 'Renomear esta aba';
         renameBtn.onclick = () => callbacks.onTabRename(activeTab);
 
+        const expandAllBtn = document.createElement('button');
+        expandAllBtn.className = 'tab-action-btn';
+        expandAllBtn.innerHTML = ICON_EXPAND_ALL;
+        expandAllBtn.title = 'Expandir todas as pastas';
+        expandAllBtn.onclick = () => callbacks.onToggleAllFolders(true);
+
+        const collapseAllBtn = document.createElement('button');
+        collapseAllBtn.className = 'tab-action-btn';
+        collapseAllBtn.innerHTML = ICON_COLLAPSE_ALL;
+        collapseAllBtn.title = 'Recolher todas as pastas';
+        collapseAllBtn.onclick = () => callbacks.onToggleAllFolders(false);
+
         tabActionsContainer.appendChild(deleteBtn);
         tabActionsContainer.appendChild(colorBtn);
         tabActionsContainer.appendChild(renameBtn);
+        tabActionsContainer.appendChild(expandAllBtn);
+        tabActionsContainer.appendChild(collapseAllBtn);
         tabActionsContainer.classList.add('visible');
     }
 
