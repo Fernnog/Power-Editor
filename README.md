@@ -42,8 +42,8 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
     -   **Variáveis de Escolha:** Evite erros de digitação criando variáveis que geram um menu de opções. Use `{{status:choice(Pendente|Aprovado|Recusado)}}` para que o sistema apresente um menu suspenso.
     -   **Variáveis de Preenchimento Rápido:** Use `{{nome:prompt}}` para que o sistema peça a informação através de uma pergunta direta.
     -   **Variáveis de Sistema Automáticas:** `{{data_atual}}`, `{{data_por_extenso}}`, `{{hora_atual}}`.
--   **Reorganização com Arrastar e Soltar (Drag and Drop):** Reordene abas, mova modelos entre abas, ou organize modelos dentro e fora de pastas, tudo com um simples arrastar e soltar.
--   **<!-- MODIFICADO --> Organização por Abas e Menus de Contexto:** Crie, renomeie, personalize com uma paleta de cores expandida e exclua abas. Ações rápidas para abas e pastas estão disponíveis através de um menu de contexto (clique com o botão direito). As abas especiais **Favoritos (⭐)** e **Power (⚡)** possuem ícones para uma interface mais limpa e agora exibem um contador de modelos.
+-   **<!-- MODIFICADO --> Reorganização com Arrastar e Soltar (Drag and Drop):** Reordene abas, mova modelos entre abas, ou organize modelos dentro e fora de pastas, tudo com um simples arrastar e soltar.
+-   **<!-- MODIFICADO --> Organização por Abas e Menus de Contexto:** Crie, renomeie, personalize com uma paleta de cores expandida e exclua abas. Ações rápidas para abas e pastas (incluindo expandir/recolher todas) estão disponíveis através de um menu de contexto (clique com o botão direito) e botões de ação. As abas especiais **Favoritos (⭐)** e **Power (⚡)** possuem ícones para uma interface mais limpa e agora exibem um contador de modelos.
 -   **Gerenciamento Completo de Modelos (CRUD):** Crie, edite, exclua e mova modelos entre abas de forma intuitiva.
 -   **Busca Rápida e Otimizada:** Filtre sua lista de modelos instantaneamente com suporte a operadores lógicos `E` e `OU` e a opção de buscar apenas na aba atual. A busca utiliza "debounce" para garantir a performance.
 -   **Card de Status de Backup:** Feedback visual imediato sobre a data e hora do último backup.
@@ -56,7 +56,7 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
 #### Persistência e Segurança de Dados
 -   **Salvamento Automático no Navegador:** Todo o seu trabalho, incluindo a ordem das abas, pastas, modelos, regras de substituição e preferência de tema, é salvo automaticamente no `LocalStorage`.
 -   **Backup e Restauração:** Exporte e importe todos os seus dados em um único arquivo `JSON`.
--   **Backup Automático por Inatividade:** Para segurança extra, a aplicação inicia o download de um arquivo de backup após um breve período de inatividade.
+-   **<!-- MODIFICADO --> Backup Automático Inteligente:** Para segurança extra, a aplicação inicia de forma inteligente o download de um arquivo de backup após um breve período de inatividade. Essa lógica foi otimizada para diferenciar alterações de dados (como salvar um modelo) de simples interações de interface (como expandir uma pasta), evitando downloads desnecessários e melhorando a experiência.
 
 ## 4. Como Executar
 
@@ -93,7 +93,7 @@ A aplicação estará pronta para uso imediato.
 -   ✅ Temas Visuais (Claro/Escuro/Amarelo) com Persistência
 -   ✅ Sistema de Automação com Snippets e Variáveis Avançadas
 -   ✅ Ferramenta de Ajuste de Texto Quebrado (PDF)
--   ✅ Reorganização Total das Abas com Arrastar e Soltar (Drag and Drop)
+-   ✅ **<!-- MODIFICADO --> Reorganização Flexível com Arrastar e Soltar (Abas, Modelos e Pastas)**
 -   ✅ Otimização de Busca com "Debounce"
 -   ✅ Sistema de Notificações "Toast"
 -   ✅ Paleta de Comandos Rápidos (Power Palette)
