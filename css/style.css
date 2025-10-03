@@ -229,7 +229,6 @@ body, html {
 
 /* --- ESTILOS PARA PASTAS E MODELOS ANINHADOS (NOVA FUNCIONALIDADE) --- */
 .folder-item {
-    background-color: #f0f2f5;
     border: 1px solid #dfe3e8;
     border-radius: 5px;
     padding: 8px 12px;
@@ -239,11 +238,11 @@ body, html {
     gap: 8px;
     cursor: pointer;
     font-weight: bold;
-    color: #495057;
-    transition: background-color 0.2s, outline 0.2s;
+    color: #374151;
+    transition: background-color 0.2s, outline 0.2s, filter 0.2s;
 }
 .folder-item:hover {
-    background-color: #e4e8ed;
+    filter: brightness(90%);
 }
 .folder-item .folder-toggle {
     font-size: 12px;
@@ -517,6 +516,7 @@ blockquote p {
 .tab-action-btn svg {
     width: 18px;
     height: 18px;
+    stroke-width: 2.2px;
 }
 
 /* Pop-up da paleta de cores */
