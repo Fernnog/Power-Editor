@@ -39,13 +39,29 @@ const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
 
-// --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA ---
-function modifyStateAndBackup(modificationFn) {
+// --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA (REATORADA) ---
+
+/**
+ * Para alterações de DADOS que são significativas e devem acionar um backup.
+ * Ex: Criar/editar/excluir modelos, abas, pastas.
+ */
+function modifyDataState(modificationFn) {
     modificationFn();
     saveStateToStorage();
     BackupManager.schedule(appState);
     render(); // Re-renderiza a UI após qualquer modificação
 }
+
+/**
+ * Para alterações de ESTADO DA UI que devem ser salvas, mas NÃO acionam backup.
+ * Ex: Expandir/recolher pastas.
+ */
+function modifyUIState(modificationFn) {
+    modificationFn();
+    saveStateToStorage();
+    render(); // Apenas salva e re-renderiza, sem acionar o BackupManager.
+}
+
 function getNextColor() { const color = TAB_COLORS[colorIndex % TAB_COLORS.length]; colorIndex++; return color; }
 
 // --- FUNÇÕES DE PERSISTÊNCIA ---
@@ -298,7 +314,7 @@ function filterModels() {
 function addNewTab() { 
     const name = prompt("Digite o nome da nova aba:"); 
     if (name && name.trim()) { 
-        modifyStateAndBackup(() => { 
+        modifyDataState(() => { 
             const newTab = { id: `tab-${Date.now()}`, name: name.trim(), color: getNextColor() }; 
             appState.tabs.push(newTab); 
             appState.activeTabId = newTab.id; 
@@ -319,7 +335,7 @@ function deleteTab(tabId) {
             if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= destinationOptions.length) {
                 NotificationService.show("Seleção inválida. A exclusão foi cancelada.", "error"); return;
             }
-            modifyStateAndBackup(() => {
+            modifyDataState(() => {
                 const destinationTabId = destinationOptions[choiceIndex].id;
                 appState.models.forEach(model => { if (model.tabId === tabId) model.tabId = destinationTabId; });
                 appState.tabs = appState.tabs.filter(t => t.id !== tabId);
@@ -332,7 +348,7 @@ function deleteTab(tabId) {
 function renameTab(tab) {
     const newName = prompt('Digite o novo nome para a aba:', tab.name);
     if (newName && newName.trim()) {
-        modifyStateAndBackup(() => {
+        modifyDataState(() => {
             const tabToUpdate = appState.tabs.find(t => t.id === tab.id);
             if(tabToUpdate) tabToUpdate.name = newName.trim();
         });
@@ -340,7 +356,7 @@ function renameTab(tab) {
 }
 
 function changeTabColor(tab, color) {
-    modifyStateAndBackup(() => {
+    modifyDataState(() => {
         const tabToUpdate = appState.tabs.find(t => t.id === tab.id);
         if(tabToUpdate) tabToUpdate.color = color;
     });
@@ -355,7 +371,7 @@ function addNewFolder() {
     const name = prompt("Digite o nome da nova pasta:");
 
     if (name && name.trim()) {
-        modifyStateAndBackup(() => {
+        modifyDataState(() => {
             const newFolder = {
                 id: `folder-${Date.now()}`,
                 name: name.trim(),
@@ -380,7 +396,7 @@ function renameFolder(folderId) {
     const newName = prompt('Digite o novo nome para a pasta:', folder.name);
 
     if (newName && newName.trim() && newName.trim() !== folder.name) {
-        modifyStateAndBackup(() => {
+        modifyDataState(() => {
             folder.name = newName.trim();
         });
         NotificationService.show('Pasta renomeada com sucesso!', 'success');
@@ -401,7 +417,7 @@ function deleteFolder(folderId) {
         NotificationService.showConfirm({
             message: `Tem certeza que deseja excluir a pasta vazia "${folder.name}"?`,
             onConfirm: () => {
-                modifyStateAndBackup(() => {
+                modifyDataState(() => {
                     appState.folders = appState.folders.filter(f => f.id !== folderId);
                 });
                 NotificationService.show('Pasta excluída com sucesso!', 'success');
@@ -413,7 +429,7 @@ function deleteFolder(folderId) {
         );
 
         if (choice === '1') {
-            modifyStateAndBackup(() => {
+            modifyDataState(() => {
                 appState.models.forEach(m => { if (m.folderId === folderId) { m.folderId = null; } });
                 appState.folders = appState.folders.filter(f => f.id !== folderId);
             });
@@ -422,7 +438,7 @@ function deleteFolder(folderId) {
              NotificationService.showConfirm({
                 message: `ATENÇÃO: Ação IRREVERSÍVEL. Confirma a exclusão da pasta "${folder.name}" E de todos os ${modelsInFolder.length} modelos dentro dela?`,
                 onConfirm: () => {
-                     modifyStateAndBackup(() => {
+                     modifyDataState(() => {
                         appState.models = appState.models.filter(m => m.folderId !== folderId);
                         appState.folders = appState.folders.filter(f => f.id !== folderId);
                     });
@@ -455,7 +471,7 @@ function addNewModelFromEditor() {
             if (!data.name) {
                 NotificationService.show('O nome do modelo não pode ser vazio.', 'error'); return;
             }
-            modifyStateAndBackup(() => {
+            modifyDataState(() => {
                 const newModel = { id: `model-${Date.now()}`, name: data.name, content: content, tabId: targetTabId, isFavorite: false, folderId: null };
                 appState.models.push(newModel);
                 searchBox.value = '';
@@ -475,7 +491,7 @@ function editModel(modelId) {
             if (!data.name) {
                 NotificationService.show('O nome do modelo não pode ser vazio.', 'error'); return;
             }
-            modifyStateAndBackup(() => {
+            modifyDataState(() => {
                 model.name = data.name;
                 model.content = data.content;
             });
@@ -489,7 +505,7 @@ function deleteModel(modelId) {
     NotificationService.showConfirm({
         message: `Tem certeza que deseja excluir o modelo "${model.name}"?`,
         onConfirm: () => {
-            modifyStateAndBackup(() => {
+            modifyDataState(() => {
                 appState.models = appState.models.filter(m => m.id !== modelId);
             });
             NotificationService.show('Modelo excluído com sucesso!', 'success');
@@ -498,7 +514,7 @@ function deleteModel(modelId) {
 }
 
 function toggleFavorite(modelId) { 
-    modifyStateAndBackup(() => {
+    modifyDataState(() => {
         const model = appState.models.find(m => m.id === modelId);
         if (model) model.isFavorite = !model.isFavorite;
     });
@@ -514,7 +530,7 @@ function moveModelToAnotherTab(modelId) {
     const choice = prompt(promptMessage);
     const choiceIndex = parseInt(choice, 10) - 1;
     if (!isNaN(choiceIndex) && choiceIndex >= 0 && choiceIndex < destinationOptions.length) {
-        modifyStateAndBackup(() => {
+        modifyDataState(() => {
             model.tabId = destinationOptions[choiceIndex].id;
         });
         NotificationService.show(`Modelo movido para a aba "${destinationOptions[choiceIndex].name}".`, 'success');
@@ -524,7 +540,7 @@ function moveModelToAnotherTab(modelId) {
 }
 
 function moveModelToTab(modelId, newTabId) {
-    modifyStateAndBackup(() => {
+    modifyDataState(() => {
         const model = appState.models.find(m => m.id === modelId);
         if (model) {
             if (newTabId === FAVORITES_TAB_ID) {
@@ -539,7 +555,7 @@ function moveModelToTab(modelId, newTabId) {
 }
 
 function moveModelToFolder(modelId, folderId) {
-    modifyStateAndBackup(() => {
+    modifyDataState(() => {
         const model = appState.models.find(m => m.id === modelId);
         if (model) {
             model.folderId = folderId;
@@ -548,7 +564,7 @@ function moveModelToFolder(modelId, folderId) {
 }
 
 function reorderModel(modelId, newIndex) {
-    modifyStateAndBackup(() => {
+    modifyDataState(() => {
         const modelsInCurrentTab = filterModels();
         const modelToMove = modelsInCurrentTab.find(m => m.id === modelId);
         if (!modelToMove) return;
@@ -622,6 +638,21 @@ function handleImportFile(event) {
     reader.readAsText(file);
 }
 
+// NOVA FUNÇÃO para expandir/recolher todas as pastas
+function toggleAllFolders(shouldExpand) {
+    modifyUIState(() => {
+        const foldersInCurrentTab = appState.folders.filter(f => f.tabId === appState.activeTabId);
+        if (foldersInCurrentTab.length > 0) {
+            foldersInCurrentTab.forEach(folder => {
+                folder.isExpanded = shouldExpand;
+            });
+        } else {
+            NotificationService.show("Não há pastas nesta aba.", "info");
+        }
+    });
+}
+
+
 // --- INICIALIZAÇÃO DA APLICAÇÃO ---
 window.addEventListener('DOMContentLoaded', () => { 
     const backupStatusEl = document.getElementById('backup-status-text');
@@ -643,7 +674,7 @@ window.addEventListener('DOMContentLoaded', () => {
         getPowerTabId: () => POWER_TAB_ID,
         getTabColors: () => TAB_COLORS,
         onTabChange: (tabId) => { appState.activeTabId = tabId; searchBox.value = ''; render(); },
-        onTabReorder: (oldIndex, newIndex) => modifyStateAndBackup(() => {
+        onTabReorder: (oldIndex, newIndex) => modifyDataState(() => {
             const movedItem = appState.tabs.splice(oldIndex, 1)[0];
             appState.tabs.splice(newIndex, 0, movedItem);
         }),
@@ -659,7 +690,8 @@ window.addEventListener('DOMContentLoaded', () => {
         onModelDropOnTab: moveModelToTab,
         onModelMoveToFolder: moveModelToFolder,
         onFolderDelete: deleteFolder,
-        onFolderRename: renameFolder
+        onFolderRename: renameFolder,
+        onToggleAllFolders: toggleAllFolders // Callback para a nova funcionalidade
     });
     
     render();
