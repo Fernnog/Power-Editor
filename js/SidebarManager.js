@@ -63,7 +63,7 @@ const SidebarManager = (() => {
                 tabEl.classList.add('tab-item-icon-only');
             } else if (tab.id === callbacks.getPowerTabId()) {
                 tabEl.innerHTML += ICON_LIGHTNING;
-                tabEl.title = tab.name;
+                tabEl.title = 'Power Palette (Ações Rápidas)';
                 tabEl.classList.add('tab-item-icon-only');
             } else {
                 const textNode = document.createTextNode(tab.name);
@@ -99,53 +99,82 @@ const SidebarManager = (() => {
     
         const renderModel = (model, isChild = false) => {
             const li = document.createElement('li');
-            li.className = 'model-item' + (isChild ? ' model-item-child' : '');
+            const isVar = isPowerVariable(model) || model.isSystemVariable;
+            
+            // Lógica de classes aprimorada para legibilidade
+            let liClasses = ['model-item'];
+            if (isChild) liClasses.push('model-item-child');
+            if (isVar) liClasses.push('model-item--power-variable');
+            if (model.isSystemVariable) liClasses.push('model-item--system-variable');
+            li.className = liClasses.join(' ');
+            
             li.dataset.modelId = model.id;
+    
+            // Se for uma variável, o clique no item inteiro insere o conteúdo.
+            if (isVar) {
+                li.addEventListener('click', () => callbacks.onModelInsert(model));
+                li.title = `Clique para inserir a variável "${model.name}"`;
+            }
     
             const headerDiv = document.createElement('div');
             headerDiv.className = 'model-header';
             const nameSpan = document.createElement('span');
             nameSpan.className = 'model-name';
-            nameSpan.title = `Clique para copiar o snippet: {{snippet:${model.name}}}`;
+            nameSpan.title = `Clique para copiar: ${model.content}`;
             nameSpan.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const snippetText = `{{snippet:${model.name}}}`;
-                navigator.clipboard.writeText(snippetText).then(() => {
-                    NotificationService.show(`Snippet "${model.name}" copiado!`, 'success', 2500);
+                e.stopPropagation(); // Impede que o clique para copiar também insira o modelo
+                navigator.clipboard.writeText(model.content).then(() => {
+                    NotificationService.show(`Conteúdo de "${model.name}" copiado!`, 'success', 2500);
                 });
             });
-            const colorIndicator = document.createElement('span');
-            colorIndicator.className = 'model-color-indicator';
-            const parentTab = appState.tabs.find(t => t.id === model.tabId);
-            colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
-            nameSpan.appendChild(colorIndicator);
-            if (model.content && model.content.includes('{{')) {
+
+            if (!model.isSystemVariable) {
+                const colorIndicator = document.createElement('span');
+                colorIndicator.className = 'model-color-indicator';
+                const parentTab = appState.tabs.find(t => t.id === model.tabId);
+                colorIndicator.style.backgroundColor = parentTab ? parentTab.color : '#ccc';
+                nameSpan.appendChild(colorIndicator);
+            }
+
+            if (model.content && model.content.includes('{{') && !model.isSystemVariable) {
                 const variableIndicator = document.createElement('span');
                 variableIndicator.className = 'model-variable-indicator';
                 variableIndicator.title = 'Este modelo contém variáveis dinâmicas';
-                variableIndicator.textContent = '🤖';
+                variableIndicator.textContent = '⚙️';
                 nameSpan.appendChild(variableIndicator);
             }
             const textNode = document.createTextNode(" " + model.name);
             nameSpan.appendChild(textNode);
             headerDiv.appendChild(nameSpan);
+
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'model-actions';
-            const actionButtons = [
-                { icon: ICON_PLUS, title: 'Inserir modelo', action: () => callbacks.onModelInsert(model) },
-                { icon: ICON_PENCIL, title: 'Editar modelo', action: () => callbacks.onModelEdit(model.id) },
-                { icon: ICON_MOVE, title: 'Mover para outra aba', action: () => callbacks.onModelMove(model.id) },
-                { icon: ICON_TRASH, title: 'Excluir modelo', action: () => callbacks.onModelDelete(model.id) },
-                { icon: model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE, title: model.isFavorite ? 'Desfavoritar' : 'Favoritar', action: () => callbacks.onModelFavoriteToggle(model.id) }
-            ];
-            actionButtons.forEach(btnInfo => {
-                const button = document.createElement('button');
-                button.className = 'action-btn';
-                button.innerHTML = btnInfo.icon;
-                button.title = btnInfo.title;
-                button.onclick = btnInfo.action;
-                actionsDiv.appendChild(button);
-            });
+            
+            // Só cria os botões de ação se NÃO for uma variável
+            if (!isVar) {
+                const insertButton = { icon: ICON_PLUS, title: 'Inserir', action: () => callbacks.onModelInsert(model) };
+                let actionButtons = [insertButton];
+    
+                actionButtons.push(
+                    { icon: ICON_PENCIL, title: 'Editar modelo', action: () => callbacks.onModelEdit(model.id) },
+                    { icon: ICON_MOVE, title: 'Mover para outra aba', action: () => callbacks.onModelMove(model.id) },
+                    { icon: ICON_TRASH, title: 'Excluir modelo', action: () => callbacks.onModelDelete(model.id) },
+                    { icon: model.isFavorite ? ICON_STAR_FILLED : ICON_STAR_OUTLINE, title: model.isFavorite ? 'Desfavoritar' : 'Favoritar', action: () => callbacks.onModelFavoriteToggle(model.id) }
+                );
+    
+                actionButtons.forEach(btnInfo => {
+                    const button = document.createElement('button');
+                    button.className = 'action-btn';
+                    button.innerHTML = btnInfo.icon;
+                    button.title = btnInfo.title;
+                    button.onclick = (e) => {
+                        e.stopPropagation(); // Impede que o clique no botão se propague
+                        btnInfo.action();
+                    };
+                    actionsDiv.appendChild(button);
+                });
+            }
+            
             li.appendChild(headerDiv);
             li.appendChild(actionsDiv);
             return li;

@@ -1,5 +1,44 @@
 // js/tinymce-config.js
 
+const CHANGELOG_DATA = {
+    currentVersion: '1.0.3',
+    history: [
+        {
+            version: '1.0.3',
+            title: '🛠️ Manutenção e Correções',
+            content: `
+                <ul>
+                    <li><strong>Correção Crítica:</strong> Corrigido um erro que impedia o salvamento de novas regras no "Gerenciador de Substituições". A funcionalidade agora está 100% operacional.</li>
+                    <li><strong>Consistência de Código:</strong> Alinhada a chamada de função de salvamento de estado com a refatoração mais recente da aplicação.</li>
+                </ul>
+            `
+        },
+        {
+            version: '1.0.2',
+            title: '🚀 Supercharge: Novas Variáveis de Sistema',
+            content: `
+                <ul>
+                    <li><strong>Novas Variáveis Automáticas:</strong> Adicionadas variáveis para <code>{{dia_da_semana}}</code>, <code>{{mes_por_extenso}}</code>, <code>{{ano_atual}}</code> e um <code>{{id_unico}}</code>.</li>
+                    <li><strong>Variáveis de Contexto Jurídico:</strong> Pré-configuradas ações rápidas para inserir Número do Processo, Nomes das Partes e Status da Decisão.</li>
+                    <li><strong>Posicionamento de Cursor:</strong> Introduzida a variável especial <code>{{cursor}}</code> para posicionar o cursor de digitação após inserir um modelo.</li>
+                    <li><strong>Refatoração:</strong> A lógica de exibição de variáveis de sistema na Aba Power agora é dinâmica, facilitando futuras expansões.</li>
+                </ul>
+            `
+        },
+        {
+            version: '1.0.1',
+            title: '✨ Lançamento Inicial e Qualidade de Vida',
+            content: `
+                <ul>
+                    <li><strong>Versão Inicial:</strong> Lançamento da plataforma base do Power Editor.</li>
+                    <li><strong>Controle de Versão:</strong> Adicionado o indicador de versão e o changelog clicável no rodapé do editor.</li>
+                    <li><strong>UX:</strong> Melhoria no tooltip do botão da Power Palette (FAB) para incluir o atalho de teclado (Ctrl + .).</li>
+                </ul>
+            `
+        }
+    ]
+};
+
 const TINYMCE_CONFIG = {
     selector: '#editor',
     
@@ -127,7 +166,7 @@ const TINYMCE_CONFIG = {
                     title: 'Gerenciador de Substituições',
                     initialData: { replacements: appState.replacements || [] },
                     onSave: (data) => {
-                        modifyStateAndBackup(() => {
+                        modifyDataState(() => {
                             appState.replacements = data.replacements;
                         });
                         NotificationService.show('Regras de substituição salvas!', 'success');
@@ -244,7 +283,8 @@ const TINYMCE_CONFIG = {
 
         // ADICIONADO: Listener para o atalho da Paleta de Comandos dentro do editor
         editor.on('keydown', function(event) {
-            if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'p') {
+            // CORREÇÃO DE ATALHO: Mudado de Ctrl+Alt+P para Ctrl+. para consistência
+            if (event.ctrlKey && event.key === '.') {
                 event.preventDefault();
                 event.stopPropagation();
                 if (typeof CommandPalette !== 'undefined' && CommandPalette.open) {
@@ -259,6 +299,38 @@ const TINYMCE_CONFIG = {
             if (savedTheme) {
                 applyTheme(savedTheme);
             }
+
+            // --- INÍCIO DA LÓGICA DO CHANGELOG ---
+            try {
+                const statusBar = editor.getContainer().querySelector('.tox-statusbar');
+                const brandingLink = statusBar.querySelector('.tox-statusbar__branding');
+                if (brandingLink) {
+                    const versionEl = document.createElement('a');
+                    versionEl.className = 'version-changelog-link';
+                    versionEl.textContent = `| Versão ${CHANGELOG_DATA.currentVersion}`;
+                    versionEl.title = 'Clique para ver o histórico de mudanças';
+
+                    versionEl.onclick = () => {
+                        ModalManager.show({
+                            type: 'info',
+                            title: 'Histórico de Versões',
+                            initialData: {
+                                title: `Novidades da Versão ${CHANGELOG_DATA.currentVersion}`,
+                                cards: CHANGELOG_DATA.history.map(item => ({
+                                    title: `Versão ${item.version} - ${item.title}`,
+                                    content: item.content
+                                }))
+                            }
+                        });
+                    };
+                    
+                    // Insere o novo elemento logo após o link de branding do TinyMCE
+                    brandingLink.parentNode.insertBefore(versionEl, brandingLink.nextSibling);
+                }
+            } catch (error) {
+                console.error("Não foi possível adicionar o link de changelog:", error);
+            }
+            // --- FIM DA LÓGICA DO CHANGELOG ---
         
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 

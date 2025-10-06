@@ -143,6 +143,16 @@ const CommandPalette = (() => {
                 li.textContent = model.name;
                 li.dataset.modelId = model.id;
                 li.setAttribute('role', 'option');
+
+                // Lógica de classes modificada para diferenciar variáveis de sistema
+                if (model.isSystemVariable) {
+                    li.classList.add('cp-result-item--system-variable');
+                    li.title = 'Variável de Sistema: ' + model.name;
+                } else if (isPowerVariable(model)) {
+                    li.classList.add('cp-result-item--power-variable');
+                    li.title = 'Inserir variável: ' + model.name;
+                }
+
                 if (index === selectedIndex) {
                     li.classList.add('selected');
                     li.setAttribute('aria-selected', 'true');
@@ -178,9 +188,9 @@ const CommandPalette = (() => {
      */
     function selectResult(model) {
         if (model) {
-            // CORREÇÃO: A função insertModelContent espera o objeto 'model' completo
-            // para processar snippets e variáveis corretamente. A chamada anterior
-            // passava apenas o conteúdo, causando o bug.
+            // A função insertModelContent já sabe como processar variáveis,
+            // então não precisamos de uma nova função. Ela vai lidar
+            // perfeitamente com um modelo que só tem uma variável.
             insertModelContent(model);
         }
         close();

@@ -153,11 +153,86 @@ const ModalManager = (() => {
             <textarea id="modal-input-broken-text" class="text-editor-modal" style="min-height: 200px;" placeholder="Seu texto com quebras de linha..."></textarea>
         `;
     }
+    
+    // --- NOVO: LÓGICA DO ASSISTENTE DE CRIAÇÃO DE POWER VARIABLES ---
+
+    /**
+     * Passo 1: Mostra a tela de seleção de tipo de Power Variable.
+     */
+    function _buildPowerVariableCreatorSelectionScreen() {
+        // Usa a constante global POWER_VARIABLE_BLUEPRINTS de script.js
+        let cardsHtml = POWER_VARIABLE_BLUEPRINTS.map(bp => `
+            <div class="pv-creator-card" data-type="${bp.type}" role="button" tabindex="0">
+                <span class="pv-creator-icon">${bp.icon}</span>
+                <div class="pv-creator-text">
+                    <strong>${bp.label}</strong>
+                    <p>${bp.description}</p>
+                </div>
+            </div>
+        `).join('');
+
+        modalDynamicContent.innerHTML = `
+            <p class="modal-description">Selecione o tipo de ação rápida que deseja criar:</p>
+            <div id="pv-creator-selection">${cardsHtml}</div>
+        `;
+        // O botão "Salvar" é desabilitado na tela de seleção
+        modalBtnSave.style.display = 'none';
+    }
+
+    /**
+     * Passo 2: Mostra o formulário de configuração para o tipo de Power Variable selecionado.
+     * @param {string} type - O tipo de blueprint (ex: 'prompt', 'choice').
+     */
+    function _renderPowerVariableConfigScreen(type) {
+        const blueprint = POWER_VARIABLE_BLUEPRINTS.find(b => b.type === type);
+        if (!blueprint) return;
+
+        // Armazena o tipo selecionado para uso na hora de salvar
+        modalDynamicContent.dataset.pvType = type;
+
+        let formFieldsHtml = `
+            <div class="pv-config-field">
+                <label for="pv-config-name">Nome da Ação:</label>
+                <input type="text" id="pv-config-name" required placeholder="Ex: Nome do Cliente">
+                <small>Este é o nome que você buscará na Paleta de Comandos.</small>
+            </div>
+        `;
+
+        if (type === 'choice') {
+            formFieldsHtml += `
+                <div class="pv-config-field">
+                    <label for="pv-config-options">Opções do Menu:</label>
+                    <textarea id="pv-config-options" required placeholder="Ex: Pendente, Aprovado, Recusado"></textarea>
+                    <small>Separe cada opção com uma vírgula.</small>
+                </div>
+            `;
+        }
+
+        modalDynamicContent.innerHTML = `
+            <p class="modal-description">Configurando a ação: <strong>${blueprint.label}</strong></p>
+            <form id="pv-config-form">${formFieldsHtml}</form>
+        `;
+        
+        // Habilita o botão "Salvar" e foca no primeiro campo
+        modalBtnSave.style.display = 'inline-block';
+        modalDynamicContent.querySelector('input[type="text"]')?.focus();
+    }
 
     /**
      * Adiciona listeners de eventos, incluindo a lógica para o acordeão de ajuda.
      */
     function _attachDynamicEventListeners() {
+        // Lógica para o novo assistente de Power Variables
+        if (currentConfig.type === 'powerVariableCreator') {
+            modalDynamicContent.addEventListener('click', (e) => {
+                const card = e.target.closest('.pv-creator-card');
+                if (card) {
+                    _renderPowerVariableConfigScreen(card.dataset.type);
+                }
+            });
+            return; // Encerra aqui para este tipo de modal
+        }
+
         // Lógica genérica para gerenciadores de lista (Substituições e Variáveis Globais)
         if (currentConfig.type === 'replacementManager' || currentConfig.type === 'globalVarManager') {
             const isReplacement = currentConfig.type === 'replacementManager';
@@ -283,6 +358,8 @@ const ModalManager = (() => {
         }
     }
     
+    // --- FUNÇÕES DE COLETA DE DADOS DO MODAL (ATUALIZADAS) ---
+    
     function _getReplacementData() {
         const replacements = [];
         modalDynamicContent.querySelectorAll('.replacement-row').forEach(row => {
@@ -328,6 +405,26 @@ const ModalManager = (() => {
             values: values
         };
     }
+    
+    /**
+     * NOVO: Coleta os dados do formulário de configuração da Power Variable.
+     */
+    function _getPowerVariableCreatorData() {
+        const type = modalDynamicContent.dataset.pvType;
+        if (!type) return null;
+
+        const name = modalDynamicContent.querySelector('#pv-config-name')?.value;
+        let options = null;
+
+        if (type === 'choice') {
+            const optionsText = modalDynamicContent.querySelector('#pv-config-options')?.value || '';
+            options = optionsText.split(',').map(opt => opt.trim()).filter(Boolean);
+        }
+
+        return { type, name, options };
+    }
+
+    // --- FUNÇÕES PÚBLICAS ---
 
     function show(config) {
         currentConfig = config;
@@ -360,6 +457,9 @@ const ModalManager = (() => {
                 break;
             case 'info':
                 _buildInfoContent(config.initialData);
+                break;
+            case 'powerVariableCreator': // NOVO CASO
+                _buildPowerVariableCreatorSelectionScreen(); // Inicia no passo 1
                 break;
             default:
                 console.error('Tipo de modal desconhecido:', config.type);
@@ -406,9 +506,14 @@ const ModalManager = (() => {
                     text: modalDynamicContent.querySelector('#modal-input-broken-text').value
                 };
                 break;
+            case 'powerVariableCreator': // NOVO CASO
+                dataToSave = _getPowerVariableCreatorData();
+                break;
         }
         
-        currentConfig.onSave(dataToSave);
+        if (dataToSave) { // Garante que só chame onSave se houver dados
+            currentConfig.onSave(dataToSave);
+        }
         hide();
     }
 
