@@ -1,3 +1,17 @@
+<p align="center">
+  <svg width="120" height="120" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#a12050;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#ce2a66;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" fill="#f0f0f0" stroke="#cccccc" stroke-width="0.5"/>
+    <path d="M14 2V8H20" fill="#e0e0e0" stroke="#cccccc" stroke-width="0.5"/>
+    <polygon points="13 11 9 16 12 16 11 20 15 15 12 15 13 11" fill="url(#grad1)"/>
+  </svg>
+</p>
+
 # Power Editor - Editor de Documentos de Alta Performance
 
 Este repositório contém o código-fonte do Power Editor, um editor de documentos web projetado para ser uma alternativa de alta performance a uma solução previamente implementada com Google Apps Script no Google Documentos.
@@ -43,7 +57,9 @@ A aplicação evoluiu para uma ferramenta de produtividade robusta, com as segui
     -   **Variáveis de Preenchimento Rápido:** Use `{{nome:prompt}}` para que o sistema peça a informação através de uma pergunta direta.
     -   **Variáveis de Sistema Automáticas:** `{{data_atual}}`, `{{data_por_extenso}}`, `{{hora_atual}}`.
 -   **<!-- MODIFICADO --> Reorganização com Arrastar e Soltar (Drag and Drop):** Reordene abas, mova modelos entre abas, ou organize modelos dentro e fora de pastas, tudo com um simples arrastar e soltar.
--   **<!-- MODIFICADO --> Organização por Abas e Menus de Contexto:** Crie, renomeie, personalize com uma paleta de cores expandida e exclua abas. Ações rápidas para abas e pastas (incluindo expandir/recolher todas) estão disponíveis através de um menu de contexto (clique com o botão direito) e botões de ação. As abas especiais **Favoritos (⭐)** e **Power (⚡)** possuem ícones para uma interface mais limpa e agora exibem um contador de modelos.
+-   **<!-- MODIFICADO --> Organização por Abas e Menus de Contexto:** Crie, renomeie, personalize com uma paleta de cores expandida e exclua abas. Ações rápidas para abas e pastas (incluindo expandir/recolher todas) estão disponíveis através de um menu de contexto (clique com o botão direito) e botões de ação.
+    *   **Diferenciação Visual Inteligente:** Para acelerar o fluxo de trabalho, as variáveis de sistema (`Data Atual`, `Hora Atual`, etc.) agora são exibidas como **"tags"** com estilo único e destacado, distinguindo-as claramente das variáveis criadas pelo usuário. Essa identificação imediata se aplica tanto na barra lateral quanto na Paleta de Comandos.
+    *   **Ícones e Contadores:** As abas especiais **Favoritos (⭐)** e **Power (⚡)** possuem ícones para uma interface mais limpa e agora exibem um contador de modelos.
 -   **Gerenciamento Completo de Modelos (CRUD):** Crie, edite, exclua e mova modelos entre abas de forma intuitiva.
 -   **Busca Rápida e Otimizada:** Filtre sua lista de modelos instantaneamente com suporte a operadores lógicos `E` e `OU` e a opção de buscar apenas na aba atual. A busca utiliza "debounce" para garantir a performance.
 -   **Card de Status de Backup:** Feedback visual imediato sobre a data e hora do último backup.
