@@ -1,5 +1,109 @@
 // js/script.js
 
+// --- NOVA BIBLIOTECA DE "BLUEPRINTS" PARA POWER VARIABLES ---
+const POWER_VARIABLE_BLUEPRINTS = [
+    {
+        type: 'prompt',
+        label: 'Caixa de Pergunta',
+        description: 'Pede ao usuário para digitar um texto livre.',
+        icon: '💬',
+        build: (name) => `{{${name.replace(/\s+/g, '_').toLowerCase()}:prompt}}`
+    },
+    {
+        type: 'choice',
+        label: 'Menu de Opções',
+        description: 'Apresenta uma lista de opções para o usuário escolher.',
+        icon: '✅',
+        build: (name, options) => `{{${name.replace(/\s+/g, '_').toLowerCase()}:choice(${options.join('|')})}}`
+    },
+    {
+        type: 'data_atual',
+        label: 'Data Atual (Simples)',
+        description: 'Insere a data de hoje no formato DD/MM/AAAA.',
+        icon: '📅',
+        build: (name) => `{{data_atual}}`
+    },
+    {
+        type: 'data_por_extenso',
+        label: 'Data por Extenso',
+        description: 'Insere a data completa (ex: sexta-feira, 2 de agosto de 2024).',
+        icon: '📜',
+        build: (name) => `{{data_por_extenso}}`
+    },
+    {
+        type: 'hora_atual',
+        label: 'Hora Atual',
+        description: 'Insere a hora e os minutos atuais.',
+        icon: '⏰',
+        build: (name) => `{{hora_atual}}`
+    },
+    // --- INÍCIO DAS NOVAS VARIÁVEIS (v1.0.2) ---
+    {
+        type: 'dia_da_semana',
+        label: 'Dia da Semana',
+        description: 'Insere o dia atual por extenso (ex: segunda-feira).',
+        icon: '🗓️',
+        build: (name) => `{{dia_da_semana}}`
+    },
+    {
+        type: 'mes_por_extenso',
+        label: 'Mês por Extenso',
+        description: 'Insere o mês atual por extenso (ex: julho).',
+        icon: '📜',
+        build: (name) => `{{mes_por_extenso}}`
+    },
+    {
+        type: 'ano_atual',
+        label: 'Ano Atual',
+        description: 'Insere o ano corrente com quatro dígitos.',
+        icon: '📅',
+        build: (name) => `{{ano_atual}}`
+    },
+    {
+        type: 'numero_processo',
+        label: 'Número do Processo',
+        description: 'Pede ao usuário para digitar o número do processo.',
+        icon: '⚖️',
+        build: (name) => `{{numero_processo:prompt}}`
+    },
+    {
+        type: 'nome_autor',
+        label: 'Nome da Parte (Autor)',
+        description: 'Pede ao usuário para digitar o nome do autor.',
+        icon: '👤',
+        build: (name) => `{{nome_autor:prompt}}`
+    },
+    {
+        type: 'nome_reu',
+        label: 'Nome da Parte (Réu)',
+        description: 'Pede ao usuário para digitar o nome do réu.',
+        icon: '👤',
+        build: (name) => `{{nome_reu:prompt}}`
+    },
+    {
+        type: 'status_decisao',
+        label: 'Status da Decisão',
+        description: 'Apresenta um menu de opções para o status.',
+        icon: '✅',
+        build: (name) => `{{status_decisao:choice(DEFIRO|INDEFIRO|DEFIRO PARCIALMENTE)}}`
+    },
+    {
+        type: 'id_unico',
+        label: 'ID Único',
+        description: 'Gera um código de referência único (timestamp).',
+        icon: '🆔',
+        build: (name) => `{{id_unico}}`
+    },
+    {
+        type: 'cursor',
+        label: 'Posição do Cursor',
+        description: 'Marca onde o cursor deve ficar após a inserção.',
+        icon: '✍️',
+        build: (name) => `{{cursor}}`
+    }
+    // --- FIM DAS NOVAS VARIÁVEIS (v1.0.2) ---
+];
+
 // --- DADOS E ESTADO DA APLICAÇÃO ---
 let appState = {};
 const FAVORITES_TAB_ID = 'favorites-tab-id';
@@ -38,6 +142,20 @@ const importFileInput = document.getElementById('import-file-input');
 const searchBtn = document.getElementById('search-btn');
 const clearSearchBtn = document.getElementById('clear-search-btn');
 const searchInTabCheckbox = document.getElementById('search-in-tab-checkbox');
+
+// --- FUNÇÃO AUXILIAR PARA DETECÇÃO DE POWER VARIABLES ---
+/**
+ * Verifica se o conteúdo de um modelo consiste em apenas uma única variável.
+ * @param {object} model - O objeto do modelo a ser verificado.
+ * @returns {boolean} - True se for uma Power Variable, false caso contrário.
+ */
+function isPowerVariable(model) {
+    if (!model || !model.content) return false;
+    // A Regex verifica se a string começa (^) e termina ($) com uma única variável {{...}},
+    // permitindo espaços em branco (\s*) antes e depois.
+    const POWER_VAR_REGEX = /^\s*{{\s*[^}]+?\s*}}\s*$/;
+    return POWER_VAR_REGEX.test(model.content);
+}
 
 // --- LÓGICA DE BACKUP E MODIFICAÇÃO DE ESTADO CENTRALIZADA (REATORADA) ---
 
@@ -189,10 +307,22 @@ function _processSystemVariables(content) {
     const dataExtenso = now.toLocaleDateString('pt-BR', optionsExtenso);
     const horaSimples = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+    // Novas variáveis (v1.0.2)
+    const diaSemana = now.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const mesExtenso = now.toLocaleDateString('pt-BR', { month: 'long' });
+    const ano = now.getFullYear();
+    const idUnico = `ID-${Date.now()}`;
+
     let processedContent = content;
     processedContent = processedContent.replace(/{{data_atual}}/gi, dataSimples);
     processedContent = processedContent.replace(/{{hora_atual}}/gi, horaSimples);
     processedContent = processedContent.replace(/{{data_por_extenso}}/gi, dataExtenso);
+    // Novas substituições (v1.0.2)
+    processedContent = processedContent.replace(/{{dia_da_semana}}/gi, diaSemana);
+    processedContent = processedContent.replace(/{{mes_por_extenso}}/gi, mesExtenso);
+    processedContent = processedContent.replace(/{{ano_atual}}/gi, ano);
+    processedContent = processedContent.replace(/{{id_unico}}/gi, idUnico);
+    
     return processedContent;
 }
 
@@ -222,7 +352,7 @@ async function insertModelContent(model) {
 
     const variableRegex = /{{\s*([^}]+?)\s*}}/g;
     const matches = [...processedContent.matchAll(variableRegex)];
-    const uniqueVariablesForModal = [...new Set(matches.map(match => match[1]).filter(v => !v.startsWith('snippet:') && !v.endsWith(':prompt') && v !== 'data_atual' && v !== 'hora_atual' && v !== 'data_por_extenso'))];
+    const uniqueVariablesForModal = [...new Set(matches.map(match => match[1]).filter(v => !v.startsWith('snippet:') && !v.endsWith(':prompt') && v !== 'data_atual' && v !== 'hora_atual' && v !== 'data_por_extenso' && v !== 'dia_da_semana' && v !== 'mes_por_extenso' && v !== 'ano_atual' && v !== 'id_unico' && v !== 'cursor'))];
 
     if (uniqueVariablesForModal.length > 0) {
         ModalManager.show({
@@ -246,7 +376,20 @@ async function insertModelContent(model) {
     } else {
         processedContent = _processSystemVariables(processedContent);
         if (tinymce.activeEditor) {
+            const hasCursor = processedContent.includes('{{cursor}}');
+            const cursorMarker = `<span id="cursor-marker" style="display:none;">\uFEFF</span>`;
+            processedContent = processedContent.replace(/{{cursor}}/g, hasCursor ? cursorMarker : '');
+
             tinymce.activeEditor.execCommand('mceInsertContent', false, processedContent);
+
+            if (hasCursor) {
+                const markerEl = tinymce.activeEditor.dom.get('cursor-marker');
+                if (markerEl) {
+                    tinymce.activeEditor.selection.select(markerEl);
+                    tinymce.activeEditor.selection.collapse(true);
+                    tinymce.activeEditor.dom.remove(markerEl);
+                }
+            }
             tinymce.activeEditor.focus();
         }
     }
@@ -267,6 +410,28 @@ function filterModels() {
         if (appState.activeTabId === FAVORITES_TAB_ID) {
             sourceModels = appState.models.filter(m => m.isFavorite);
             sourceFolders = [];
+        } else if (appState.activeTabId === POWER_TAB_ID) {
+            const userPowerModels = appState.models.filter(m => m.tabId === appState.activeTabId);
+            
+            // Lógica refatorada para buscar variáveis de sistema dinamicamente (v1.0.2)
+            const systemVariableTypes = [
+                'data_atual', 'data_por_extenso', 'hora_atual', 'dia_da_semana', 
+                'mes_por_extenso', 'ano_atual', 'id_unico', 'cursor'
+            ];
+            const systemVariables = POWER_VARIABLE_BLUEPRINTS
+                .filter(bp => systemVariableTypes.includes(bp.type))
+                .map(bp => ({
+                    id: `system-var-${bp.type}`,
+                    name: bp.label,
+                    content: bp.build(bp.label),
+                    isSystemVariable: true,
+                    tabId: POWER_TAB_ID,
+                    type: 'model'
+                }));
+
+            sourceModels = [...systemVariables, ...userPowerModels];
+            sourceFolders = (appState.folders || []).filter(f => f.tabId === appState.activeTabId);
+
         } else {
             sourceModels = appState.models.filter(m => m.tabId === appState.activeTabId);
             sourceFolders = (appState.folders || []).filter(f => f.tabId === appState.activeTabId);
@@ -451,6 +616,58 @@ function deleteFolder(folderId) {
     }
 }
 
+// --- NOVA LÓGICA DE CRIAÇÃO DE ITENS (CONTEXTUAL) ---
+
+/**
+ * Ponto de entrada para o botão "Adicionar". Decide qual fluxo de criação iniciar
+ * com base na aba ativa.
+ */
+function handleAddNewItem() {
+    if (appState.activeTabId === POWER_TAB_ID) {
+        // Se estamos na aba Power, abre o assistente de criação de Power Variables
+        openPowerVariableCreator();
+    } else {
+        // Se estamos em qualquer outra aba, usa o fluxo antigo de salvar do editor
+        addNewModelFromEditor();
+    }
+}
+
+/**
+ * Abre o modal do assistente de criação de Power Variables.
+ */
+function openPowerVariableCreator() {
+    ModalManager.show({
+        type: 'powerVariableCreator', // O novo tipo implementado no ModalManager
+        title: 'Criar Nova Ação Rápida',
+        onSave: (data) => { // A função onSave receberá os dados do formulário final
+            const blueprint = POWER_VARIABLE_BLUEPRINTS.find(b => b.type === data.type);
+            if (!blueprint || !data.name) {
+                NotificationService.show('O nome da ação é obrigatório.', 'error');
+                return;
+            }
+
+            // Usa a função 'build' do blueprint para gerar o conteúdo do modelo
+            const content = blueprint.build(data.name, data.options);
+            
+            modifyDataState(() => {
+                const newModel = { 
+                    id: `model-${Date.now()}`, 
+                    name: data.name.trim(), 
+                    content: content, 
+                    tabId: POWER_TAB_ID, 
+                    isFavorite: false, 
+                    folderId: null 
+                };
+                appState.models.push(newModel);
+            });
+            NotificationService.show(`Ação "${data.name.trim()}" criada com sucesso!`, 'success');
+        }
+    });
+}
+
+/**
+ * Lógica original para salvar o conteúdo do editor como um novo modelo.
+ */
 function addNewModelFromEditor() {
     const content = tinymce.activeEditor.getContent();
     if (!content) {
@@ -480,6 +697,7 @@ function addNewModelFromEditor() {
         }
     });
 }
+
 
 function editModel(modelId) {
     const model = appState.models.find(m => m.id === modelId);
@@ -660,6 +878,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     loadStateFromStorage(); 
 
+    // MELHORIA DE UX (PRIORIDADE 2): Adicionar tooltip descritivo ao FAB
+    const fab = document.getElementById('open-palette-fab');
+    if (fab) {
+        fab.title = 'Abrir Power Palette (Ctrl + .)';
+    }
+
     if (typeof TINYMCE_CONFIG !== 'undefined') {
         tinymce.init(TINYMCE_CONFIG);
     } else {
@@ -701,7 +925,8 @@ window.addEventListener('DOMContentLoaded', () => {
     searchBox.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); render(); } });
     addNewTabBtn.addEventListener('click', addNewTab);
     addNewFolderBtn.addEventListener('click', addNewFolder);
-    addNewModelBtn.addEventListener('click', addNewModelFromEditor);
+    // MODIFICADO: O botão "Adicionar" agora usa o handler contextual
+    addNewModelBtn.addEventListener('click', handleAddNewItem);
     searchBtn.addEventListener('click', render);
     clearSearchBtn.addEventListener('click', () => { searchBox.value = ''; render(); });
     exportBtn.addEventListener('click', exportModels);
