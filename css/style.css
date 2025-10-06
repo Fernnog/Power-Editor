@@ -673,7 +673,7 @@ blockquote p {
     color: #333;
 }
 
-.variable-row input {
+.variable-row input, .variable-row select {
     width: 100%;
     padding: 10px;
     box-sizing: border-box;
@@ -1130,7 +1130,6 @@ blockquote p {
     color: #c82333;
 }
 
-/* Adicionar estas novas regras ao final do arquivo style.css */
 .model-item .model-name {
     cursor: copy; /* Muda o cursor para indicar uma ação de cópia */
     transition: color 0.2s ease-in-out;
@@ -1142,4 +1141,86 @@ blockquote p {
 .model-item .model-name:hover {
     color: var(--primary-color);
     background-color: rgba(206, 42, 102, 0.1);
+}
+
+/* --- ESTILOS REVISADOS PARA POWER VARIABLES --- */
+
+/* Estilo base para variáveis de USUÁRIO (fundo rosa claro) */
+.model-item.model-item--power-variable {
+    background-color: rgba(206, 42, 102, 0.08);
+    border: 1px solid rgba(206, 42, 102, 0.3);
+    border-radius: 20px;
+    color: #a12050;
+    /* Oculta os botões de ação para TODAS as variáveis */
+    .model-actions {
+        display: none;
+    }
+    .model-header {
+        margin-bottom: 0;
+    }
+}
+.model-item.model-item--power-variable:hover {
+    background-color: rgba(206, 42, 102, 0.15);
+    border-color: rgba(206, 42, 102, 0.5);
+}
+
+/* NOVO: Estilo de "Tag" para VARIÁVEIS DE SISTEMA na Sidebar (Sobrescreve o estilo base) */
+.model-item.model-item--system-variable {
+    background-color: var(--primary-color); /* Fundo fúcsia forte */
+    border-color: var(--primary-color-dark);
+    color: white;
+    font-weight: bold;
+}
+.model-item.model-item--system-variable:hover {
+    background-color: var(--primary-color-dark);
+}
+.model-item.model-item--system-variable .model-name:hover {
+    background-color: transparent; /* Remove o hover do nome dentro da tag */
+}
+
+/* Estilo para variáveis de USUÁRIO na Paleta de Comandos */
+.cp-result-item.cp-result-item--power-variable {
+    font-style: italic;
+    color: #a12050;
+}
+.cp-result-item.cp-result-item--power-variable::before {
+    content: '⚙️';
+    margin-right: 10px;
+}
+.cp-result-item.cp-result-item--power-variable.selected {
+    color: white;
+}
+
+/* NOVO: Estilo de "Tag" para VARIÁVEIS DE SISTEMA na Paleta de Comandos */
+.cp-result-item.cp-result-item--system-variable {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    font-style: normal;
+    border-radius: 4px;
+    margin: 2px 8px; /* Adiciona espaçamento vertical e horizontal */
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.cp-result-item.cp-result-item--system-variable.selected {
+    background-color: var(--primary-color-dark);
+}
+/* Remove o ícone de engrenagem APENAS das variáveis de sistema na paleta */
+.cp-result-item.cp-result-item--system-variable::before {
+    content: none;
+}
+
+/* --- ESTILOS PARA O CONTROLE DE VERSÃO NO STATUSBAR --- */
+.version-changelog-link {
+    margin-left: 10px;
+    color: #555;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.version-changelog-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
 }
