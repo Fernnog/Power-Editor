@@ -15,6 +15,16 @@ const CHANGELOG_DATA = {
                 </ul>
             `
         },
+         {
+            version: '1.0.3',
+            title: '🛠️ Manutenção e Correções',
+            content: `
+                <ul>
+                    <li><strong>Correção Crítica:</strong> Corrigido um erro que impedia o salvamento de novas regras no "Gerenciador de Substituições". A funcionalidade agora está 100% operacional.</li>
+                    <li><strong>Consistência de Código:</strong> Alinhada a chamada de função de salvamento de estado com a refatoração mais recente da aplicação.</li>
+                </ul>
+            `
+        },
         {
             version: '1.0.2',
             title: '🚀 Supercharge: Novas Variáveis de Sistema',
