@@ -1224,3 +1224,12 @@ blockquote p {
     color: var(--primary-color);
     text-decoration: underline;
 }
+
+/* --- NOVO: Feedback Visual para Drag & Drop no Editor (Prioridade 2) --- */
+.editor-wrapper.drag-over {
+    transition: all 0.2s ease-in-out;
+    outline: 3px dashed var(--primary-color);
+    outline-offset: -8px; /* Deslocamento para dentro */
+    background-color: rgba(206, 42, 102, 0.05); /* Fundo sutil */
+    box-shadow: inset 0 0 25px rgba(206, 42, 102, 0.1); /* Sombra interna */
+}
