@@ -344,54 +344,40 @@ const TINYMCE_CONFIG = {
                 const closeBtn = document.getElementById('dictation-close-btn');
                 if (closeBtn) closeBtn.addEventListener('click', () => { SpeechDictation.stop(); });
             }
-
-            // --- INÍCIO DA NOVA LÓGICA DE DRAG & DROP ---
-            const editorBody = editor.getBody();
-            const editorContainer = editor.getContainer();
-
-            // Adiciona feedback visual quando um item arrastável entra na área do editor
-            editorContainer.addEventListener('dragenter', (event) => {
-                if (Array.from(event.dataTransfer.types).includes('text/plain')) {
-                    editorContainer.classList.add('editor-drag-over');
-                }
-            });
-
-            // Remove o feedback visual quando o item sai
-            editorContainer.addEventListener('dragleave', (event) => {
-                if (!editorContainer.contains(event.relatedTarget)) {
-                   editorContainer.classList.remove('editor-drag-over');
-                }
-            });
-
-            // Permite que o editor seja uma zona de "drop"
-            editorBody.addEventListener('dragover', (event) => {
-                event.preventDefault();
-            });
-
-            // Lida com o evento de "soltar" o item no editor
-            editorBody.addEventListener('drop', (event) => {
-                event.preventDefault();
-                editorContainer.classList.remove('editor-drag-over'); // Limpa o feedback visual
-
-                const modelId = event.dataTransfer.getData('text/plain');
-                if (!modelId || !modelId.startsWith('system-var-')) {
-                    return; // Ignora se não for uma variável de sistema
-                }
-
-                const type = modelId.replace('system-var-', '');
-                const blueprint = POWER_VARIABLE_BLUEPRINTS.find(bp => bp.type === type);
-                
-                if (blueprint && typeof _processSystemVariables === 'function') {
-                    // Simula a criação de um modelo para usar a função de processamento
-                    const tempModel = { content: blueprint.build(blueprint.label) };
-                    const processedContent = _processSystemVariables(tempModel.content);
-                    editor.execCommand('mceInsertContent', false, processedContent);
-                } else {
-                    console.error('Blueprint ou função _processSystemVariables não encontrada.');
-                }
-            });
-            // --- FIM DA NOVA LÓGICA DE DRAG & DROP ---
         });
+
+        // ============================ INÍCIO DA CORREÇÃO DE DRAG & DROP ============================
+        // Adiciona um manipulador de eventos 'drop' usando a API oficial do TinyMCE.
+        // Isso garante que a nossa lógica seja executada corretamente dentro do contexto do editor.
+        editor.on('drop', function(event) {
+            // Previne o comportamento padrão do editor/navegador (que seria inserir o texto do dataTransfer).
+            event.preventDefault();
+
+            // Pega o ID da variável que foi armazenado durante o evento 'dragstart' em SidebarManager.js
+            const modelId = event.dataTransfer.getData('text/plain');
+            
+            // Só executa nossa lógica personalizada se o item arrastado for uma variável de sistema.
+            if (!modelId || !modelId.startsWith('system-var-')) {
+                // Se não for, não fazemos nada e deixamos o TinyMCE lidar com o drop (ex: arrastar uma imagem).
+                return;
+            }
+
+            // Extrai o tipo da variável do ID (ex: 'data_atual' de 'system-var-data_atual').
+            const type = modelId.replace('system-var-', '');
+            const blueprint = POWER_VARIABLE_BLUEPRINTS.find(bp => bp.type === type);
+            
+            if (blueprint) {
+                // Cria um modelo temporário com o código da variável (ex: {{data_atual}}).
+                const tempModel = { content: blueprint.build(blueprint.label) };
+                
+                // Usa a função global _processSystemVariables (de script.js) para converter o código no valor final.
+                const processedContent = _processSystemVariables(tempModel.content);
+                
+                // Insere o conteúdo JÁ PROCESSADO na posição do cursor no editor.
+                editor.execCommand('mceInsertContent', false, processedContent);
+            }
+        });
+        // ============================ FIM DA CORREÇÃO DE DRAG & DROP ============================
         
         // --- LÓGICA DE DETECÇÃO AUTOMÁTICA DE MARKDOWN (CORRIGIDA) ---
         editor.on('paste_preprocess', function (plugin, args) {
