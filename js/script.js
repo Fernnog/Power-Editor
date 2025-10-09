@@ -616,7 +616,7 @@ function deleteFolder(folderId) {
     }
 }
 
-// --- NOVA LÓGICA DE CRIAÇÃO DE ITENS (CONTEXTUAL) ---
+// --- LÓGICA DE CRIAÇÃO DE ITENS (CONTEXTUAL) MODIFICADA ---
 
 /**
  * Ponto de entrada para o botão "Adicionar". Decide qual fluxo de criação iniciar
@@ -624,8 +624,8 @@ function deleteFolder(folderId) {
  */
 function handleAddNewItem() {
     if (appState.activeTabId === POWER_TAB_ID) {
-        // Se estamos na aba Power, abre o assistente de criação de Power Variables
-        openPowerVariableCreator();
+        // Se estamos na aba Power, inicia o fluxo de criação de um novo modelo RÁPIDO.
+        addNewModelToPowerTab();
     } else {
         // Se estamos em qualquer outra aba, usa o fluxo antigo de salvar do editor
         addNewModelFromEditor();
@@ -633,34 +633,29 @@ function handleAddNewItem() {
 }
 
 /**
- * Abre o modal do assistente de criação de Power Variables.
+ * NOVA FUNÇÃO: Abre o modal para criar um novo modelo especificamente na aba Power.
  */
-function openPowerVariableCreator() {
+function addNewModelToPowerTab() {
     ModalManager.show({
-        type: 'powerVariableCreator', // O novo tipo implementado no ModalManager
-        title: 'Criar Nova Ação Rápida',
-        onSave: (data) => { // A função onSave receberá os dados do formulário final
-            const blueprint = POWER_VARIABLE_BLUEPRINTS.find(b => b.type === data.type);
-            if (!blueprint || !data.name) {
-                NotificationService.show('O nome da ação é obrigatório.', 'error');
-                return;
+        type: 'modelEditor',
+        title: 'Criar Novo Modelo Rápido',
+        initialData: { name: '', content: '' }, // Inicia com o conteúdo vazio
+        onSave: (data) => {
+            if (!data.name) {
+                NotificationService.show('O nome do modelo não pode ser vazio.', 'error'); return;
             }
-
-            // Usa a função 'build' do blueprint para gerar o conteúdo do modelo
-            const content = blueprint.build(data.name, data.options);
-            
             modifyDataState(() => {
                 const newModel = { 
                     id: `model-${Date.now()}`, 
-                    name: data.name.trim(), 
-                    content: content, 
-                    tabId: POWER_TAB_ID, 
+                    name: data.name, 
+                    content: data.content, 
+                    tabId: POWER_TAB_ID, // Salva diretamente na aba Power
                     isFavorite: false, 
                     folderId: null 
                 };
                 appState.models.push(newModel);
             });
-            NotificationService.show(`Ação "${data.name.trim()}" criada com sucesso!`, 'success');
+            NotificationService.show('Novo modelo rápido salvo com sucesso!', 'success');
         }
     });
 }
