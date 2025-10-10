@@ -1,8 +1,18 @@
 // js/tinymce-config.js
 
 const CHANGELOG_DATA = {
-    currentVersion: '1.0.4',
+    currentVersion: '1.0.5',
     history: [
+        {
+            version: '1.0.5',
+            title: '🚀 Aprimoramento de Variáveis de Sistema',
+            content: `
+                <ul>
+                    <li><strong>Clique para Copiar:</strong> Clicar em uma variável de sistema (ex: "Data Atual") na aba Power ⚡️ agora copia seu código (<code>{{data_atual}}</code>) para a área de transferência.</li>
+                    <li><strong>Arrastar e Soltar Inteligente:</strong> Arrastar uma variável de sistema para o editor agora insere seu valor final processado (ex: "10/10/2025") em vez do código, agilizando a criação de documentos.</li>
+                </ul>
+            `
+        },
         {
             version: '1.0.4',
             title: '⚡️ Power Tab Overhaul & UX Polish',
@@ -347,19 +357,20 @@ const TINYMCE_CONFIG = {
             }
         });
 
-        // ============================ INÍCIO DA CORREÇÃO DE DRAG & DROP ============================
-        // Adiciona um manipulador de eventos 'drop' usando a API oficial do TinyMCE.
-        // Isso garante que a nossa lógica seja executada corretamente dentro do contexto do editor.
+        // ============================ INÍCIO DA LÓGICA DE DRAG & DROP ============================
+        // Adiciona um manipulador de eventos 'drop' para capturar o momento em que o usuário
+        // solta uma variável de sistema dentro do editor.
         editor.on('drop', function(event) {
-            // Previne o comportamento padrão do editor/navegador (que seria inserir o texto do dataTransfer).
+            // Previne o comportamento padrão do editor/navegador para que possamos
+            // implementar nossa própria lógica customizada.
             event.preventDefault();
 
             // Pega o ID da variável que foi armazenado durante o evento 'dragstart' em SidebarManager.js
             const modelId = event.dataTransfer.getData('text/plain');
             
-            // Só executa nossa lógica personalizada se o item arrastado for uma variável de sistema.
+            // Verifica se o item arrastado é de fato uma variável de sistema.
+            // Se não for, interrompemos a função para não interferir com outros comportamentos (ex: arrastar uma imagem).
             if (!modelId || !modelId.startsWith('system-var-')) {
-                // Se não for, não fazemos nada e deixamos o TinyMCE lidar com o drop (ex: arrastar uma imagem).
                 return;
             }
 
@@ -368,17 +379,17 @@ const TINYMCE_CONFIG = {
             const blueprint = POWER_VARIABLE_BLUEPRINTS.find(bp => bp.type === type);
             
             if (blueprint) {
-                // Cria um modelo temporário com o código da variável (ex: {{data_atual}}).
+                // Cria um modelo temporário contendo apenas o código da variável (ex: {{data_atual}}).
                 const tempModel = { content: blueprint.build(blueprint.label) };
                 
-                // Usa a função global _processSystemVariables (de script.js) para converter o código no valor final.
+                // Usa a função global _processSystemVariables (de script.js) para converter o código no seu valor final.
                 const processedContent = _processSystemVariables(tempModel.content);
                 
                 // Insere o conteúdo JÁ PROCESSADO na posição do cursor no editor.
                 editor.execCommand('mceInsertContent', false, processedContent);
             }
         });
-        // ============================ FIM DA CORREÇÃO DE DRAG & DROP ============================
+        // ============================ FIM DA LÓGICA DE DRAG & DROP ============================
         
         // --- LÓGICA DE DETECÇÃO AUTOMÁTICA DE MARKDOWN (CORRIGIDA) ---
         editor.on('paste_preprocess', function (plugin, args) {
