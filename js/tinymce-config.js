@@ -1,8 +1,41 @@
 // js/tinymce-config.js
 
 const CHANGELOG_DATA = {
-    currentVersion: '1.0.5',
+    currentVersion: '1.0.7',
     history: [
+        {
+            version: '1.0.7',
+            title: '✨ Polimento de Interface e Qualidade de Vida',
+            content: `
+                <ul>
+                    <li><strong>Ícone de Variável Refinado:</strong> O ícone de raio (⚡️) na barra lateral foi ajustado em tamanho e cor (agora fúcsia), garantindo maior consistência visual com os outros elementos da interface.</li>
+                    <li><strong>Centralização Inteligente de Modais:</strong> As janelas de diálogo (como "Salvar Modelo") agora aparecem centralizadas sobre a área de edição de texto, e não mais no centro da tela inteira. Isso mantém o foco do usuário onde a ação está ocorrendo.</li>
+                    <li><strong>Guia de Funcionalidades Aprimorado:</strong> A janela de ajuda foi otimizada para melhor usabilidade:
+                        <ul>
+                            <li>Adicionada uma <strong>barra de rolagem</strong> para garantir que todo o conteúdo seja acessível, mesmo em telas menores.</li>
+                            <li>Implementado um botão <strong>"Copiar Exemplo"</strong> em cada seção, permitindo que você utilize os códigos de sintaxe avançada de forma rápida e sem erros.</li>
+                        </ul>
+                    </li>
+                </ul>
+            `
+        },
+        {
+    version: '1.0.6',
+    title: '🚀 Modelos Inteligentes: Lógica Condicional e Agilidade na Criação',
+    content: `
+        <ul>
+            <li><strong>Lógica Condicional ("Se...Então..."):</strong> Crie modelos que se adaptam a diferentes cenários. Use a nova sintaxe <code>{{#if:variavel=valor}}...{{/if}}</code> para lidar com variações como singular/plural ou masculino/feminino em um único modelo, eliminando redundância.</li>
+            <li><strong>Criação de Modelos Acelerada:</strong> Ao clicar em "Adicionar", o conteúdo do editor principal é automaticamente transferido para a janela de criação de modelo, economizando tempo e cliques.</li>
+            <li><strong>Feedback Visual Aprimorado:</strong>
+                <ul>
+                    <li><strong>Ícone de Raio (⚡️):</strong> Modelos com variáveis agora são facilmente identificáveis na barra lateral por um novo ícone, substituindo a antiga engrenagem.</li>
+                    <li><strong>Realce de Sintaxe:</strong> Dentro do editor de modelos, a sintaxe <code>{{...}}</code> é destacada com um fundo fúcsia pulsante, confirmando seu reconhecimento pelo sistema.</li>
+                </ul>
+            </li>
+            <li><strong>Documentação Atualizada:</strong> O guia de ajuda (ícone 'i') foi atualizado com instruções detalhadas e exemplos da nova e poderosa funcionalidade de lógica condicional.</li>
+        </ul>
+    `
+},
         {
             version: '1.0.5',
             title: '🚀 Aprimoramento de Variáveis de Sistema',
@@ -22,28 +55,6 @@ const CHANGELOG_DATA = {
                     <li><strong>Fluxo de Criação Simplificado:</strong> O botão "Adicionar" na aba Power agora funciona de forma intuitiva. Ele abre a janela padrão para criar um <strong>novo modelo rápido</strong>, em vez do antigo pop-up confuso.</li>
                     <li><strong>Clique para Copiar:</strong> Clicar em uma variável de sistema (as tags fúcsia) agora copia seu código (ex: <code>{{hora_atual}}</code>) diretamente para a área de transferência, facilitando a construção de modelos complexos.</li>
                     <li><strong>Consistência Visual:</strong> As variáveis de sistema são apresentadas como "tags" sem botões de ação, reforçando que são elementos nativos e não editáveis, distinguindo-as claramente dos seus modelos personalizados.</li>
-                </ul>
-            `
-        },
-         {
-            version: '1.0.3',
-            title: '🛠️ Manutenção e Correções',
-            content: `
-                <ul>
-                    <li><strong>Correção Crítica:</strong> Corrigido um erro que impedia o salvamento de novas regras no "Gerenciador de Substituições". A funcionalidade agora está 100% operacional.</li>
-                    <li><strong>Consistência de Código:</strong> Alinhada a chamada de função de salvamento de estado com a refatoração mais recente da aplicação.</li>
-                </ul>
-            `
-        },
-        {
-            version: '1.0.2',
-            title: '🚀 Supercharge: Novas Variáveis de Sistema',
-            content: `
-                <ul>
-                    <li><strong>Novas Variáveis Automáticas:</strong> Adicionadas variáveis para <code>{{dia_da_semana}}</code>, <code>{{mes_por_extenso}}</code>, <code>{{ano_atual}}</code> e um <code>{{id_unico}}</code>.</li>
-                    <li><strong>Variáveis de Contexto Jurídico:</strong> Pré-configuradas ações rápidas para inserir Número do Processo, Nomes das Partes e Status da Decisão.</li>
-                    <li><strong>Posicionamento de Cursor:</strong> Introduzida a variável especial <code>{{cursor}}</code> para posicionar o cursor de digitação após inserir um modelo.</li>
-                    <li><strong>Refatoração:</strong> A lógica de exibição de variáveis de sistema na Aba Power agora é dinâmica, facilitando futuras expansões.</li>
                 </ul>
             `
         }

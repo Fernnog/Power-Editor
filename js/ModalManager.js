@@ -132,6 +132,7 @@ const ModalManager = (() => {
                 </button>
                 <div id="accordion-content-${index}" class="accordion-content" role="region">
                     ${card.content}
+                    <button class="copy-code-btn">Copiar Exemplo</button>
                 </div>
             </div>
         `).join('');
@@ -309,6 +310,29 @@ const ModalManager = (() => {
                                 `
                             },
                             {
+                                title: '📝 Modelos Condicionais (Lógica "Se...Então...")',
+                                content: `
+                                    <p>Leve seus modelos a outro nível. Em vez de criar um para o singular e outro para o plural, por exemplo, crie um único modelo que se adapta com base em uma escolha inicial.</p>
+                                    <h4>Como usar:</h4>
+                                    <p>A lógica condicional funciona em duas partes:</p>
+                                    <p>1. <strong>O Gatilho:</strong> Uma variável do tipo <code>choice</code> que define a condição.</p>
+                                    <p>2. <strong>Os Blocos de Conteúdo:</strong> Trechos de texto envolvidos pela sintaxe <code>{{#if:nome_da_variavel=ValorDaOpcao}} ... {{/if}}</code>.</p>
+                                    
+                                    <h4>Exemplo Prático (Singular vs. Plural):</h4>
+                                    <pre><code>Determine-se a citação {{partes:choice(do réu|dos réus)}}.
+
+{{#if:partes=do réu}}
+1. Cite-se a parte executada para que, no prazo de 48h, efetue o pagamento da dívida.
+{{/if}}
+
+{{#if:partes=dos réus}}
+1. Citem-se as partes executadas para que, no prazo de 48h, efetuem o pagamento da dívida.
+{{/if}}
+                                    </code></pre>
+                                    <p><strong>Como funciona:</strong> Ao usar este modelo, o sistema primeiro perguntará: "do réu ou dos réus?". Se você escolher "do réu", ele incluirá APENAS o primeiro bloco de texto e descartará o segundo, montando o documento corretamente.</p>
+                                `
+                            },
+                            {
                                 title: '⚡ Variáveis Automáticas e de Preenchimento Rápido',
                                 content: `
                                     <p>Automatize seus documentos com variáveis que são preenchidas pelo próprio sistema ou através de uma pergunta rápida. Elas são 'mágicas': o sistema as insere no último segundo, por isso <strong>nunca aparecem no formulário de perguntas.</strong></p>
@@ -336,7 +360,7 @@ const ModalManager = (() => {
             }
         }
 
-        // LÓGICA PARA CONTROLAR O ACORDEÃO NO MODAL DE INFORMAÇÕES
+        // LÓGICA PARA CONTROLAR O ACORDEÃO E O BOTÃO DE COPIAR NO MODAL DE INFORMAÇÕES
         if (currentConfig.type === 'info' && modalDynamicContent.querySelector('.accordion-container')) {
             const headers = modalDynamicContent.querySelectorAll('.accordion-header');
             headers.forEach(header => {
@@ -354,6 +378,27 @@ const ModalManager = (() => {
                          header.setAttribute('aria-expanded', 'false');
                     }
                 });
+            });
+
+            // Lógica para os botões de copiar
+            modalDynamicContent.addEventListener('click', (e) => {
+                if (e.target.classList.contains('copy-code-btn')) {
+                    const accordionContent = e.target.closest('.accordion-content');
+                    if (accordionContent) {
+                        const preElement = accordionContent.querySelector('pre');
+                        if (preElement) {
+                            const codeText = preElement.textContent;
+                            navigator.clipboard.writeText(codeText).then(() => {
+                                NotificationService.show('Exemplo copiado para a área de transferência!', 'success');
+                                e.target.textContent = 'Copiado!';
+                                setTimeout(() => { e.target.textContent = 'Copiar Exemplo'; }, 2000);
+                            }).catch(err => {
+                                NotificationService.show('Falha ao copiar o texto.', 'error');
+                                console.error('Erro ao copiar:', err);
+                            });
+                        }
+                    }
+                }
             });
         }
     }
