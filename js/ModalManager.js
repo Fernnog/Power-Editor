@@ -155,7 +155,7 @@ const ModalManager = (() => {
         `;
     }
     
-    // --- NOVO: LÓGICA DO ASSISTENTE DE CRIAÇÃO DE POWER VARIABLES ---
+    // --- INÍCIO DA LÓGICA DO ASSISTENTE DE CRIAÇÃO DE POWER VARIABLES ---
 
     /**
      * Passo 1: Mostra a tela de seleção de tipo de Power Variable.
@@ -452,7 +452,7 @@ const ModalManager = (() => {
     }
     
     /**
-     * NOVO: Coleta os dados do formulário de configuração da Power Variable.
+     * Coleta os dados do formulário de configuração da Power Variable.
      */
     function _getPowerVariableCreatorData() {
         const type = modalDynamicContent.dataset.pvType;
@@ -503,7 +503,7 @@ const ModalManager = (() => {
             case 'info':
                 _buildInfoContent(config.initialData);
                 break;
-            case 'powerVariableCreator': // NOVO CASO
+            case 'powerVariableCreator':
                 _buildPowerVariableCreatorSelectionScreen(); // Inicia no passo 1
                 break;
             default:
@@ -551,7 +551,7 @@ const ModalManager = (() => {
                     text: modalDynamicContent.querySelector('#modal-input-broken-text').value
                 };
                 break;
-            case 'powerVariableCreator': // NOVO CASO
+            case 'powerVariableCreator':
                 dataToSave = _getPowerVariableCreatorData();
                 break;
         }
