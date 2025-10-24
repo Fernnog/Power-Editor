@@ -22,6 +22,7 @@ const ICON_PASTE_MARKDOWN = `<svg xmlns="http://www.w3.org/2000/svg" width="24" 
 const ICON_LIGHTNING = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
 const ICON_JOIN_LINES = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12M3 12h18M3 18h12M21 15l-3-3 3-3"/></svg>`;
 const ICON_PAINTBRUSH = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M5 19.5V14l7 7h-5.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>`;
+const ICON_THEME_SWITCHER = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 18v2M4.93 4.93l1.41 1.41m12.73 12.73l1.41 1.41M2 12h2m18 0h2M4.93 19.07l1.41-1.41m12.73-12.73l1.41-1.41"/></svg>`;
 
 
 // --- ÍCONE DE ESTADO (EX: CARREGAMENTO) ---
@@ -29,3 +30,5 @@ const ICON_SPINNER = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height=
 
 const ICON_EXPAND_ALL = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10L20 4"/><path d="M15 4H20V9"/><path d="M10 14L4 20"/><path d="M4 15V20H9"/></svg>`;
 const ICON_COLLAPSE_ALL = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L10 14"/><path d="M5 14H10V19"/><path d="M20 4L14 10"/><path d="M19 10H14V5"/></svg>`;
+
+const ICON_MAGIC_WAND = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2m0 14v-2m-7.5-10.5L6 4m0 12l1.5-1.5M2 15h2m14 0h2M6.34 17.66l-1.41-1.41M19.07 6.34l-1.41-1.41"/><path d="M12 22a7 7 0 0 0-7-7c0-2 1-3 3-4s3-2 4-3 2-2 3-3a7 7 0 0 0 7 7c0 2-1 3-3 4s-3 2-4 3-2 2-3 3Z"/></svg>`;

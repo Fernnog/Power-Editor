@@ -4,104 +4,133 @@
 const POWER_VARIABLE_BLUEPRINTS = [
     {
         type: 'prompt',
+        category: 'interactive', // Categoria para ações que pedem input
         label: 'Caixa de Pergunta',
         description: 'Pede ao usuário para digitar um texto livre.',
         icon: '💬',
-        build: (name) => `{{${name.replace(/\s+/g, '_').toLowerCase()}:prompt}}`
+        build: (name) => `{{${name.replace(/\s+/g, '_').toLowerCase()}:prompt}}`,
+        helpContent: {
+            title: 'Criando uma Caixa de Pergunta',
+            explanation: `<p>Esta ação cria uma variável que fará uma pergunta direta ao usuário através de uma caixa de diálogo simples. É ideal para solicitar informações curtas e diretas, como um nome ou número.</p>`,
+            example: `<p>Use a sintaxe <code>{{nome:prompt}}</code>.</p>
+                      <pre><code>Contrato referente ao serviço prestado para {{cliente_nome:prompt}}.</code></pre>
+                      <p>Ao usar o modelo, o sistema exibirá uma caixa pedindo: "Por favor, insira o valor para 'cliente nome'".</p>`
+        }
     },
     {
         type: 'choice',
+        category: 'interactive', // Categoria para ações que pedem input
         label: 'Menu de Opções',
         description: 'Apresenta uma lista de opções para o usuário escolher.',
         icon: '✅',
-        build: (name, options) => `{{${name.replace(/\s+/g, '_').toLowerCase()}:choice(${options.join('|')})}}`
+        build: (name, options) => `{{${name.replace(/\s+/g, '_').toLowerCase()}:choice(${options.join('|')})}}`,
+        helpContent: {
+            title: 'Criando um Menu de Seleção Rápida',
+            explanation: `<p>Esta ação cria uma variável que, ao ser processada, exibirá um <strong>menu suspenso com opções pré-definidas</strong> para o usuário. É ideal para situações onde a resposta precisa ser padronizada, evitando erros de digitação.</p>`,
+            example: `<p>Use a sintaxe <code>{{nome:choice(OpçãoA|OpçãoB)}}</code>.</p>
+                      <pre><code>O status do processo é: {{status:choice(Pendente|Aprovado|Recusado)}}</code></pre>
+                      <p>Ao usar o modelo, o sistema apresentará um menu para escolher entre "Pendente", "Aprovado" ou "Recusado".</p>`
+        }
+    },
+    {
+        type: 'conditional_logic',
+        category: 'interactive',
+        label: 'Lógica Condicional (Se...Então...)',
+        description: 'Cria um bloco de texto que muda com base em uma escolha.',
+        icon: '🔀', // Ícone para representar ramificação/condição
+        build: (trigger, blocks) => {
+            let finalString = trigger + '\n\n';
+            const triggerVarNameMatch = trigger.match(/{{([^:]+):/);
+            if (!triggerVarNameMatch) return trigger; // Fallback se o trigger for inválido
+            const triggerVarName = triggerVarNameMatch[1];
+            
+            blocks.forEach(block => {
+                if (block.content.trim()) { // Só adiciona o bloco se tiver conteúdo
+                    finalString += `{{#if:${triggerVarName}=${block.option}}}\n${block.content}\n{{/if}}\n\n`;
+                }
+            });
+            return finalString.trim();
+        },
+        helpContent: {
+            title: 'Criando Lógica Condicional (Se...Então...)',
+            explanation: `<p>Esta é a ação mais poderosa. Ela permite criar blocos de texto que <strong>só aparecem se uma condição específica for atendida</strong>, com base em uma escolha do usuário. É perfeita para lidar com variações como singular/plural ou masculino/feminino em um único modelo.</p>`,
+            example: `<p>A sintaxe usa um gatilho 'choice' e blocos '#if':</p>
+                      <pre><code>Determine-se a citação {{partes:choice(do réu|dos réus)}}.
+
+{{#if:partes=do réu}}
+1. Cite-se a parte executada.
+{{/if}}
+
+{{#if:partes=dos réus}}
+1. Citem-se as partes executadas.
+{{/if}}</code></pre>
+                      <p>O sistema primeiro perguntará "do réu ou dos réus?". Com base na resposta, apenas o bloco de texto correspondente será inserido no documento final.</p>`
+        }
     },
     {
         type: 'data_atual',
+        category: 'system', // Categoria para inserção direta
         label: 'Data Atual (Simples)',
         description: 'Insere a data de hoje no formato DD/MM/AAAA.',
         icon: '📅',
-        build: (name) => `{{data_atual}}`
+        build: () => `{{data_atual}}`
     },
     {
         type: 'data_por_extenso',
+        category: 'system', // Categoria para inserção direta
         label: 'Data por Extenso',
         description: 'Insere a data completa (ex: sexta-feira, 2 de agosto de 2024).',
         icon: '📜',
-        build: (name) => `{{data_por_extenso}}`
+        build: () => `{{data_por_extenso}}`
     },
     {
         type: 'hora_atual',
+        category: 'system', // Categoria para inserção direta
         label: 'Hora Atual',
         description: 'Insere a hora e os minutos atuais.',
         icon: '⏰',
-        build: (name) => `{{hora_atual}}`
+        build: () => `{{hora_atual}}`
     },
-    // --- INÍCIO DAS NOVAS VARIÁVEIS (v1.0.2) ---
     {
         type: 'dia_da_semana',
+        category: 'system', // Categoria para inserção direta
         label: 'Dia da Semana',
         description: 'Insere o dia atual por extenso (ex: segunda-feira).',
         icon: '🗓️',
-        build: (name) => `{{dia_da_semana}}`
+        build: () => `{{dia_da_semana}}`
     },
     {
         type: 'mes_por_extenso',
+        category: 'system', // Categoria para inserção direta
         label: 'Mês por Extenso',
         description: 'Insere o mês atual por extenso (ex: julho).',
         icon: '📜',
-        build: (name) => `{{mes_por_extenso}}`
+        build: () => `{{mes_por_extenso}}`
     },
     {
         type: 'ano_atual',
+        category: 'system', // Categoria para inserção direta
         label: 'Ano Atual',
         description: 'Insere o ano corrente com quatro dígitos.',
         icon: '📅',
-        build: (name) => `{{ano_atual}}`
-    },
-    {
-        type: 'numero_processo',
-        label: 'Número do Processo',
-        description: 'Pede ao usuário para digitar o número do processo.',
-        icon: '⚖️',
-        build: (name) => `{{numero_processo:prompt}}`
-    },
-    {
-        type: 'nome_autor',
-        label: 'Nome da Parte (Autor)',
-        description: 'Pede ao usuário para digitar o nome do autor.',
-        icon: '👤',
-        build: (name) => `{{nome_autor:prompt}}`
-    },
-    {
-        type: 'nome_reu',
-        label: 'Nome da Parte (Réu)',
-        description: 'Pede ao usuário para digitar o nome do réu.',
-        icon: '👤',
-        build: (name) => `{{nome_reu:prompt}}`
-    },
-    {
-        type: 'status_decisao',
-        label: 'Status da Decisão',
-        description: 'Apresenta um menu de opções para o status.',
-        icon: '✅',
-        build: (name) => `{{status_decisao:choice(DEFIRO|INDEFIRO|DEFIRO PARCIALMENTE)}}`
+        build: () => `{{ano_atual}}`
     },
     {
         type: 'id_unico',
+        category: 'system', // Categoria para inserção direta
         label: 'ID Único',
         description: 'Gera um código de referência único (timestamp).',
         icon: '🆔',
-        build: (name) => `{{id_unico}}`
+        build: () => `{{id_unico}}`
     },
     {
         type: 'cursor',
+        category: 'system', // Categoria para inserção direta
         label: 'Posição do Cursor',
         description: 'Marca onde o cursor deve ficar após a inserção.',
         icon: '✍️',
-        build: (name) => `{{cursor}}`
+        build: () => `{{cursor}}`
     }
-    // --- FIM DAS NOVAS VARIÁVEIS (v1.0.2) ---
 ];
 
 // --- DADOS E ESTADO DA APLICAÇÃO ---

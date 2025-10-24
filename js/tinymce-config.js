@@ -1,8 +1,29 @@
 // js/tinymce-config.js
 
 const CHANGELOG_DATA = {
-    currentVersion: '1.0.7',
+    currentVersion: '1.0.9',
     history: [
+       {
+            version: '1.0.9',
+            title: '✨ Clareza Total: Redesign do Criador de Ações Rápidas com Ajuda Integrada',
+            content: `
+                <ul>
+                    <li><strong>NOVO - Layout de Cartões e Organização Visual:</strong> A janela "Criador de Ações Rápidas" foi completamente redesenhada. Cada opção agora é apresentada em um "cartão" individual com separadores visuais, tornando a interface mais limpa, organizada e fácil de navegar.</li>
+                    <li><strong>NOVO - Ajuda Contextual e Detalhada:</strong> Chega de dúvidas! Cada cartão agora possui um <strong>ícone de ajuda (i)</strong>. Ao clicar, uma janela se abre com uma explicação detalhada sobre o que a funcionalidade faz, como usá-la e um <strong>exemplo prático de código</strong>, eliminando a confusão entre "Menu de Opções" e "Lógica Condicional".</li>
+                    <li><strong>Experiência Aprimorada:</strong> Com o novo design e a ajuda integrada, criar modelos inteligentes tornou-se um processo muito mais intuitivo e guiado, reduzindo a curva de aprendizado e permitindo que você aproveite ao máximo as funcionalidades avançadas.</li>
+                </ul>
+            `
+        },
+       {
+    version: '1.0.8',
+    title: '🚀 Assistente de Lógica Condicional e Simplificação da Interface',
+    content: `
+        <ul>
+            <li><strong>NOVO - Assistente de Lógica Condicional (Se...Então...):</strong> Cansado de decorar a sintaxe <code>{{#if...}}</code>? A nova opção "Lógica Condicional" abre um assistente passo a passo. Basta criar sua pergunta (ex: "Singular ou Plural?"), definir as opções e preencher o texto para cada uma. O sistema monta o código complexo para você, tornando a criação de documentos inteligentes mais rápida e visual do que nunca.</li>
+            <li><strong>Interface Simplificada e Intuitiva:</strong> As opções "Número do Processo", "Nome da Parte" e "Status da Decisão" foram removidas da lista de Ações Rápidas. Elas eram redundantes, pois as mesmas funcionalidades podem ser alcançadas de forma mais flexível com as ferramentas "Caixa de Pergunta" e "Menu de Opções". O resultado é uma interface mais limpa e focada no que é essencial.</li>
+        </ul>
+    `
+},
         {
             version: '1.0.7',
             title: '✨ Polimento de Interface e Qualidade de Vida',
@@ -66,7 +87,7 @@ const TINYMCE_CONFIG = {
     
     plugins: 'lists pagebreak visualblocks wordcount',
     
-    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton | customPasteMarkdown customCopyFormatted customOdtButton | customThemeButton customDeleteButton',
+    toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | alignjustify | customIndent customBlockquote | pagebreak visualblocks | customMicButton customAiButton customReplaceButton | customPowerVariableButton | customPasteMarkdown customCopyFormatted customOdtButton | customThemeButton customDeleteButton',
     
     menubar: false,
     statusbar: true,
@@ -108,7 +129,8 @@ const TINYMCE_CONFIG = {
         editor.ui.registry.addIcon('custom-delete-doc', ICON_DELETE_DOC);
         editor.ui.registry.addIcon('custom-paste-markdown', ICON_PASTE_MARKDOWN);
         editor.ui.registry.addIcon('custom-join-lines', ICON_JOIN_LINES);
-        editor.ui.registry.addIcon('custom-paintbrush', ICON_PAINTBRUSH); // NOVO ÍCONE REGISTRADO
+        editor.ui.registry.addIcon('custom-lightning', ICON_LIGHTNING);
+        editor.ui.registry.addIcon('custom-theme-switcher', ICON_THEME_SWITCHER);
 
         // --- Definição dos Botões ---
 
@@ -197,6 +219,37 @@ const TINYMCE_CONFIG = {
             }
         });
 
+        // NOVO BOTÃO: Inserir Ação Rápida (Variável Dinâmica)
+        editor.ui.registry.addButton('customPowerVariableButton', {
+            icon: 'custom-lightning',
+            tooltip: 'Inserir Ação Rápida (Variável Dinâmica)',
+            onAction: function() {
+                ModalManager.show({
+                    type: 'powerVariableCreator',
+                    title: 'Criador de Ações Rápidas',
+                    onSave: (data) => {
+                        if (!data || !data.name) {
+                            // O usuário pode ter fechado o modal no passo de configuração
+                            return;
+                        }
+
+                        const blueprint = POWER_VARIABLE_BLUEPRINTS.find(b => b.type === data.type);
+                        if (!blueprint) {
+                            NotificationService.show('Tipo de ação inválido.', 'error');
+                            return;
+                        }
+
+                        // Constrói a string da variável (ex: "{{nome:prompt}}")
+                        const variableString = blueprint.build(data.name, data.options);
+
+                        // Insere a string gerada no local do cursor do editor
+                        editor.execCommand('mceInsertContent', false, variableString);
+                        NotificationService.show('Ação Rápida inserida!', 'success');
+                    }
+                });
+            }
+        });
+
         // NOVO BOTÃO: Colar do Markdown
         editor.ui.registry.addButton('customPasteMarkdown', {
             icon: 'custom-paste-markdown',
@@ -264,7 +317,7 @@ const TINYMCE_CONFIG = {
 
         // NOVO BOTÃO: Seletor de Tema
         editor.ui.registry.addMenuButton('customThemeButton', {
-            icon: 'custom-paintbrush',
+            icon: 'custom-theme-switcher',
             tooltip: 'Mudar Tema do Editor',
             fetch: function (callback) {
                 const items = [
