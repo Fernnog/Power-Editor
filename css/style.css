@@ -1297,3 +1297,166 @@ blockquote p {
         background-color: rgba(206, 42, 102, 0.15);
     }
 }
+
+/* Efeito "Neon" para o novo botão na barra de ferramentas do TinyMCE */
+.tox-tbtn[aria-label="Inserir Ação Rápida"] {
+    background-color: #f0abfc !important; /* Cor de fundo lilás claro */
+    box-shadow: 0 0 5px #d946ef, 0 0 10px #d946ef, inset 0 0 5px rgba(255, 255, 255, 0.5);
+    border: 1px solid #d946ef !important;
+}
+
+.tox-tbtn[aria-label="Inserir Ação Rápida"] .tox-icon svg {
+    stroke: #a855f7 !important; /* Roxo vibrante para o ícone */
+    stroke-width: 2.2px;
+}
+
+/* CORREÇÃO CRÍTICA: Adiciona barra de rolagem ao conteúdo do modal de ajuda */
+.info-modal-content {
+    max-height: 70vh; /* Limita a altura a 70% da altura da tela */
+    overflow-y: auto; /* Adiciona a barra de rolagem vertical quando necessário */
+    padding-right: 15px; /* Espaço para a barra de rolagem não sobrepor o conteúdo */
+}
+
+/* --- Novos Estilos para as Abas Internas do Assistente --- */
+.pv-creator-tabs {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 15px;
+}
+
+.pv-creator-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6c757d;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.pv-creator-tab:hover {
+    color: #343a40;
+}
+
+.pv-creator-tab.active {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Linha indicadora da aba ativa */
+.pv-creator-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+.pv-creator-panel {
+    display: none; /* Painéis iniciam ocultos */
+    animation: fadeIn 0.3s ease;
+}
+
+.pv-creator-panel.active {
+    display: block; /* Apenas o painel ativo é exibido */
+}
+
+/* Animação sutil de entrada */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- NOVOS ESTILOS PARA O ASSISTENTE DE LÓGICA CONDICIONAL --- */
+.condition-block {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+}
+
+.condition-label {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 10px;
+    display: block;
+    color: #495057;
+}
+
+.condition-label strong {
+    color: var(--primary-color);
+    font-family: monospace;
+    background-color: #fbe0e3;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.condition-content {
+    min-height: 80px; /* Altura mínima menor para cada bloco */
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.pv-creator-panel.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.pv-creator-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #e9ecef; /* Linha separadora */
+    transition: background-color 0.2s ease;
+}
+
+.pv-creator-card:hover {
+    background-color: #f8f9fa;
+}
+
+.pv-creator-card:last-child {
+    border-bottom: none;
+}
+
+.pv-card-main-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pv-creator-text p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.pv-card-help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background-color: #6c757d;
+    color: white;
+    border-radius: 50%;
+    border: none;
+    font-weight: bold;
+    font-family: serif;
+    font-style: italic;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 15px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.pv-card-help-btn:hover {
+    background-color: var(--primary-color);
+    transform: scale(1.1);
+}
