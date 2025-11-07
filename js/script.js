@@ -415,6 +415,11 @@ async function insertModelContent(model) {
                 // Limpa os blocos condicionais não escolhidos e a variável de escolha
                 content = content.replace(new RegExp(`{{\#if:${varName}=[^}]+?}}.*?{{\/if}}`, 'gs'), '');
                 content = content.replace(fullMatch, '');
+                
+                // *** LINHA ADICIONADA: A SOLUÇÃO ***
+                // Remove quaisquer quebras de linha ou espaços que possam ter ficado no início do conteúdo.
+                content = content.trim();
+
             } else {
                 NotificationService.show('Inserção cancelada.', 'info');
                 return; // Encerra a função se o usuário cancelar
