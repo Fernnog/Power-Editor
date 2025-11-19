@@ -95,17 +95,44 @@
         </div>
     </div>
 
-    <!-- Estrutura do Modal de Ditado (Inicialmente Oculta) -->
+    <!-- Estrutura do Modal de Ditado AVANÇADO (Inicialmente Oculta) -->
     <div id="dictation-modal" class="modal-overlay">
-        <div class="dictation-content">
-            <select id="dictation-lang-select" title="Selecionar idioma">
-                <option value="pt-BR" selected>Português (Brasil)</option>
-                <option value="en-US">English (US)</option>
-                <option value="es-ES">Español (España)</option>
-            </select>
-            <span id="dictation-status">Clique no microfone para começar</span>
-            <div id="dictation-mic-icon" class="mic-icon">🎤</div>
-            <button id="dictation-close-btn">&times;</button>
+        <div class="dictation-content advanced-mode">
+            <div class="dictation-header">
+                <!-- Container para o ícone e a animação da onda sonora -->
+                <div class="mic-wrapper">
+                    <div id="dictation-mic-icon" class="mic-icon">🎤</div>
+                    <!-- Visualizador de Onda Sonora (Sound Wave) -->
+                    <div id="dictation-wave" class="sound-wave">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+
+                <div class="dictation-controls">
+                    <select id="dictation-lang-select" title="Selecionar idioma">
+                        <option value="pt-BR" selected>Português (Brasil)</option>
+                        <option value="en-US">English (US)</option>
+                        <option value="es-ES">Español (España)</option>
+                    </select>
+                    <span id="dictation-status">Pronto para ouvir</span>
+                </div>
+                <button id="dictation-close-btn">&times;</button>
+            </div>
+            
+            <!-- Nova Área de Buffer (Rascunho) -->
+            <div class="dictation-buffer-area">
+                <textarea id="dictation-textarea" placeholder="Fale e seu texto aparecerá aqui. Edite se necessário..."></textarea>
+                <!-- Exibição de resultados provisórios (interim results) -->
+                <div id="dictation-interim" class="interim-display"></div>
+            </div>
+
+            <div class="dictation-footer">
+                <span id="dictation-save-status" class="save-status">Salvo automaticamente</span>
+                <div class="footer-buttons">
+                    <button id="btn-clear-dictation" class="secondary-btn">Limpar</button>
+                    <button id="btn-insert-dictation" class="primary-btn">Inserir no Documento</button>
+                </div>
+            </div>
         </div>
     </div>
 
