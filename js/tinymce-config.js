@@ -1,9 +1,20 @@
 // js/tinymce-config.js
 
 const CHANGELOG_DATA = {
-    currentVersion: '1.0.9',
+    currentVersion: '1.1.0',
     history: [
        {
+            version: '1.1.0',
+            title: '🎙️ A Revolução do Ditado: Rascunho Seguro e Feedback Visual',
+            content: `
+                <ul>
+                    <li><strong>NOVO - Área de Rascunho Inteligente (Buffer):</strong> O ditado não insere mais o texto "às cegas" no documento. Agora, suas palavras aparecem instantaneamente em uma área de edição dedicada. Você vê o texto se formando em tempo real (com feedback provisório) e pode revisar tudo antes de clicar em "Inserir".</li>
+                    <li><strong>NOVO - Cofre de Voz (Auto-Save):</strong> Nunca mais perca uma ideia por falha na internet ou fechamento acidental. O sistema agora salva cada palavra ditada automaticamente na memória do navegador. Ao reabrir a ferramenta de voz, seu texto estará lá, intacto, esperando por você.</li>
+                    <li><strong>NOVO - Visualizador de Onda Sonora:</strong> Chega da dúvida "será que o microfone está ligado?". Uma nova animação de ondas sonoras (Sound Wave) aparece ao lado do ícone, oferecendo feedback visual claro e moderno de que o sistema está ouvindo ativamente.</li>
+                </ul>
+            `
+        },
+        {
             version: '1.0.9',
             title: '✨ Clareza Total: Redesign do Criador de Ações Rápidas com Ajuda Integrada',
             content: `
