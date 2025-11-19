@@ -407,17 +407,37 @@ const TINYMCE_CONFIG = {
             }
             // --- FIM DA LÓGICA DO CHANGELOG ---
         
+            // --- LÓGICA DE INICIALIZAÇÃO DO DITADO POR VOZ (ATUALIZADA) ---
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
+                    // Elementos existentes
                     micIcon: document.getElementById('dictation-mic-icon'), 
                     langSelect: document.getElementById('dictation-lang-select'), 
                     statusDisplay: document.getElementById('dictation-status'), 
                     dictationModal: document.getElementById('dictation-modal'),
                     toolbarMicButton: editor.getContainer().querySelector('[aria-label="Ditar texto"]'),
-                    onResult: (transcript) => { editor.execCommand('mceInsertContent', false, transcript); } 
+                    
+                    // NOVOS ELEMENTOS MAPEADOS PARA O BUFFER E ONDA SONORA
+                    waveAnimation: document.getElementById('dictation-wave'),
+                    textArea: document.getElementById('dictation-textarea'),
+                    interimDisplay: document.getElementById('dictation-interim'),
+                    saveStatus: document.getElementById('dictation-save-status'),
+                    btnInsert: document.getElementById('btn-insert-dictation'),
+                    btnClear: document.getElementById('btn-clear-dictation'),
+
+                    // Ação final: inserir no TinyMCE quando o usuário clica em "Inserir"
+                    onInsert: (text) => { 
+                        editor.execCommand('mceInsertContent', false, text);
+                        NotificationService.show('Texto ditado inserido com sucesso!', 'success');
+                    } 
                 });
+                
+                // Botão fechar do modal de ditado
                 const closeBtn = document.getElementById('dictation-close-btn');
-                if (closeBtn) closeBtn.addEventListener('click', () => { SpeechDictation.stop(); });
+                if (closeBtn) closeBtn.addEventListener('click', () => { 
+                    SpeechDictation.stop(); 
+                    document.getElementById('dictation-modal').classList.remove('visible'); 
+                });
             }
         });
 
