@@ -1,8 +1,7 @@
 const CONFIG = {
-    // Cole aqui a chave (API Key) gerada no Google AI Studio.
-    // Exemplo: "AIzaSy..."
-    apiKey: "AIzaSyC0EiIzNQqMyOCI5oV2XXQvGzVFntFaqQU",
+    // Sua chave de API do Google AI Studio
+    apiKey: "AIzaSyC0EiIzNQqMyOCI5oV2XXQvGzVFntFaqQU", // Mantive a do seu log (mas cuidado ao expor!)
 
-    // Modelo selecionado: 'gemini-1.5-flash' é otimizado para velocidade e baixo custo (gratuito no tier inicial).
-    model: "gemini-1.5-flash"
+    // ALTERAÇÃO: Adicionado sufixo '-latest' para garantir que a API encontre o modelo
+    model: "gemini-1.5-flash-latest"
 };
