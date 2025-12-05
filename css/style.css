@@ -502,6 +502,22 @@ body, html {
     color: #666;
 }
 
+/* --- ALTERAÇÃO AQUI: Novos estilos para indicadores de status --- */
+.status-indicator {
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.status-indicator.reconnecting {
+    color: #e67e22; /* Laranja */
+    font-style: italic;
+}
+
+.status-indicator.error {
+    color: #dc3545; /* Vermelho */
+    font-weight: bold;
+}
+
 /* Botão Fechar do Modal */
 #dictation-close-btn {
     background: #f1f1f1;
@@ -538,6 +554,7 @@ body, html {
     background-color: #fff;
 }
 
+/* --- ALTERAÇÃO AQUI: Melhorias no textarea de ditado --- */
 #dictation-textarea {
     flex: 1;
     border: none;
@@ -545,11 +562,19 @@ body, html {
     padding: 15px;
     font-size: 16px;
     font-family: inherit;
-    line-height: 1.5;
+    line-height: 1.6;        /* Aumentado para melhor leitura */
+    letter-spacing: 0.3px;   /* Leve espaçamento */
     resize: none;
     outline: none;
     z-index: 2;
     color: #333;
+    border-left: 4px solid transparent; /* Preparação para foco */
+    transition: border-color 0.3s, background-color 0.2s;
+}
+
+#dictation-textarea:focus {
+    border-left-color: var(--primary-color);
+    background-color: #fff;
 }
 
 .interim-display {
