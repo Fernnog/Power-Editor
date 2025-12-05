@@ -1,77 +1,63 @@
 const GeminiService = (() => {
-    // Utiliza as configurações globais ou valores padrão de segurança
-    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-1.5-flash';
+    // Pega o modelo do config ou usa um fallback seguro
+    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-1.5-flash-latest';
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
     /**
-     * Envia um texto para a API do Gemini e retorna a correção gramatical/ortográfica.
-     * @param {string} textToCorrect O texto cru vindo do reconhecimento de voz.
-     * @param {string} apiKey A chave de API do Google AI Studio.
-     * @returns {Promise<string>} O texto corrigido.
+     * Envia o texto completo para correção.
      */
     async function correctText(textToCorrect, apiKey) {
-        // Se o texto for vazio, retorna imediatamente
         if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
 
-        // Prompt de Sistema: Instruções rígidas para a IA agir apenas como formatador
         const prompt = `
-            Atue como um editor de texto silencioso e preciso para Português do Brasil.
-            Sua única tarefa é formatar o texto recebido de um ditado por voz.
+            Atue como um editor de texto profissional.
+            Sua tarefa é formatar e corrigir o texto cru de um ditado.
             
-            Regras obrigatórias:
-            1. Corrija pontuação, acentuação, ortografia e concordância.
-            2. Aplique letras maiúsculas no início de frases e em nomes próprios.
-            3. NÃO adicione introduções, explicações, aspas ou qualquer texto extra.
-            4. Mantenha o estilo e o tom originais do usuário.
-            5. Se o texto for um fragmento sem sentido claro, apenas corrija a ortografia básica.
+            Regras:
+            1. Corrija pontuação, acentuação e gramática.
+            2. Capitalize o início das frases.
+            3. NÃO adicione introduções ou explicações. Retorne APENAS o texto.
+            4. Se o texto for longo, mantenha a formatação de parágrafos.
             
             Entrada: "${textToCorrect}"
         `;
 
         try {
-            const response = await fetch(`${BASE_URL}${MODEL}:generateContent?key=${apiKey}`, {
+            // Monta a URL garantindo que o modelo esteja correto
+            const url = `${BASE_URL}${MODEL}:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: prompt
-                        }]
-                    }],
+                    contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
-                        temperature: 0.1, // Baixa criatividade para garantir fidelidade ao ditado
-                        maxOutputTokens: 1000, // Limite de segurança
+                        temperature: 0.1,
+                        maxOutputTokens: 2000 // Aumentado para suportar textos maiores
                     }
                 })
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.warn('Erro API Gemini:', errorData);
-                throw new Error(`Status ${response.status}`);
+                const errorData = await response.json();
+                console.error("Detalhes do Erro Gemini:", errorData);
+                throw new Error(`Erro API: ${errorData.error?.message || response.status}`);
             }
 
             const data = await response.json();
             
-            // Extração segura da resposta
-            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-                const correctedText = data.candidates[0].content.parts[0].text;
-                // Remove espaços extras ou quebras de linha acidentais no início/fim
-                return correctedText.trim();
+            if (data.candidates && data.candidates[0]?.content?.parts[0]) {
+                return data.candidates[0].content.parts[0].text.trim();
             } else {
-                throw new Error("Formato de resposta da API inesperado.");
+                throw new Error("Formato de resposta inválido");
             }
 
         } catch (error) {
-            console.error("Falha na correção IA (usando texto original):", error);
-            // Fallback: Em caso de erro (ex: sem internet, chave inválida), retorna o texto original
-            return textToCorrect; 
+            console.error("Falha na correção IA:", error);
+            alert("A IA não conseguiu processar. Inserindo texto original.");
+            return textToCorrect; // Retorna o texto original em caso de erro
         }
     }
 
-    return {
-        correctText
-    };
+    return { correctText };
 })();
