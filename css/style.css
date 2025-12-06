@@ -1,5 +1,3 @@
---- START OF FILE css/style.css ---
-
 /* Configurações Globais /
 :root {
 --primary-color: #ce2a66;
@@ -1760,4 +1758,3 @@ transition: background-color 0.2s, transform 0.2s;
 background-color: var(--primary-color);
 transform: scale(1.1);
 }
---- END OF FILE css/style.css ---
