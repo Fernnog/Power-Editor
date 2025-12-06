@@ -10,7 +10,11 @@ const SpeechDictation = (() => {
     let ui = {
         micIcon: null, langSelect: null, statusDisplay: null, dictationModal: null,
         toolbarMicButton: null, waveAnimation: null, textArea: null,
-        interimDisplay: null, saveStatus: null, btnInsert: null, btnClear: null
+        interimDisplay: null, saveStatus: null, btnClear: null,
+        // NOVOS BOTÕES
+        btnInsertRaw: null,
+        btnInsertFix: null,
+        btnInsertLegal: null
     };
 
     let onInsertCallback = () => {};
@@ -87,49 +91,68 @@ const SpeechDictation = (() => {
             updateStatus('Erro: ' + event.error, 'error');
         };
 
-        // --- AÇÃO: CLIQUE NO BOTÃO INSERIR (INTEGRAÇÃO COM IA) ---
-        if (ui.btnInsert) {
-            ui.btnInsert.onclick = async () => {
-                const rawText = ui.textArea ? ui.textArea.value.trim() : '';
-                
-                if (!rawText) {
-                    alert("O buffer está vazio. Fale algo antes de inserir.");
-                    return;
+        // --- AÇÃO: LÓGICA UNIFICADA DE INSERÇÃO (RAW / FIX / LEGAL) ---
+        const handleInsert = async (mode) => {
+            const rawText = ui.textArea ? ui.textArea.value.trim() : '';
+            if (!rawText) {
+                alert("O buffer está vazio. Fale algo antes de inserir.");
+                return;
+            }
+
+            // Para o microfone para evitar conflitos de áudio
+            stop();
+
+            // Identifica qual botão foi clicado para feedback visual
+            let targetBtn = null;
+            if (mode === 'raw') targetBtn = ui.btnInsertRaw;
+            else if (mode === 'fix') targetBtn = ui.btnInsertFix;
+            else if (mode === 'legal') targetBtn = ui.btnInsertLegal;
+
+            const originalBtnText = targetBtn ? targetBtn.textContent : '';
+
+            try {
+                let textToInsert = rawText;
+
+                // Se não for inserção crua, processa com IA
+                if (mode !== 'raw') {
+                    if (targetBtn) {
+                        targetBtn.textContent = mode === 'legal' ? "⚖️ Refinando..." : "✨ Corrigindo...";
+                        targetBtn.disabled = true;
+                    }
+
+                    if (mode === 'fix') {
+                        // Correção Padrão (Gramática/Pontuação)
+                        textToInsert = await GeminiService.correctText(rawText);
+                    } else if (mode === 'legal') {
+                        // Refinamento Jurídico (Novo Prompt)
+                        textToInsert = await GeminiService.refineLegalText(rawText);
+                    }
                 }
 
-                // 1. Prepara a UI (Bloqueia botão e muda texto para feedback)
-                const originalBtnText = ui.btnInsert.textContent;
-                ui.btnInsert.textContent = "✨ Otimizando com IA...";
-                ui.btnInsert.disabled = true;
+                // Insere o texto (cru ou processado) no editor principal
+                onInsertCallback(textToInsert);
                 
-                // Para o microfone para evitar conflitos de áudio
-                stop(); 
+                // Limpa o rascunho e fecha o modal
+                clearBackup();
+                if (ui.dictationModal) ui.dictationModal.classList.remove('visible');
 
-                try {
-                    // 2. Chama a IA para corrigir
-                    // AQUI ESTAVA A MUDANÇA PRINCIPAL:
-                    // Removemos a verificação do CONFIG.apiKey e chamamos direto.
-                    // O GeminiService cuidará de pedir a chave se ela não existir.
-                    const textToInsert = await GeminiService.correctText(rawText);
-
-                    // 3. Insere o texto corrigido no editor principal
-                    onInsertCallback(textToInsert);
-                    
-                    // 4. Limpa o rascunho e fecha o modal
-                    clearBackup();
-                    if (ui.dictationModal) ui.dictationModal.classList.remove('visible');
-
-                } catch (error) {
-                    console.error("Erro no fluxo de inserção:", error);
-                    alert("Houve um erro técnico. Inserindo texto original.");
-                    onInsertCallback(rawText);
-                } finally {
-                    // Restaura o botão para o estado original
-                    ui.btnInsert.textContent = originalBtnText;
-                    ui.btnInsert.disabled = false;
+            } catch (error) {
+                console.error("Erro no fluxo de inserção:", error);
+                alert("Houve um erro técnico. Inserindo texto original.");
+                onInsertCallback(rawText);
+            } finally {
+                // Restaura o botão para o estado original
+                if (targetBtn && mode !== 'raw') {
+                    targetBtn.textContent = originalBtnText;
+                    targetBtn.disabled = false;
                 }
-            };
-        }
+            }
+        };
+
+        // Atribui os listeners aos novos botões
+        if (ui.btnInsertRaw) ui.btnInsertRaw.onclick = () => handleInsert('raw');
+        if (ui.btnInsertFix) ui.btnInsertFix.onclick = () => handleInsert('fix');
+        if (ui.btnInsertLegal) ui.btnInsertLegal.onclick = () => handleInsert('legal');
 
         // --- AÇÃO: CLIQUE NO BOTÃO LIMPAR ---
         if (ui.btnClear) {
