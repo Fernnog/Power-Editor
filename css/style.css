@@ -593,6 +593,60 @@ body, html {
     padding-top: 5px;
 }
 
+/* --- NOVOS ESTILOS: GRUPO DE BOTÕES DO DITADO (v1.1.2) --- */
+.footer-buttons-group {
+display: flex;
+gap: 15px;
+align-items: center;
+}
+.action-buttons {
+display: flex;
+gap: 8px;
+}
+/* Botão Inserir (Cru) - Discreto */
+.action-btn-raw {
+background-color: #fff;
+color: #555;
+border: 1px solid #ccc;
+padding: 10px 15px;
+border-radius: 5px;
+cursor: pointer;
+font-weight: bold;
+transition: all 0.2s;
+font-size: 14px;
+}
+.action-btn-raw:hover { background-color: #f0f0f0; }
+/* Botão Revisar (Padrão IA) - Cor Primária */
+.action-btn-fix {
+background-color: var(--primary-color);
+color: white;
+border: 1px solid var(--primary-color-dark);
+padding: 10px 15px;
+border-radius: 5px;
+cursor: pointer;
+font-weight: bold;
+transition: all 0.2s;
+font-size: 14px;
+}
+.action-btn-fix:hover { filter: brightness(0.9); }
+/* Botão Jurídico (Especial) - Índigo /
+.action-btn-legal {
+background-color: #4B0082; / Índigo */
+color: white;
+border: 1px solid #3a0063;
+padding: 10px 15px;
+border-radius: 5px;
+cursor: pointer;
+font-weight: bold;
+display: flex;
+align-items: center;
+gap: 5px;
+transition: all 0.2s;
+font-size: 14px;
+}
+.action-btn-legal:hover { background-color: #3a0063; }
+/* --- FIM DOS NOVOS ESTILOS DO DITADO --- */
+
 .save-status {
     font-size: 12px;
     color: #28a745;
