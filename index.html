@@ -127,11 +127,18 @@
                 <div id="dictation-interim" class="interim-display"></div>
             </div>
 
+            <!-- MODIFICAÇÃO: Rodapé com novos botões de ação -->
             <div class="dictation-footer">
                 <span id="dictation-save-status" class="save-status">Salvo automaticamente</span>
-                <div class="footer-buttons">
-                    <button id="btn-clear-dictation" class="secondary-btn">Limpar</button>
-                    <button id="btn-insert-dictation" class="primary-btn">Inserir no Documento</button>
+                <div class="footer-buttons-group">
+                    <button id="btn-clear-dictation" class="secondary-btn" title="Limpar texto">Limpar</button>
+                    
+                    <!-- Novos Botões de Ação -->
+                    <div class="action-buttons">
+                        <button id="btn-insert-raw" class="action-btn-raw" title="Inserir texto sem alterações">Inserir</button>
+                        <button id="btn-insert-fix" class="action-btn-fix" title="Corrigir gramática e pontuação">Revisar ✨</button>
+                        <button id="btn-insert-legal" class="action-btn-legal" title="Refinar para linguagem jurídica formal">Jurídico ⚖️</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -164,7 +171,11 @@
     <script src="js/ModalManager.js"></script> <!-- ModalManager ANTES de script.js -->
     <script src="js/NotificationService.js"></script> <!-- NotificationService ANTES de script.js -->
     <script src="js/gemini-service.js"></script>
-    <script src="js/ui-icons.js"></script> 
+    <script src="js/ui-icons.js"></script>
+    
+    <!-- MODIFICAÇÃO: Importação do novo script de Changelog -->
+    <script src="js/changelog.js"></script> 
+    
     <script src="js/markdown-converter.js"></script> <!-- NOVO MÓDULO DE MARKDOWN -->
     <script src="js/CommandPalette.js"></script> <!-- NOVO SCRIPT DA PALETA DE COMANDOS -->
     
