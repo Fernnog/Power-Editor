@@ -3,7 +3,7 @@
 const GeminiService = (() => {
     // ALTERAÇÃO: Fallback atualizado para 'gemini-1.5-flash' (versão estável sem sufixo -latest)
     // Isso previne erros 404 caso o config.js não seja carregado corretamente.
-    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-1.5-flash';
+    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-2.0-flash-001';
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
     /**
