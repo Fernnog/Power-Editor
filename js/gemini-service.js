@@ -1,6 +1,9 @@
+// --- START OF FILE js/gemini-service.js ---
+
 const GeminiService = (() => {
-    // Pega o modelo do config ou usa um fallback seguro
-    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-1.5-flash-latest';
+    // ALTERAÇÃO: Fallback atualizado para 'gemini-1.5-flash' (versão estável sem sufixo -latest)
+    // Isso previne erros 404 caso o config.js não seja carregado corretamente.
+    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-1.5-flash';
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
     /**
@@ -8,6 +11,13 @@ const GeminiService = (() => {
      */
     async function correctText(textToCorrect, apiKey) {
         if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
+
+        // MELHORIA: Validação básica para evitar chamadas com chaves inválidas ou vazias
+        if (!apiKey || apiKey.includes("SUA_CHAVE")) {
+            console.warn("Chave de API inválida ou não configurada.");
+            alert("Atenção: Configure sua chave de API válida no arquivo js/config.js para usar a IA.");
+            return textToCorrect;
+        }
 
         const prompt = `
             Atue como um editor de texto profissional.
@@ -41,7 +51,8 @@ const GeminiService = (() => {
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("Detalhes do Erro Gemini:", errorData);
-                throw new Error(`Erro API: ${errorData.error?.message || response.status}`);
+                // MELHORIA: Lança um erro com a mensagem específica da API para facilitar o debug
+                throw new Error(`Erro API (${response.status}): ${errorData.error?.message || response.statusText}`);
             }
 
             const data = await response.json();
@@ -49,13 +60,14 @@ const GeminiService = (() => {
             if (data.candidates && data.candidates[0]?.content?.parts[0]) {
                 return data.candidates[0].content.parts[0].text.trim();
             } else {
-                throw new Error("Formato de resposta inválido");
+                throw new Error("Formato de resposta da IA inválido ou vazio.");
             }
 
         } catch (error) {
             console.error("Falha na correção IA:", error);
-            alert("A IA não conseguiu processar. Inserindo texto original.");
-            return textToCorrect; // Retorna o texto original em caso de erro
+            // MELHORIA: Alert mais informativo para o usuário saber o que aconteceu
+            alert(`A IA não conseguiu processar o texto.\nDetalhe: ${error.message}\n\nO texto original será inserido.`);
+            return textToCorrect; // Retorna o texto original em caso de erro para não perder dados
         }
     }
 
