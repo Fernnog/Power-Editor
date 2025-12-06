@@ -1,7 +1,7 @@
 const GeminiService = (() => {
     // Configurações Iniciais
     // Tenta pegar o modelo do config, ou usa o padrão seguro que descobrimos
-    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-2.0-flash-exp';
+    const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-flash-latest';
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
     const STORAGE_KEY = 'minha_chave_gemini_secreta'; // O nome do nosso "cofre"
 
