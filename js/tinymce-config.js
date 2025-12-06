@@ -1,8 +1,19 @@
 // js/tinymce-config.js
 
 const CHANGELOG_DATA = {
-    currentVersion: '1.1.0',
+    currentVersion: '1.1.1',
     history: [
+       {
+            version: '1.1.1',
+            title: '🤖 IA Ativa & Segurança Reforçada: O Fim do Config.js',
+            content: `
+                <ul>
+                    <li><strong>🔒 Cofre de Chaves (LocalStorage):</strong> A segurança foi elevada ao nível máximo. Removemos a necessidade de salvar sua Chave de API em arquivos de código (<code>config.js</code>). Agora, o sistema solicita a chave <strong>uma única vez</strong> via interface e a guarda seguramente no "cofre" do seu navegador.</li>
+                    <li><strong>✨ Integração Gemini Estável:</strong> O fluxo de correção gramatical foi destravado. O botão "Inserir" agora se conecta de forma inteligente à API do Google Gemini, gerenciando automaticamente a autenticação e o processamento do texto.</li>
+                    <li><strong>🛠️ Correção de Infraestrutura:</strong> Ajustes profundos na seleção de modelos de IA resolveram os erros de "Modelo não encontrado" (404) e "Cota Excedida" (429), garantindo o acesso ao nível gratuito (Free Tier).</li>
+                </ul>
+            `
+        },
        {
             version: '1.1.0',
             title: '🎙️ A Revolução do Ditado: Rascunho Seguro e Feedback Visual',
@@ -131,6 +142,7 @@ const TINYMCE_CONFIG = {
         };
         
         // --- Registro de Ícones Customizados ---
+        // (Nota: As constantes ICON_... devem estar definidas no arquivo ui-icons.js carregado antes deste)
         editor.ui.registry.addIcon('custom-mic', ICON_MIC);
         editor.ui.registry.addIcon('custom-ai-brain', ICON_AI_BRAIN);
         editor.ui.registry.addIcon('custom-replace', ICON_REPLACE);
@@ -187,6 +199,8 @@ const TINYMCE_CONFIG = {
         });
 
         // Botão de Ajustar Texto Quebrado (substituindo o de IA)
+        // Nota: O processamento de IA agora acontece dentro do SpeechDictation, mas este botão
+        // serve para limpar quebras de linha de PDFs colados (join lines).
         editor.ui.registry.addButton('customAiButton', {
             icon: 'custom-join-lines',
             tooltip: 'Ajustar Texto Quebrado (de PDF)',
@@ -369,7 +383,7 @@ const TINYMCE_CONFIG = {
 
         // ADICIONADO: Listener para o atalho da Paleta de Comandos dentro do editor
         editor.on('keydown', function(event) {
-            // CORREÇÃO DE ATALHO: Mudado de Ctrl+Alt+P para Ctrl+. para consistência
+            // Atalho Ctrl + .
             if (event.ctrlKey && event.key === '.') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -418,7 +432,7 @@ const TINYMCE_CONFIG = {
             }
             // --- FIM DA LÓGICA DO CHANGELOG ---
         
-            // --- LÓGICA DE INICIALIZAÇÃO DO DITADO POR VOZ (ATUALIZADA) ---
+            // --- LÓGICA DE INICIALIZAÇÃO DO DITADO POR VOZ ---
             if (typeof SpeechDictation !== 'undefined' && SpeechDictation.isSupported()) {
                 SpeechDictation.init({ 
                     // Elementos existentes
@@ -437,9 +451,10 @@ const TINYMCE_CONFIG = {
                     btnClear: document.getElementById('btn-clear-dictation'),
 
                     // Ação final: inserir no TinyMCE quando o usuário clica em "Inserir"
+                    // O SpeechDictation agora já entrega o texto corrigido pela IA
                     onInsert: (text) => { 
                         editor.execCommand('mceInsertContent', false, text);
-                        NotificationService.show('Texto ditado inserido com sucesso!', 'success');
+                        NotificationService.show('Texto inserido com sucesso!', 'success');
                     } 
                 });
                 
@@ -464,7 +479,6 @@ const TINYMCE_CONFIG = {
             const modelId = event.dataTransfer.getData('text/plain');
             
             // Verifica se o item arrastado é de fato uma variável de sistema.
-            // Se não for, interrompemos a função para não interferir com outros comportamentos (ex: arrastar uma imagem).
             if (!modelId || !modelId.startsWith('system-var-')) {
                 return;
             }
@@ -486,7 +500,7 @@ const TINYMCE_CONFIG = {
         });
         // ============================ FIM DA LÓGICA DE DRAG & DROP ============================
         
-        // --- LÓGICA DE DETECÇÃO AUTOMÁTICA DE MARKDOWN (CORRIGIDA) ---
+        // --- LÓGICA DE DETECÇÃO AUTOMÁTICA DE MARKDOWN ---
         editor.on('paste_preprocess', function (plugin, args) {
             // Para contornar a limpeza do TinyMCE, extraímos o texto puro
             const tempDiv = document.createElement('div');
