@@ -33,32 +33,12 @@ const GeminiService = (() => {
     }
 
     /**
-     * Envia o texto completo para correção.
+     * Função auxiliar privada para realizar a chamada à API do Gemini.
+     * Centraliza a lógica de fetch, tratamento de erro e limpeza de chave inválida.
+     * @param {string} apiKey - A chave de API validada.
+     * @param {string} promptText - O prompt completo a ser enviado.
      */
-    async function correctText(textToCorrect) {
-        if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
-
-        // Recupera a chave usando nossa nova lógica inteligente
-        const apiKey = _getApiKey();
-
-        if (!apiKey) {
-            alert("Operação cancelada: Nenhuma chave de API fornecida.");
-            return textToCorrect; // Retorna o original sem mexer
-        }
-
-        const promptText = `
-            Atue como um editor de texto profissional.
-            Sua tarefa é formatar e corrigir o texto cru de um ditado.
-            
-            Regras:
-            1. Corrija pontuação, acentuação e gramática.
-            2. Capitalize o início das frases.
-            3. NÃO adicione introduções ou explicações. Retorne APENAS o texto corrigido.
-            4. Se o texto for longo, mantenha a formatação de parágrafos.
-            
-            Entrada: "${textToCorrect}"
-        `;
-
+    async function _callGeminiAPI(apiKey, promptText) {
         try {
             const url = `${BASE_URL}${MODEL}:generateContent?key=${apiKey}`;
             
@@ -95,7 +75,75 @@ const GeminiService = (() => {
             }
 
         } catch (error) {
-            console.error("Falha na correção IA:", error);
+            console.error("Falha na comunicação com IA:", error);
+            throw error; // Re-lança o erro para ser tratado pela UI
+        }
+    }
+
+    /**
+     * Envia o texto completo para correção gramatical padrão.
+     */
+    async function correctText(textToCorrect) {
+        if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
+
+        const apiKey = _getApiKey();
+        if (!apiKey) {
+            alert("Operação cancelada: Nenhuma chave de API fornecida.");
+            return textToCorrect;
+        }
+
+        const promptText = `
+            Atue como um editor de texto profissional.
+            Sua tarefa é formatar e corrigir o texto cru de um ditado.
+            
+            Regras:
+            1. Corrija pontuação, acentuação e gramática.
+            2. Capitalize o início das frases.
+            3. NÃO adicione introduções ou explicações. Retorne APENAS o texto corrigido.
+            4. Se o texto for longo, mantenha a formatação de parágrafos.
+            
+            Entrada: "${textToCorrect}"
+        `;
+
+        try {
+            return await _callGeminiAPI(apiKey, promptText);
+        } catch (error) {
+            alert(`Erro na IA: ${error.message}\n\nInserindo texto original.`);
+            return textToCorrect;
+        }
+    }
+
+    /**
+     * Refina o texto para o contexto jurídico trabalhista.
+     * Utiliza um prompt especializado para elevar o registro da linguagem.
+     */
+    async function refineLegalText(textToCorrect) {
+        if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
+        
+        const apiKey = _getApiKey();
+        if (!apiKey) {
+            alert("Operação cancelada: Nenhuma chave de API fornecida.");
+            return textToCorrect;
+        }
+
+        const promptText = `
+            Atue como um assistente jurídico sênior especialista em Direito e Processo do Trabalho.
+            Sua tarefa é refinar um texto ditado para ser utilizado em peças processuais, despachos ou sentenças na Justiça do Trabalho.
+
+            Diretrizes Obrigatórias:
+            1. Eleve o registro da linguagem para a norma culta formal (jurídica).
+            2. Substitua termos coloquiais por terminologia técnica adequada ao contexto trabalhista (ex: prefira 'Reclamante' e 'Reclamada' quando cabível; 'dispensa' em vez de 'mandar embora').
+            3. Corrija rigorosamente gramática, concordância e pontuação.
+            4. Se houver menção a leis (ex: "clt", "constituição"), formate corretamente (ex: "CLT", "CF/88").
+            5. Mantenha a clareza e a concisão, sem alterar o sentido original dos fatos narrados.
+            6. Retorne APENAS o texto reescrito, sem introduções, aspas ou comentários.
+            
+            Entrada (Texto Ditado): "${textToCorrect}"
+        `;
+
+        try {
+            return await _callGeminiAPI(apiKey, promptText);
+        } catch (error) {
             alert(`Erro na IA: ${error.message}\n\nInserindo texto original.`);
             return textToCorrect;
         }
@@ -107,5 +155,5 @@ const GeminiService = (() => {
         alert("Chave removida. Na próxima tentativa, será solicitada uma nova.");
     }
 
-    return { correctText, resetKey };
+    return { correctText, refineLegalText, resetKey };
 })();
