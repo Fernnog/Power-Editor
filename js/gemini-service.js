@@ -1,57 +1,88 @@
-// --- START OF FILE js/gemini-service.js ---
-
 const GeminiService = (() => {
-    // ALTERAÇÃO: Fallback atualizado para 'gemini-1.5-flash' (versão estável sem sufixo -latest)
-    // Isso previne erros 404 caso o config.js não seja carregado corretamente.
+    // Configurações Iniciais
+    // Tenta pegar o modelo do config, ou usa o padrão seguro que descobrimos
     const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-2.0-flash-001';
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+    const STORAGE_KEY = 'minha_chave_gemini_secreta'; // O nome do nosso "cofre"
+
+    /**
+     * Função interna para gerenciar a chave de segurança
+     */
+    function _getApiKey() {
+        // 1. Verifica se (por acaso) ainda está no arquivo de config
+        if (typeof CONFIG !== 'undefined' && CONFIG.apiKey) {
+            return CONFIG.apiKey;
+        }
+
+        // 2. Tenta pegar do "Cofre" do navegador (LocalStorage)
+        let savedKey = localStorage.getItem(STORAGE_KEY);
+
+        // 3. Se não tiver em lugar nenhum, pede ao usuário
+        if (!savedKey) {
+            savedKey = prompt("⚠️ Configuração Necessária\n\nPara usar a IA, cole sua Chave de API do Google Gemini abaixo.\nEla será salva apenas no seu navegador.");
+            
+            // Se o usuário digitou algo, salva no cofre
+            if (savedKey && savedKey.trim().length > 10) {
+                savedKey = savedKey.trim();
+                localStorage.setItem(STORAGE_KEY, savedKey);
+                alert("✅ Chave salva com sucesso! Você já pode usar o ditado.");
+            }
+        }
+
+        return savedKey;
+    }
 
     /**
      * Envia o texto completo para correção.
      */
-    async function correctText(textToCorrect, apiKey) {
+    async function correctText(textToCorrect) {
         if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
 
-        // MELHORIA: Validação básica para evitar chamadas com chaves inválidas ou vazias
-        if (!apiKey || apiKey.includes("SUA_CHAVE")) {
-            console.warn("Chave de API inválida ou não configurada.");
-            alert("Atenção: Configure sua chave de API válida no arquivo js/config.js para usar a IA.");
-            return textToCorrect;
+        // Recupera a chave usando nossa nova lógica inteligente
+        const apiKey = _getApiKey();
+
+        if (!apiKey) {
+            alert("Operação cancelada: Nenhuma chave de API fornecida.");
+            return textToCorrect; // Retorna o original sem mexer
         }
 
-        const prompt = `
+        const promptText = `
             Atue como um editor de texto profissional.
             Sua tarefa é formatar e corrigir o texto cru de um ditado.
             
             Regras:
             1. Corrija pontuação, acentuação e gramática.
             2. Capitalize o início das frases.
-            3. NÃO adicione introduções ou explicações. Retorne APENAS o texto.
+            3. NÃO adicione introduções ou explicações. Retorne APENAS o texto corrigido.
             4. Se o texto for longo, mantenha a formatação de parágrafos.
             
             Entrada: "${textToCorrect}"
         `;
 
         try {
-            // Monta a URL garantindo que o modelo esteja correto
             const url = `${BASE_URL}${MODEL}:generateContent?key=${apiKey}`;
             
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
+                    contents: [{ parts: [{ text: promptText }] }],
                     generationConfig: {
                         temperature: 0.1,
-                        maxOutputTokens: 2000 // Aumentado para suportar textos maiores
+                        maxOutputTokens: 2000
                     }
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("Detalhes do Erro Gemini:", errorData);
-                // MELHORIA: Lança um erro com a mensagem específica da API para facilitar o debug
+                
+                // Se o erro for de permissão (chave inválida), limpamos o cofre para pedir de novo na próxima
+                if (response.status === 400 || response.status === 403) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    console.error("Chave inválida removida. O usuário terá que inserir novamente.");
+                }
+
                 throw new Error(`Erro API (${response.status}): ${errorData.error?.message || response.statusText}`);
             }
 
@@ -60,16 +91,21 @@ const GeminiService = (() => {
             if (data.candidates && data.candidates[0]?.content?.parts[0]) {
                 return data.candidates[0].content.parts[0].text.trim();
             } else {
-                throw new Error("Formato de resposta da IA inválido ou vazio.");
+                throw new Error("Formato de resposta inválido");
             }
 
         } catch (error) {
             console.error("Falha na correção IA:", error);
-            // MELHORIA: Alert mais informativo para o usuário saber o que aconteceu
-            alert(`A IA não conseguiu processar o texto.\nDetalhe: ${error.message}\n\nO texto original será inserido.`);
-            return textToCorrect; // Retorna o texto original em caso de erro para não perder dados
+            alert(`Erro na IA: ${error.message}\n\nInserindo texto original.`);
+            return textToCorrect;
         }
     }
 
-    return { correctText };
+    // Função utilitária caso você queira criar um botão de "Resetar Chave" no futuro
+    function resetKey() {
+        localStorage.removeItem(STORAGE_KEY);
+        alert("Chave removida. Na próxima tentativa, será solicitada uma nova.");
+    }
+
+    return { correctText, resetKey };
 })();
