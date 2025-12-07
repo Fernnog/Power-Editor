@@ -102,30 +102,37 @@ const SpeechDictation = (() => {
             // Para o microfone para evitar conflitos de áudio
             stop();
 
-            // Identifica qual botão foi clicado para feedback visual
-            let targetBtn = null;
-            if (mode === 'raw') targetBtn = ui.btnInsertRaw;
-            else if (mode === 'fix') targetBtn = ui.btnInsertFix;
-            else if (mode === 'legal') targetBtn = ui.btnInsertLegal;
+            // 1. GESTÃO DE UX: BLOQUEIO DE BOTÕES
+            const footerGroup = document.querySelector('.footer-buttons-group');
+            if (footerGroup) {
+                footerGroup.classList.add('disabled-all'); // Classe que aplica opacidade e pointer-events: none via CSS
+            }
 
-            const originalBtnText = targetBtn ? targetBtn.textContent : '';
-
+            // Armazena texto original para caso de erro ou para envio à API
+            const originalText = rawText;
+            
             try {
                 let textToInsert = rawText;
 
-                // Se não for inserção crua, processa com IA
+                // Se não for inserção crua, prepara o feedback visual e processa com IA
                 if (mode !== 'raw') {
-                    if (targetBtn) {
-                        targetBtn.textContent = mode === 'legal' ? "⚖️ Refinando..." : "✨ Corrigindo...";
-                        targetBtn.disabled = true;
+                    // Feedback visual na área de texto
+                    if (ui.textArea) {
+                        ui.textArea.classList.add('processing-state'); // Classe para pulso amarelo via CSS
+                        ui.textArea.setAttribute('data-original-text', originalText);
+                        // Mensagem de feedback contextual
+                        const msg = mode === 'legal' 
+                            ? "⚖️ O Assistente Jurídico está refinando seu texto. Aguarde..." 
+                            : "✨ A IA está corrigindo a gramática. Aguarde...";
+                        ui.textArea.value = msg;
                     }
 
                     if (mode === 'fix') {
                         // Correção Padrão (Gramática/Pontuação)
-                        textToInsert = await GeminiService.correctText(rawText);
+                        textToInsert = await GeminiService.correctText(originalText);
                     } else if (mode === 'legal') {
-                        // Refinamento Jurídico (Novo Prompt)
-                        textToInsert = await GeminiService.refineLegalText(rawText);
+                        // Refinamento Jurídico (Prompt Sênior)
+                        textToInsert = await GeminiService.refineLegalText(originalText);
                     }
                 }
 
@@ -139,12 +146,22 @@ const SpeechDictation = (() => {
             } catch (error) {
                 console.error("Erro no fluxo de inserção:", error);
                 alert("Houve um erro técnico. Inserindo texto original.");
-                onInsertCallback(rawText);
+                // Recupera o texto original para garantir que o usuário não perca o trabalho
+                onInsertCallback(originalText);
+                if (ui.dictationModal) ui.dictationModal.classList.remove('visible');
             } finally {
-                // Restaura o botão para o estado original
-                if (targetBtn && mode !== 'raw') {
-                    targetBtn.textContent = originalBtnText;
-                    targetBtn.disabled = false;
+                // 2. RESTAURAÇÃO DE UX: DESBLOQUEIO E LIMPEZA
+                if (footerGroup) {
+                    footerGroup.classList.remove('disabled-all');
+                }
+                
+                if (ui.textArea) {
+                    ui.textArea.classList.remove('processing-state');
+                    // Se o modal não fechou (ex: erro silencioso ou lógica de manter aberto), restaura o texto
+                    const savedOriginal = ui.textArea.getAttribute('data-original-text');
+                    if (savedOriginal && ui.textArea.value !== savedOriginal) {
+                        ui.textArea.value = savedOriginal;
+                    }
                 }
             }
         };
