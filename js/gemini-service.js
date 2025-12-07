@@ -1,6 +1,6 @@
 const GeminiService = (() => {
     // Configurações Iniciais
-    // Tenta pegar o modelo do config, ou usa o padrão seguro que descobrimos
+    // Tenta pegar o modelo do config, ou usa o padrão seguro
     const MODEL = (typeof CONFIG !== 'undefined' && CONFIG.model) ? CONFIG.model : 'gemini-flash-latest';
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
     const STORAGE_KEY = 'minha_chave_gemini_secreta'; // O nome do nosso "cofre"
@@ -82,6 +82,7 @@ const GeminiService = (() => {
 
     /**
      * Envia o texto completo para correção gramatical padrão.
+     * Usa o PromptManager para obter as instruções.
      */
     async function correctText(textToCorrect) {
         if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
@@ -92,18 +93,13 @@ const GeminiService = (() => {
             return textToCorrect;
         }
 
-        const promptText = `
-            Atue como um editor de texto profissional.
-            Sua tarefa é formatar e corrigir o texto cru de um ditado.
-            
-            Regras:
-            1. Corrija pontuação, acentuação e gramática.
-            2. Capitalize o início das frases.
-            3. NÃO adicione introduções ou explicações. Retorne APENAS o texto corrigido.
-            4. Se o texto for longo, mantenha a formatação de parágrafos.
-            
-            Entrada: "${textToCorrect}"
-        `;
+        // MODIFICAÇÃO: Uso do PromptManager
+        if (typeof PromptManager === 'undefined' || !PromptManager.correction) {
+            console.error("PromptManager não foi carregado.");
+            return textToCorrect;
+        }
+
+        const promptText = PromptManager.correction.replace('{{TEXT}}', textToCorrect);
 
         try {
             return await _callGeminiAPI(apiKey, promptText);
@@ -115,7 +111,7 @@ const GeminiService = (() => {
 
     /**
      * Refina o texto para o contexto jurídico trabalhista.
-     * Utiliza um prompt especializado para elevar o registro da linguagem.
+     * Usa o PromptManager para obter as instruções.
      */
     async function refineLegalText(textToCorrect) {
         if (!textToCorrect || !textToCorrect.trim()) return textToCorrect;
@@ -126,20 +122,13 @@ const GeminiService = (() => {
             return textToCorrect;
         }
 
-        const promptText = `
-            Atue como um assistente jurídico sênior especialista em Direito e Processo do Trabalho.
-            Sua tarefa é refinar um texto ditado para ser utilizado em peças processuais, despachos ou sentenças na Justiça do Trabalho.
+        // MODIFICAÇÃO: Uso do PromptManager
+        if (typeof PromptManager === 'undefined' || !PromptManager.legal_senior) {
+            console.error("PromptManager não foi carregado.");
+            return textToCorrect;
+        }
 
-            Diretrizes Obrigatórias:
-            1. Eleve o registro da linguagem para a norma culta formal (jurídica).
-            2. Substitua termos coloquiais por terminologia técnica adequada ao contexto trabalhista (ex: prefira 'Reclamante' e 'Reclamada' quando cabível; 'dispensa' em vez de 'mandar embora').
-            3. Corrija rigorosamente gramática, concordância e pontuação.
-            4. Se houver menção a leis (ex: "clt", "constituição"), formate corretamente (ex: "CLT", "CF/88").
-            5. Mantenha a clareza e a concisão, sem alterar o sentido original dos fatos narrados.
-            6. Retorne APENAS o texto reescrito, sem introduções, aspas ou comentários.
-            
-            Entrada (Texto Ditado): "${textToCorrect}"
-        `;
+        const promptText = PromptManager.legal_senior.replace('{{TEXT}}', textToCorrect);
 
         try {
             return await _callGeminiAPI(apiKey, promptText);
