@@ -486,19 +486,64 @@
 .interim-display { padding: 0 15px 15px 15px; color: #999; font-style: italic; min-height: 24px; pointer-events: none; }
 
 .dictation-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 5px; }
-.footer-buttons-group { display: flex; gap: 15px; align-items: center; }
-.action-buttons { display: flex; gap: 8px; }
+.footer-buttons-group { display: flex; gap: 10px; align-items: center; }
+.action-buttons { display: flex; gap: 10px; }
 
-/* Botões de Ação do Ditado */
-.action-btn-raw { background-color: #fff; color: #555; border: 1px solid #ccc; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.2s; font-size: 14px; }
-.action-btn-raw:hover { background-color: #f0f0f0; }
+/* --- [ATUALIZAÇÃO v1.1.3] BOTÕES DO RODAPÉ UNIFORMIZADOS --- */
+/* Regra unificada para garantir tamanho e forma consistentes em todos os botões do ditado */
+#btn-clear-dictation,
+.action-btn-raw,
+.action-btn-fix,
+.action-btn-legal {
+    height: 42px; /* Altura fixa para todos */
+    padding: 0 18px; /* Espaçamento horizontal consistente */
+    border-radius: 6px; /* Arredondamento igual */
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* Espaço entre ícone e texto */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    min-width: 90px; /* Garante que botões curtos não fiquem muito pequenos */
+    border: 1px solid transparent;
+}
 
-.action-btn-fix { background-color: var(--primary-color); color: white; border: 1px solid var(--primary-color-dark); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.2s; font-size: 14px; }
-.action-btn-fix:hover { filter: brightness(0.9); }
+/* Estilo Específico: Botão Limpar (Secundário) */
+#btn-clear-dictation {
+    background-color: #fff;
+    color: #666;
+    border-color: #ddd;
+}
+#btn-clear-dictation:hover { background-color: #f8f9fa; border-color: #ccc; color: #333; }
 
-.action-btn-legal { background-color: #4B0082; color: white; border: 1px solid #3a0063; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: all 0.2s; font-size: 14px; }
-.action-btn-legal:hover { background-color: #3a0063; }
+/* Estilo Específico: Botão Inserir (Básico) */
+.action-btn-raw {
+    background-color: #fff;
+    color: #333;
+    border-color: #ccc;
+}
+.action-btn-raw:hover { background-color: #e2e6ea; border-color: #adb5bd; }
 
+/* Estilo Específico: Botão Revisar (IA Padrão) */
+.action-btn-fix {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color-dark);
+}
+.action-btn-fix:hover { filter: brightness(0.9); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+/* Estilo Específico: Botão Jurídico (IA Avançada) */
+.action-btn-legal {
+    background-color: #4B0082;
+    color: white;
+    border-color: #3a0063;
+}
+.action-btn-legal:hover { background-color: #3a0063; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
+
+/* Salvo Status */
 .save-status { font-size: 12px; color: #28a745; opacity: 0; transition: opacity 0.5s ease; font-weight: bold; display: flex; align-items: center; gap: 5px; }
 .save-status::before { content: '✓'; }
 .save-status.visible { opacity: 1; }
