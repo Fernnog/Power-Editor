@@ -238,7 +238,19 @@
 
 .model-color-indicator { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); flex-shrink: 0; display: inline-block; }
 .model-header { display: flex; align-items: center; margin-bottom: 8px; }
-.model-actions { display: flex; gap: 8px; flex-shrink: 0; justify-content: flex-start; padding-top: 5px; border-top: 1px solid #f9e0a8; }
+
+/* [CORREÇÃO VISUAL] Ícones de ação delicados e menores */
+.model-actions { 
+    display: flex; 
+    gap: 5px; 
+    flex-wrap: wrap;
+    flex-shrink: 0; 
+    justify-content: flex-start; 
+    padding-top: 6px; 
+    margin-top: 4px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
 .model-variable-indicator { font-size: 1em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
 .model-variable-indicator svg { width: 16px; height: 16px; color: var(--primary-color); stroke-width: 2.5; }
 
@@ -285,7 +297,7 @@
 #add-new-folder-btn { background-color: #17a2b8; color: white; border-color: #138496; }
 #add-new-folder-btn:hover { background-color: #138496; }
 
-/* Ações Flutuantes das Abas */
+/* [CORREÇÃO VISUAL] Botões de Ação Redondos (Delicados) */
 #tab-actions-container {
     position: absolute; bottom: 10px; right: 10px;
     display: flex; gap: 8px;
@@ -295,14 +307,47 @@
 #tab-actions-container.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
 
 .action-btn, .tab-action-btn {
-    background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 50%;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 0;
+    background: #fff; /* Fundo branco para limpeza visual */
+    border: 1px solid #e0c080; /* Borda sutil que combina com o card amarelo */
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    padding: 0;
+    flex-shrink: 0;
 }
-.action-btn { width: 32px; height: 32px; }
-.tab-action-btn { width: 34px; height: 34px; }
-.action-btn:hover, .tab-action-btn:hover { background-color: #e9ecef; transform: scale(1.1); border-color: #adb5bd; }
+
+/* Tamanhos Reduzidos para Delicadeza */
+.action-btn { width: 24px; height: 24px; min-width: 24px; }
+.tab-action-btn { width: 28px; height: 28px; }
+
+/* Hover Suave */
+.action-btn:hover, .tab-action-btn:hover { 
+    background-color: #fff; 
+    transform: translateY(-1px); 
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: var(--primary-color);
+}
+
 .tab-action-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Ícones SVG mais finos e delicados */
+.action-btn svg { 
+    width: 13px; height: 13px; 
+    stroke-width: 1.5px; 
+    color: #555; 
+    transition: stroke 0.2s;
+}
+.tab-action-btn svg { width: 15px; height: 15px; stroke-width: 1.5px; }
+
+/* Hover nos ícones */
+.action-btn:hover svg, .tab-action-btn:hover svg {
+    color: var(--primary-color);
+}
 
 /* Menu de Contexto e Paleta de Cores */
 .context-menu {
