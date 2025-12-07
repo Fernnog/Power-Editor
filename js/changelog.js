@@ -3,8 +3,17 @@
 const ChangelogManager = (() => {
     // Dados centralizados das versões
     const DATA = {
-        currentVersion: '1.1.2',
+        currentVersion: '1.1.3',
         history: [
+            {
+                version: '1.1.3',
+                title: '🎨 Polimento Visual: Uniformidade no Ditado',
+                content: `
+                    <ul>
+                        <li><strong>Botões de Ação Padronizados:</strong> A interface do modal "Ditar" recebeu um ajuste fino de design. Os botões "Limpar", "Inserir", "Revisar" e "Jurídico" agora possuem exatamente a mesma altura, espaçamento e formato arredondado. Isso elimina a inconsistência visual anterior e melhora a área de clique, proporcionando uma experiência de uso mais fluida e profissional.</li>
+                    </ul>
+                `
+            },
             {
                 version: '1.1.2',
                 title: '⚖️ Power Dictation & Organização',
