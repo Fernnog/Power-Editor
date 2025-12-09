@@ -165,24 +165,68 @@ blockquote p {
     box-shadow: inset 0 0 25px rgba(206, 42, 102, 0.1);
 }
 
-/* --- ESTILOS DO VISUALIZADOR DE ÁUDIO (CANVAS) --- */
-/* Substitui os antigos .sound-wave e @keyframes */
+/* --- ESTILOS DO VISUALIZADOR DE ÁUDIO (CANVAS & LAYOUT) --- */
+/* CORREÇÃO APLICADA: Layout Flexível para evitar sobreposição */
 
-#audio-visualizer {
-    display: none; /* Oculto por padrão, ativado via JS */
-    width: 200px;  /* Largura fixa na UI */
+/* 1. Container flexível que cresce quando o canvas aparece */
+.mic-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: auto;         /* Permite crescimento horizontal */
     height: 50px;
-    position: absolute;
-    left: 60px;    /* Mesma posição relativa do anterior */
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none; /* Não bloquear cliques */
+    gap: 15px;           /* Espaçamento seguro entre ícone e barras */
+    margin-right: 20px;  /* Empurra o seletor de idioma para a direita */
+}
+
+/* 2. Ícone fixo (não encolhe) */
+.mic-icon {
+    flex-shrink: 0;
+    font-size: 36px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    z-index: 2;
+}
+
+.mic-icon:hover {
+    background-color: #f0f0f0;
+}
+
+.mic-icon.listening {
+    color: var(--primary-color);
+    background-color: rgba(206, 42, 102, 0.1);
+}
+
+/* 3. Canvas posicionado no fluxo normal (Relative) */
+#audio-visualizer {
+    display: none;       /* Oculto por padrão */
+    width: 160px;        /* Tamanho controlado */
+    height: 45px;
+    
+    position: relative;  /* CORREÇÃO: Remove position absolute */
+    left: auto;
+    top: auto;
+    transform: none;
+    
+    pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
-    z-index: 10;
 }
 
 #audio-visualizer.active {
     display: block;
     opacity: 1;
+}
+
+/* Removemos a classe antiga .sound-wave pois foi substituída pelo canvas */
+.sound-wave {
+    display: none !important;
 }
