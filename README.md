@@ -14,7 +14,7 @@
 
 # Power Editor - Editor de Documentos de Alta Performance
 
-Este repositório contém o código-fonte do Power Editor (v1.1.2), um editor de documentos web projetado para ser uma alternativa de alta performance a soluções baseadas em nuvem. Focado em agilidade, o sistema roda totalmente no lado do cliente (client-side), oferecendo ferramentas avançadas de automação jurídica e integração com Inteligência Artificial.
+Este repositório contém o código-fonte do Power Editor (v1.1.4), um editor de documentos web projetado para ser uma alternativa de alta performance a soluções baseadas em nuvem. Focado em agilidade, o sistema roda totalmente no lado do cliente (client-side), oferecendo ferramentas avançadas de automação jurídica e integração com Inteligência Artificial.
 
 ## 1. Contexto do Projeto
 
@@ -33,13 +33,14 @@ A aplicação é uma SPA (Single Page Application) leve, sem dependência de fra
 ## 3. Principais Funcionalidades
 
 ### 🧠 Inteligência Artificial e Ditado (Power Dictation)
-A ferramenta de voz foi totalmente reformulada na versão 1.1.2, transformando-se em uma central de produção de texto:
-*   **Buffer de Rascunho Seguro:** O texto ditado não vai direto para o documento. Ele aparece em uma área de rascunho onde você pode ver o reconhecimento em tempo real. Se fechar a janela, o texto é salvo automaticamente.
-*   **Visualização de Áudio:** Uma onda sonora animada confirma visualmente que o microfone está captando áudio.
+A ferramenta de voz foi revolucionada na versão 1.1.4, introduzindo processamento de sinal digital (DSP) profissional:
+*   **Visualização de Áudio Profissional:** Um canvas de espectro de áudio real, com barras coloridas que reagem dinamicamente à frequência e volume da voz, substituindo animações CSS estáticas.
+*   **Tratamento de Áudio (DSP):** Filtros passa-alta (85Hz) para remover ruídos graves e compressores dinâmicos para nivelar o volume da voz antes do reconhecimento.
+*   **Validação de Hardware:** O sistema verifica ativamente o fluxo de dados do microfone. Se o visualizador não se move, o usuário sabe instantaneamente que o microfone não está captando áudio.
 *   **Três Modos de Inserção:**
     1.  **Inserir:** Cola o texto cru, exatamente como foi ditado.
     2.  **Revisar ✨:** Usa a IA para corrigir gramática, pontuação e capitalização antes de inserir.
-    3.  **Jurídico ⚖️:** Transforma linguagem coloquial em **norma culta jurídica**. A IA atua como um assistente sênior de Direito do Trabalho, substituindo termos como "mandar embora" por "dispensa" e formatando menções a leis (ex: CLT, CF/88).
+    3.  **Jurídico ⚖️:** Transforma linguagem coloquial em **norma culta jurídica**. A IA atua como um assistente sênior de Direito do Trabalho.
 
 ### 🚀 Produtividade e Automação
 *   **Power Palette (`Ctrl + .`):** Uma paleta de comandos rápida (estilo VS Code) para inserir modelos sem tirar as mãos do teclado.
@@ -68,14 +69,15 @@ A arquitetura foi modularizada para facilitar a manutenção e a escalabilidade.
 ### Núcleo (Core)
 -   `index.html`: Estrutura principal, modais e templates.
 -   `css/style.css`: Estilização completa, variáveis de temas e animações.
+-   `css/components.css`: Estilos específicos para componentes, modais e o novo visualizador de áudio.
 -   `js/script.js`: Controlador principal (Controller), gerencia estado global e inicialização.
--   `js/config.js`: *(Depreciado/Legado)* Mantido apenas para compatibilidade, não contém mais chaves sensíveis.
+-   `js/config.js`: *(Depreciado/Legado)* Mantido apenas para compatibilidade.
 
 ### Módulos de Funcionalidade
--   **`js/changelog.js`: (NOVO)** Gerencia o histórico de versões e exibe as novidades na UI. Separado da configuração do editor para segurança.
+-   **`js/speech.js`: (ATUALIZADO)** Gerencia a Web Speech API, agora com classe `AudioVisualizer` e lógica DSP integrada.
+-   `js/changelog.js`: Gerencia o histórico de versões e exibe as novidades na UI.
 -   `js/tinymce-config.js`: Configuração do editor TinyMCE e barra de ferramentas.
--   `js/speech.js`: API de reconhecimento de voz e integração com os botões de ação (Inserir/Revisar/Jurídico).
--   `js/gemini-service.js`: Serviço de comunicação com a API Google Gemini. Inclui o novo prompt de "Persona Jurídica".
+-   `js/gemini-service.js`: Serviço de comunicação com a API Google Gemini.
 -   `js/SidebarManager.js`: Gerencia a renderização e eventos da barra lateral (pastas, drag & drop).
 -   `js/CommandPalette.js`: Lógica da paleta de comandos flutuante.
 -   `js/ModalManager.js`: Sistema centralizado para exibição de janelas modais dinâmicas.
@@ -97,18 +99,14 @@ A aplicação é **100% Client-Side**. Não requer Node.js, Python ou servidor b
 
 ## 6. Roadmap e Histórico
 
-### Versão Atual: 1.1.2 🚀
--   ✅ **Separação de Arquitetura:** Changelog desacoplado em `js/changelog.js`.
--   ✅ **Modo Jurídico (IA):** Novo botão no ditado que formaliza o texto para peças processuais.
--   ✅ **Múltiplos Modos de Inserção:** Escolha entre texto cru, revisado ou jurídico.
-
-### Implementações Recentes
--   ✅ Rascunho Seguro (Buffer) para ditado.
--   ✅ Cofre de Chaves no LocalStorage (Fim do `config.js` com dados sensíveis).
--   ✅ Assistente de Lógica Condicional (GUI para criar `{{#if...}}`).
--   ✅ Arrastar e Soltar Variáveis de Sistema.
+### Versão Atual: 1.1.4 🚀
+-   ✅ **Visualizador de Áudio Real (DSP):** Canvas de espectro com tratamento de sinal (filtro/compressor).
+-   ✅ **Validação de Hardware:** Feedback visual preciso sobre a captura do microfone.
+-   ✅ **Correção de Layout:** Ajuste flexbox no modal de ditado para evitar sobreposições.
 
 ### Futuro
 -   [ ] **Temas Personalizados:** Criador de temas onde o usuário define as cores.
 -   [ ] **Sincronização Cloud:** Integração opcional com Firebase/Supabase para sincronizar modelos entre dispositivos.
 -   [ ] **Histórico de Documentos:** Salvar snapshots do conteúdo do editor localmente.
+
+---
