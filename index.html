@@ -100,13 +100,11 @@
     <div id="dictation-modal" class="modal-overlay">
         <div class="dictation-content advanced-mode">
             <div class="dictation-header">
-                <!-- Container para o ícone e a animação da onda sonora -->
+                <!-- Container para o ícone e a visualização -->
                 <div class="mic-wrapper">
                     <div id="dictation-mic-icon" class="mic-icon">🎤</div>
-                    <!-- Visualizador de Onda Sonora (Sound Wave) -->
-                    <div id="dictation-wave" class="sound-wave">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
+                    <!-- Visualizador de Áudio Real (DSP Canvas) - Substitui a antiga animação CSS -->
+                    <canvas id="audio-visualizer" width="300" height="60"></canvas>
                 </div>
 
                 <div class="dictation-controls">
