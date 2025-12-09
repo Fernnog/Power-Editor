@@ -3,8 +3,24 @@
 const ChangelogManager = (() => {
     // Dados centralizados das versões
     const DATA = {
-        currentVersion: '1.1.3',
+        currentVersion: '1.1.4',
         history: [
+            {
+                version: '1.1.4',
+                title: '🎙️ Engenharia de Áudio: Visualização Profissional e DSP',
+                content: `
+                    <ul>
+                        <li><strong>Visualizador de Espectro Real:</strong> Substituímos a animação decorativa por um analisador de áudio profissional. Agora você vê barras coloridas que reagem instantaneamente à frequência e volume da sua voz. Se as barras não se moverem, seu microfone não está captando áudio.</li>
+                        <li><strong>Tratamento de Sinal (DSP):</strong> Implementamos filtros invisíveis que melhoram a qualidade da captura:
+                            <ul>
+                                <li><strong>Filtro Passa-Alta:</strong> Remove ruídos graves de fundo (como ar-condicionado).</li>
+                                <li><strong>Compressor Dinâmico:</strong> Nivela o volume da voz, garantindo que o visualizador funcione bem mesmo se você falar baixo.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Layout Robusto:</strong> O painel de ditado foi redesenhado com tecnologia Flexbox, garantindo que os controles nunca se sobreponham, independentemente do tamanho da tela.</li>
+                    </ul>
+                `
+            },
             {
                 version: '1.1.3',
                 title: '🎨 Polimento Visual: Uniformidade no Ditado',
