@@ -444,28 +444,62 @@
 
 .dictation-header { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
 
-.mic-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; }
-.mic-icon { font-size: 36px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.2s; z-index: 2; }
+/* [CORREÇÃO DE LAYOUT] Container Flexível para o Microfone e Visualizador */
+.mic-wrapper { 
+    position: relative; 
+    display: flex; /* Alinha lado a lado */
+    align-items: center; 
+    justify-content: flex-start; 
+    width: auto; /* Permite crescer */
+    height: 50px; 
+    gap: 15px; /* Espaço entre mic e canvas */
+    margin-right: 20px; /* Empurra os controles para a direita */
+    flex-shrink: 0;
+}
+
+.mic-icon { 
+    font-size: 36px; cursor: pointer; padding: 8px; border-radius: 50%; 
+    transition: background-color 0.2s; z-index: 2; 
+    width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
 .mic-icon:hover { background-color: #f0f0f0; }
 .mic-icon.listening { color: var(--primary-color); background-color: rgba(206, 42, 102, 0.1); }
 
-.sound-wave { display: none; align-items: center; justify-content: center; gap: 4px; height: 30px; position: absolute; left: 60px; }
-.sound-wave.active { display: flex; }
-.sound-wave span { display: block; width: 5px; height: 10%; background-color: var(--primary-color); border-radius: 3px; animation: wave-animation 1s ease-in-out infinite; }
-.sound-wave span:nth-child(1) { animation-delay: 0.0s; }
-.sound-wave span:nth-child(2) { animation-delay: 0.1s; }
-.sound-wave span:nth-child(3) { animation-delay: 0.2s; }
-.sound-wave span:nth-child(4) { animation-delay: 0.3s; }
-.sound-wave span:nth-child(5) { animation-delay: 0.4s; }
+/* Estilo do Visualizador de Áudio (Canvas) */
+#audio-visualizer {
+    display: none;
+    width: 160px; /* Largura controlada */
+    height: 45px;
+    position: relative; /* No fluxo normal do documento */
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
 
-.dictation-controls { display: flex; flex-direction: column; align-items: flex-start; flex-grow: 1; margin-left: 60px; }
+#audio-visualizer.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Remove a classe antiga de onda CSS */
+.sound-wave { display: none !important; }
+
+/* Remove margem fixa antiga pois agora usamos flex gap */
+.dictation-controls { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start; 
+    flex-grow: 1; 
+    min-width: 0; 
+}
+
 #dictation-lang-select { padding: 6px 10px; border-radius: 5px; border: 1px solid #ccc; background-color: #f8f9fa; font-size: 14px; margin-bottom: 4px; }
-#dictation-status { font-size: 14px; color: #666; }
+#dictation-status { font-size: 14px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .status-indicator { font-weight: 500; transition: color 0.3s; }
 .status-indicator.reconnecting { color: #e67e22; font-style: italic; }
 .status-indicator.error { color: #dc3545; font-weight: bold; }
 
-#dictation-close-btn { background: #f1f1f1; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; line-height: 32px; text-align: center; cursor: pointer; color: #555; transition: background-color 0.2s; }
+#dictation-close-btn { background: #f1f1f1; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; line-height: 32px; text-align: center; cursor: pointer; color: #555; transition: background-color 0.2s; flex-shrink: 0; }
 #dictation-close-btn:hover { background-color: #e0e0e0; }
 
 .dictation-buffer-area {
