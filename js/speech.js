@@ -1,27 +1,168 @@
+// js/speech.js
+
+/**
+ * Classe responsável pelo Processamento de Sinal Digital (DSP) e Visualização
+ * Baseada em Web Audio API e Canvas API.
+ */
+class AudioVisualizer {
+    constructor(canvasElement) {
+        this.canvas = canvasElement;
+        this.ctx = this.canvas.getContext('2d');
+        this.audioContext = null;
+        this.analyser = null;
+        this.dataArray = null;
+        this.animationId = null;
+        this.isActive = false;
+        
+        // Ajuste inicial de resolução (DPI)
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+    }
+
+    resize() {
+        const dpr = window.devicePixelRatio || 1;
+        // Verifica se o canvas existe e tem dimensões no DOM
+        if (this.canvas) {
+            const rect = this.canvas.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                this.canvas.width = rect.width * dpr;
+                this.canvas.height = rect.height * dpr;
+                this.ctx.scale(dpr, dpr);
+            }
+        }
+    }
+
+    async start(stream) {
+        if (this.isActive) return;
+        
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = this.audioContext.createMediaStreamSource(stream);
+            
+            // --- CADEIA DSP (Tratamento de Áudio) ---
+            
+            // 1. Filtro Passa-Alta (Remove ruídos graves/hum elétrico abaixo de 85Hz)
+            const filter = this.audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 85;
+
+            // 2. Compressor (Nivela o volume da voz para visualização consistente)
+            const compressor = this.audioContext.createDynamicsCompressor();
+            compressor.threshold.value = -50;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+
+            // 3. Analisador (FFT para visualização)
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 256; // Resolução das barras
+            this.analyser.smoothingTimeConstant = 0.5; // Suavização do movimento
+
+            // Conexões: Fonte -> Filtro -> Compressor -> Analisador
+            source.connect(filter);
+            filter.connect(compressor);
+            compressor.connect(this.analyser);
+            // Nota: Não conectamos ao destination (alto-falantes) para evitar eco.
+
+            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+            this.isActive = true;
+            this.draw();
+            
+        } catch (e) {
+            console.error("Erro ao iniciar AudioVisualizer:", e);
+        }
+    }
+
+    draw() {
+        if (!this.isActive) return;
+        this.animationId = requestAnimationFrame(() => this.draw());
+
+        // Pega dados de frequência
+        this.analyser.getByteFrequencyData(this.dataArray);
+        
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
+        this.ctx.clearRect(0, 0, width, height);
+
+        // Configuração das barras
+        // Cortamos as frequências muito altas (acima do índice 80) onde a voz humana tem pouca energia
+        const bufferLength = Math.floor(this.dataArray.length * 0.7); 
+        const barWidth = (width / bufferLength) * 2.5;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const value = this.dataArray[i];
+            const percent = value / 255;
+            
+            // Altura da barra
+            const barHeight = height * percent * 0.9; 
+            
+            // --- Lógica de Cor do Tema Power Editor ---
+            // Base: #ce2a66 (Hue ~338). Variação para Roxo/Fúcsia conforme intensidade.
+            const hue = 330 + (percent * 30); // Varia entre 330 (Rosa) e 360 (Vermelho/Fúcsia)
+            const lightness = 50 + (percent * 10);
+            
+            this.ctx.fillStyle = `hsl(${hue}, 80%, ${lightness}%)`;
+
+            // Desenha a barra
+            if (barHeight > 1) {
+                // Centralizada verticalmente
+                const y = (height - barHeight) / 2;
+                
+                // Arredondamento simples
+                this.ctx.beginPath();
+                this.ctx.roundRect(x, y, barWidth - 1, barHeight, [3]);
+                this.ctx.fill();
+            }
+            x += barWidth;
+        }
+    }
+
+    stop() {
+        this.isActive = false;
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+        
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            this.audioContext.close();
+        }
+        
+        // Limpa o canvas
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        this.ctx.clearRect(0, 0, width, height);
+    }
+}
+
+/**
+ * Módulo Principal de Ditado
+ */
 const SpeechDictation = (() => {
-    // Verifica compatibilidade com navegadores (Chrome/Edge/Safari/Firefox)
+    // Verifica compatibilidade
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     let isListening = false;
-    let shouldKeepListening = false; // Controle para reinício automático
-    const STORAGE_KEY = 'dictation_buffer_backup'; // Chave para o "Rascunho Seguro"
+    let shouldKeepListening = false; 
+    const STORAGE_KEY = 'dictation_buffer_backup'; 
 
-    // Mapeamento dos elementos da interface
+    // Variáveis para o Visualizador e Stream de Hardware
+    let visualizerInstance = null;
+    let audioStream = null;
+
+    // Mapeamento UI
     let ui = {
         micIcon: null, langSelect: null, statusDisplay: null, dictationModal: null,
-        toolbarMicButton: null, waveAnimation: null, textArea: null,
+        toolbarMicButton: null, 
+        canvas: null, // Substitui waveAnimation
+        textArea: null,
         interimDisplay: null, saveStatus: null, btnClear: null,
-        // NOVOS BOTÕES
-        btnInsertRaw: null,
-        btnInsertFix: null,
-        btnInsertLegal: null
+        btnInsertRaw: null, btnInsertFix: null, btnInsertLegal: null
     };
 
     let onInsertCallback = () => {};
     const isSupported = () => !!SpeechRecognition;
 
     const setupListeners = () => {
-        // --- EVENTO 1: ENQUANTO VOCÊ FALA (Reconhecimento) ---
+        // --- EVENTO 1: RECONHECIMENTO (TEXTO) ---
         recognition.onresult = (event) => {
             let interimTranscript = '';
             let finalTranscriptChunk = '';
@@ -30,54 +171,41 @@ const SpeechDictation = (() => {
                 const transcript = event.results[i][0].transcript;
                 
                 if (event.results[i].isFinal) {
-                    // Texto confirmado pelo navegador
                     finalTranscriptChunk += transcript; 
                 } else {
-                    // Texto provisório (cinza)
                     interimTranscript += transcript;
                 }
             }
 
-            // Atualiza o Buffer na tela (Texto Cru)
             if (finalTranscriptChunk && ui.textArea) {
                 const currentVal = ui.textArea.value;
-                // Adiciona espaço se necessário
                 const separator = (currentVal && !/[\s\n]$/.test(currentVal)) ? ' ' : '';
-                
-                // Formatação mínima apenas para visualização (Maiúscula inicial)
                 const formattedChunk = finalTranscriptChunk.charAt(0).toUpperCase() + finalTranscriptChunk.slice(1);
                 
                 ui.textArea.value += separator + formattedChunk;
-                
-                // Rola para o final
                 ui.textArea.scrollTop = ui.textArea.scrollHeight;
-                
-                // Salva backup no navegador
                 saveBackup(ui.textArea.value);
             }
 
-            // Exibe resultados provisórios
             if (ui.interimDisplay) {
                 ui.interimDisplay.textContent = interimTranscript;
             }
         };
 
-        // --- EVENTO 2: RECONEXÃO AUTOMÁTICA ---
+        // --- EVENTO 2: FIM DO CICLO / RECONEXÃO ---
         recognition.onend = () => {
             if (shouldKeepListening) {
-                // Se o usuário não mandou parar, reinicia o microfone
-                updateStatus('Microfone reiniciando...', 'reconnecting');
+                updateStatus('Reiniciando serviço de voz...', 'reconnecting');
                 try { recognition.start(); } catch (e) {}
             } else {
-                isListening = false;
-                toggleVisuals(false);
-                updateStatus('Pronto para ouvir.');
+                // Se parou definitivamente, garante limpeza total
+                stop(); 
             }
         };
 
-        // --- EVENTO 3: TRATAMENTO DE ERROS ---
+        // --- EVENTO 3: ERROS ---
         recognition.onerror = (event) => {
-            if (event.error === 'no-speech') return; // Ignora silêncio
+            if (event.error === 'no-speech') return;
             
             if (event.error === 'network') {
                 updateStatus('Erro de rede. Reconectando...', 'error');
@@ -85,13 +213,12 @@ const SpeechDictation = (() => {
                 return;
             }
             
-            // Outros erros param o reconhecimento
-            shouldKeepListening = false;
-            toggleVisuals(false);
+            // Outros erros param tudo
+            stop();
             updateStatus('Erro: ' + event.error, 'error');
         };
 
-        // --- AÇÃO: LÓGICA UNIFICADA DE INSERÇÃO (RAW / FIX / LEGAL) ---
+        // --- LÓGICA DE INSERÇÃO ---
         const handleInsert = async (mode) => {
             const rawText = ui.textArea ? ui.textArea.value.trim() : '';
             if (!rawText) {
@@ -99,28 +226,20 @@ const SpeechDictation = (() => {
                 return;
             }
 
-            // Para o microfone para evitar conflitos de áudio
-            stop();
+            stop(); // Para o microfone imediatamente
 
-            // 1. GESTÃO DE UX: BLOQUEIO DE BOTÕES
             const footerGroup = document.querySelector('.footer-buttons-group');
-            if (footerGroup) {
-                footerGroup.classList.add('disabled-all'); // Classe que aplica opacidade e pointer-events: none via CSS
-            }
+            if (footerGroup) footerGroup.classList.add('disabled-all');
 
-            // Armazena texto original para caso de erro ou para envio à API
             const originalText = rawText;
             
             try {
                 let textToInsert = rawText;
 
-                // Se não for inserção crua, prepara o feedback visual e processa com IA
                 if (mode !== 'raw') {
-                    // Feedback visual na área de texto
                     if (ui.textArea) {
-                        ui.textArea.classList.add('processing-state'); // Classe para pulso amarelo via CSS
+                        ui.textArea.classList.add('processing-state');
                         ui.textArea.setAttribute('data-original-text', originalText);
-                        // Mensagem de feedback contextual
                         const msg = mode === 'legal' 
                             ? "⚖️ O Assistente Jurídico está refinando seu texto. Aguarde..." 
                             : "✨ A IA está corrigindo a gramática. Aguarde...";
@@ -128,36 +247,25 @@ const SpeechDictation = (() => {
                     }
 
                     if (mode === 'fix') {
-                        // Correção Padrão (Gramática/Pontuação)
                         textToInsert = await GeminiService.correctText(originalText);
                     } else if (mode === 'legal') {
-                        // Refinamento Jurídico (Prompt Sênior)
                         textToInsert = await GeminiService.refineLegalText(originalText);
                     }
                 }
 
-                // Insere o texto (cru ou processado) no editor principal
                 onInsertCallback(textToInsert);
-                
-                // Limpa o rascunho e fecha o modal
                 clearBackup();
                 if (ui.dictationModal) ui.dictationModal.classList.remove('visible');
 
             } catch (error) {
                 console.error("Erro no fluxo de inserção:", error);
                 alert("Houve um erro técnico. Inserindo texto original.");
-                // Recupera o texto original para garantir que o usuário não perca o trabalho
                 onInsertCallback(originalText);
                 if (ui.dictationModal) ui.dictationModal.classList.remove('visible');
             } finally {
-                // 2. RESTAURAÇÃO DE UX: DESBLOQUEIO E LIMPEZA
-                if (footerGroup) {
-                    footerGroup.classList.remove('disabled-all');
-                }
-                
+                if (footerGroup) footerGroup.classList.remove('disabled-all');
                 if (ui.textArea) {
                     ui.textArea.classList.remove('processing-state');
-                    // Se o modal não fechou (ex: erro silencioso ou lógica de manter aberto), restaura o texto
                     const savedOriginal = ui.textArea.getAttribute('data-original-text');
                     if (savedOriginal && ui.textArea.value !== savedOriginal) {
                         ui.textArea.value = savedOriginal;
@@ -166,12 +274,10 @@ const SpeechDictation = (() => {
             }
         };
 
-        // Atribui os listeners aos novos botões
         if (ui.btnInsertRaw) ui.btnInsertRaw.onclick = () => handleInsert('raw');
         if (ui.btnInsertFix) ui.btnInsertFix.onclick = () => handleInsert('fix');
         if (ui.btnInsertLegal) ui.btnInsertLegal.onclick = () => handleInsert('legal');
 
-        // --- AÇÃO: CLIQUE NO BOTÃO LIMPAR ---
         if (ui.btnClear) {
             ui.btnClear.onclick = () => {
                 if (confirm('Tem certeza que deseja limpar o rascunho atual?')) {
@@ -185,66 +291,119 @@ const SpeechDictation = (() => {
 
     const init = (config) => {
         if (!isSupported()) {
-            console.error("Web Speech API não suportada neste navegador.");
+            console.error("Web Speech API não suportada.");
             return;
         }
 
+        // Mapeia configurações e captura o Canvas
         ui = { ...ui, ...config };
+        
+        // Elemento Canvas substitui o antigo waveAnimation na lógica
+        ui.canvas = document.getElementById('audio-visualizer');
+        if (ui.canvas) {
+            visualizerInstance = new AudioVisualizer(ui.canvas);
+        }
+
         onInsertCallback = config.onInsert;
         
         recognition = new SpeechRecognition();
-        recognition.continuous = true; // Continua ouvindo mesmo após pausas
-        recognition.interimResults = true; // Mostra o texto enquanto fala
-        recognition.lang = 'pt-BR'; // Idioma padrão
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'pt-BR';
         
         setupListeners();
-        restoreBackup(); // Recupera texto salvo caso a página tenha sido recarregada
+        restoreBackup();
     };
 
-    const start = () => {
+    /**
+     * Inicia o fluxo de captura de áudio:
+     * 1. Pede permissão do hardware (getUserMedia)
+     * 2. Inicia o Visualizador (Canvas)
+     * 3. Inicia o Reconhecimento de Texto
+     */
+    const start = async () => {
         if (isListening) return;
-        shouldKeepListening = true;
-        if (ui.langSelect) recognition.lang = ui.langSelect.value;
         
         try {
+            // Passo 1: Captura de Áudio do Hardware (Crucial para o visualizador)
+            audioStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: true, 
+                    noiseSuppression: true 
+                } 
+            });
+
+            // Passo 2: Inicia Visualização DSP
+            if (visualizerInstance) {
+                await visualizerInstance.start(audioStream);
+                if (ui.canvas) ui.canvas.classList.add('active'); // Fade-in
+            }
+
+            // Passo 3: Configura e Inicia Reconhecimento
+            shouldKeepListening = true;
+            if (ui.langSelect) recognition.lang = ui.langSelect.value;
             recognition.start();
+
+            // Atualiza Estado UI
             isListening = true;
-            toggleVisuals(true);
+            toggleUIVisuals(true);
             updateStatus('Ouvindo...');
             if (ui.dictationModal) ui.dictationModal.classList.add('visible');
             if (ui.textArea) ui.textArea.focus();
-        } catch (e) {
-            console.error("Erro ao iniciar reconhecimento:", e);
+
+        } catch (err) {
+            console.error("Erro ao acessar microfone:", err);
+            updateStatus("Erro: Acesso ao microfone negado.", "error");
+            stop();
         }
     };
 
+    /**
+     * Para todo o fluxo e libera o hardware
+     */
     const stop = () => {
         shouldKeepListening = false;
-        if (recognition) recognition.stop();
         isListening = false;
-        toggleVisuals(false);
+
+        // 1. Para o reconhecimento de texto
+        if (recognition) {
+            try { recognition.stop(); } catch(e) {}
+        }
+
+        // 2. Para o visualizador e fecha AudioContext
+        if (visualizerInstance) {
+            visualizerInstance.stop();
+        }
+
+        // 3. Libera a luz do microfone (Hardware)
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+
+        // Atualiza UI
+        if (ui.canvas) ui.canvas.classList.remove('active');
+        toggleUIVisuals(false);
         updateStatus('Pausado.');
     };
 
     const updateStatus = (text, type = '') => {
         if (ui.statusDisplay) {
             ui.statusDisplay.textContent = text;
-            // Mantém a classe base e adiciona o tipo (ex: error, reconnecting)
             ui.statusDisplay.className = 'status-indicator ' + type;
         }
     };
 
-    const toggleVisuals = (active) => {
+    const toggleUIVisuals = (active) => {
         if (ui.micIcon) ui.micIcon.classList.toggle('listening', active);
         if (ui.toolbarMicButton) ui.toolbarMicButton.classList.toggle('listening', active);
-        if (ui.waveAnimation) active ? ui.waveAnimation.classList.add('active') : ui.waveAnimation.classList.remove('active');
+        // Nota: A onda antiga foi removida, o canvas é controlado via .active em start/stop
     };
 
-    // Funções de Persistência (Cofre de Voz)
+    // --- Persistência (Cofre de Voz) ---
     function saveBackup(text) { 
         localStorage.setItem(STORAGE_KEY, text); 
         if (ui.saveStatus) ui.saveStatus.classList.add('visible');
-        // Esconde o indicador de "Salvo" após 2 segundos
         setTimeout(() => { if (ui.saveStatus) ui.saveStatus.classList.remove('visible'); }, 2000);
     }
     
