@@ -164,3 +164,25 @@ blockquote p {
     background-color: rgba(206, 42, 102, 0.05);
     box-shadow: inset 0 0 25px rgba(206, 42, 102, 0.1);
 }
+
+/* --- ESTILOS DO VISUALIZADOR DE ÁUDIO (CANVAS) --- */
+/* Substitui os antigos .sound-wave e @keyframes */
+
+#audio-visualizer {
+    display: none; /* Oculto por padrão, ativado via JS */
+    width: 200px;  /* Largura fixa na UI */
+    height: 50px;
+    position: absolute;
+    left: 60px;    /* Mesma posição relativa do anterior */
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none; /* Não bloquear cliques */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+#audio-visualizer.active {
+    display: block;
+    opacity: 1;
+}
