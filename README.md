@@ -1,15 +1,5 @@
 <p align="center">
-  <svg width="120" height="120" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#a12050;stop-opacity:1" />
-        <stop offset="100%" style="stop-color:#ce2a66;stop-opacity:1" />
-      </linearGradient>
-    </defs>
-    <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" fill="#f0f0f0" stroke="#cccccc" stroke-width="0.5"/>
-    <path d="M14 2V8H20" fill="#e0e0e0" stroke="#cccccc" stroke-width="0.5"/>
-    <polygon points="13 11 9 16 12 16 11 20 15 15 12 15 13 11" fill="url(#grad1)"/>
-  </svg>
+  <img src="assets/logo.png" alt="Logotipo do Plano de Leitura" width="150">
 </p>
 
 # Power Editor - Editor de Documentos de Alta Performance
