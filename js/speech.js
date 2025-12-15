@@ -147,12 +147,15 @@ const SpeechDictation = (() => {
     // Variáveis para o Visualizador e Stream de Hardware
     let visualizerInstance = null;
     let audioStream = null;
+    
+    // --- NOVO: Variável para controle do Wake Lock (Modo Foco) ---
+    let screenLock = null;
 
     // Mapeamento UI
     let ui = {
         micIcon: null, langSelect: null, statusDisplay: null, dictationModal: null,
         toolbarMicButton: null, 
-        canvas: null, // Substitui waveAnimation
+        canvas: null,
         textArea: null,
         interimDisplay: null, saveStatus: null, btnClear: null,
         btnInsertRaw: null, btnInsertFix: null, btnInsertLegal: null
@@ -160,6 +163,25 @@ const SpeechDictation = (() => {
 
     let onInsertCallback = () => {};
     const isSupported = () => !!SpeechRecognition;
+
+    /**
+     * Função Auxiliar: Gerenciamento de Energia
+     * Impede que a tela apague durante o ditado
+     */
+    const toggleWakeLock = async (active) => {
+        if ('wakeLock' in navigator) {
+            try {
+                if (active && !screenLock) {
+                    screenLock = await navigator.wakeLock.request('screen');
+                } else if (!active && screenLock) {
+                    await screenLock.release();
+                    screenLock = null;
+                }
+            } catch (err) {
+                console.warn('Wake Lock API não disponível ou bloqueada pelo sistema:', err);
+            }
+        }
+    };
 
     const setupListeners = () => {
         // --- EVENTO 1: RECONHECIMENTO (TEXTO) ---
@@ -226,7 +248,7 @@ const SpeechDictation = (() => {
                 return;
             }
 
-            stop(); // Para o microfone imediatamente
+            await stop(); // Para o microfone imediatamente (agora com await por ser async)
 
             const footerGroup = document.querySelector('.footer-buttons-group');
             if (footerGroup) footerGroup.classList.add('disabled-all');
@@ -316,52 +338,74 @@ const SpeechDictation = (() => {
     };
 
     /**
-     * Inicia o fluxo de captura de áudio:
-     * 1. Pede permissão do hardware (getUserMedia)
-     * 2. Inicia o Visualizador (Canvas)
-     * 3. Inicia o Reconhecimento de Texto
+     * MÉTODO START MODERNIZADO
+     * Incorpora High-Fidelity Audio, Fallback de Hardware e Proteção de Sessão (Wake Lock)
      */
     const start = async () => {
         if (isListening) return;
         
         try {
-            // Passo 1: Captura de Áudio do Hardware (Crucial para o visualizador)
-            audioStream = await navigator.mediaDevices.getUserMedia({ 
+            // 1. Definição de Constraints de Alta Definição
+            // Solicita o melhor áudio possível que o hardware aguenta
+            const hdConstraints = { 
                 audio: { 
                     echoCancellation: true, 
-                    noiseSuppression: true 
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: { ideal: 1 }, // Prioriza Mono (Voz limpa, evita fase)
+                    sampleRate: { ideal: 48000 } // Prioriza Alta Definição
                 } 
-            });
+            };
 
-            // Passo 2: Inicia Visualização DSP
+            // 2. Captura do Stream com Fallback (Auto-Healing)
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia(hdConstraints);
+            } catch (e) {
+                // Fallback: Se o hardware não suportar HD, tenta o básico
+                console.warn("Hardware não suporta HD Audio. Usando padrão.");
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            }
+
+            // 3. Ativa o Wake Lock (Modo Foco)
+            await toggleWakeLock(true);
+
+            // 4. Inicia Visualização DSP (Lógica existente)
             if (visualizerInstance) {
                 await visualizerInstance.start(audioStream);
                 if (ui.canvas) ui.canvas.classList.add('active'); // Fade-in
             }
 
-            // Passo 3: Configura e Inicia Reconhecimento
+            // 5. Configura e Inicia Reconhecimento
             shouldKeepListening = true;
             if (ui.langSelect) recognition.lang = ui.langSelect.value;
-            recognition.start();
+            
+            // Tratamento específico para o start do reconhecimento
+            try {
+                recognition.start();
+            } catch (recError) {
+                // Ignora erro se já estiver rodando
+                if (recError.name !== 'InvalidStateError') throw recError;
+            }
 
             // Atualiza Estado UI
             isListening = true;
             toggleUIVisuals(true);
-            updateStatus('Ouvindo...');
+            updateStatus('Ouvindo (HD)...'); // Feedback de qualidade
             if (ui.dictationModal) ui.dictationModal.classList.add('visible');
             if (ui.textArea) ui.textArea.focus();
 
         } catch (err) {
-            console.error("Erro ao acessar microfone:", err);
-            updateStatus("Erro: Acesso ao microfone negado.", "error");
-            stop();
+            console.error("Erro crítico ao iniciar áudio:", err);
+            updateStatus("Erro: Microfone inacessível.", "error");
+            await stop(); // Garante limpeza em caso de falha
         }
     };
 
     /**
-     * Para todo o fluxo e libera o hardware
+     * MÉTODO STOP ATUALIZADO
+     * Garante a liberação correta dos recursos e do Wake Lock
      */
-    const stop = () => {
+    const stop = async () => {
         shouldKeepListening = false;
         isListening = false;
 
@@ -381,6 +425,9 @@ const SpeechDictation = (() => {
             audioStream = null;
         }
 
+        // 4. Libera Wake Lock (Permite tela apagar)
+        await toggleWakeLock(false);
+
         // Atualiza UI
         if (ui.canvas) ui.canvas.classList.remove('active');
         toggleUIVisuals(false);
@@ -397,7 +444,6 @@ const SpeechDictation = (() => {
     const toggleUIVisuals = (active) => {
         if (ui.micIcon) ui.micIcon.classList.toggle('listening', active);
         if (ui.toolbarMicButton) ui.toolbarMicButton.classList.toggle('listening', active);
-        // Nota: A onda antiga foi removida, o canvas é controlado via .active em start/stop
     };
 
     // --- Persistência (Cofre de Voz) ---
