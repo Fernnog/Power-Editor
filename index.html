@@ -102,18 +102,24 @@
             <div class="dictation-header">
                 <!-- Container para o ícone e a visualização -->
                 <div class="mic-wrapper">
-                    <div id="dictation-mic-icon" class="mic-icon">🎤</div>
-                    <!-- Visualizador de Áudio Real (DSP Canvas) - Substitui a antiga animação CSS -->
+                    <!-- Ícone agora clicável para PAUSAR/INICIAR -->
+                    <div id="dictation-mic-icon" class="mic-icon" title="Clique para Iniciar/Pausar">🎤</div>
+                    <!-- Visualizador de Áudio Real (DSP Canvas) -->
                     <canvas id="audio-visualizer" width="300" height="60"></canvas>
                 </div>
 
                 <div class="dictation-controls">
+                    <!-- NOVO: Seletor de Microfone -->
+                    <select id="dictation-mic-select" title="Fonte de Áudio">
+                        <option value="default">Padrão do Sistema</option>
+                    </select>
+
                     <select id="dictation-lang-select" title="Selecionar idioma">
                         <option value="pt-BR" selected>Português (Brasil)</option>
                         <option value="en-US">English (US)</option>
                         <option value="es-ES">Español (España)</option>
                     </select>
-                    <!-- ALTERAÇÃO AQUI: Adicionado a classe status-indicator -->
+                    <!-- Status Indicator -->
                     <span id="dictation-status" class="status-indicator">Pronto para ouvir</span>
                 </div>
                 <button id="dictation-close-btn">&times;</button>
@@ -130,7 +136,10 @@
             <div class="dictation-footer">
                 <span id="dictation-save-status" class="save-status">Salvo automaticamente</span>
                 <div class="footer-buttons-group">
-                    <button id="btn-clear-dictation" class="secondary-btn" title="Limpar texto">Limpar</button>
+                    <!-- Wrapper para o botão Limpar e o Undo -->
+                    <div class="undo-wrapper" style="position: relative; display: inline-block;">
+                        <button id="btn-clear-dictation" class="secondary-btn" title="Limpar texto (Com desfazer)">Limpar</button>
+                    </div>
                     
                     <!-- Novos Botões de Ação -->
                     <div class="action-buttons">
