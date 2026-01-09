@@ -3,6 +3,7 @@
 /**
  * Classe responsável pelo Processamento de Sinal Digital (DSP) e Visualização
  * Baseada em Web Audio API e Canvas API.
+ * ATUALIZADO: Inclui linha de limiar (Threshold) e feedback visual de detecção.
  */
 class AudioVisualizer {
     constructor(canvasElement) {
@@ -84,37 +85,60 @@ class AudioVisualizer {
         
         this.ctx.clearRect(0, 0, width, height);
 
-        // Configuração das barras
-        // Cortamos as frequências muito altas (acima do índice 80) onde a voz humana tem pouca energia
+        // --- 1. Desenha Linha de Limiar (Threshold) ---
+        // Indica o volume mínimo recomendado para boa captura
+        const centerY = height / 2;
+        // Ajustamos uma posição visual para a linha de corte
+        const thresholdY = height * 0.4; 
+
+        this.ctx.beginPath();
+        this.ctx.setLineDash([4, 4]); 
+        this.ctx.strokeStyle = 'rgba(206, 42, 102, 0.3)'; // Cor primária suave
+        this.ctx.lineWidth = 1;
+        this.ctx.moveTo(0, thresholdY);
+        this.ctx.lineTo(width, thresholdY);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]); // Reseta dash
+
+        // --- 2. Desenha Barras de Frequência ---
         const bufferLength = Math.floor(this.dataArray.length * 0.7); 
         const barWidth = (width / bufferLength) * 2.5;
         let x = 0;
+        let maxAmplitude = 0;
 
         for (let i = 0; i < bufferLength; i++) {
             const value = this.dataArray[i];
             const percent = value / 255;
             
+            if (value > maxAmplitude) maxAmplitude = value;
+
             // Altura da barra
             const barHeight = height * percent * 0.9; 
             
-            // --- Lógica de Cor do Tema Power Editor ---
-            // Base: #ce2a66 (Hue ~338). Variação para Roxo/Fúcsia conforme intensidade.
+            // Lógica de Cor do Tema
             const hue = 330 + (percent * 30); // Varia entre 330 (Rosa) e 360 (Vermelho/Fúcsia)
             const lightness = 50 + (percent * 10);
             
             this.ctx.fillStyle = `hsl(${hue}, 80%, ${lightness}%)`;
 
-            // Desenha a barra
             if (barHeight > 1) {
-                // Centralizada verticalmente
-                const y = (height - barHeight) / 2;
-                
-                // Arredondamento simples
+                const y = height - barHeight; // Barras vêm de baixo para cima agora
                 this.ctx.beginPath();
                 this.ctx.roundRect(x, y, barWidth - 1, barHeight, [3]);
                 this.ctx.fill();
             }
             x += barWidth;
+        }
+
+        // --- 3. Feedback Visual de Detecção de Áudio (Glow Effect) ---
+        const dictationContent = document.querySelector('.dictation-content');
+        // Se a amplitude máxima passar de um certo ponto (~10% do volume), ativa o glow
+        if (dictationContent) {
+            if (maxAmplitude > 25) { // 25/255 ~= 10%
+                dictationContent.classList.add('audio-detected');
+            } else {
+                dictationContent.classList.remove('audio-detected');
+            }
         }
     }
 
@@ -126,6 +150,9 @@ class AudioVisualizer {
             this.audioContext.close();
         }
         
+        const dictationContent = document.querySelector('.dictation-content');
+        if (dictationContent) dictationContent.classList.remove('audio-detected');
+
         // Limpa o canvas
         const width = this.canvas.width / (window.devicePixelRatio || 1);
         const height = this.canvas.height / (window.devicePixelRatio || 1);
@@ -135,6 +162,7 @@ class AudioVisualizer {
 
 /**
  * Módulo Principal de Ditado
+ * ATUALIZADO: Gerenciamento de dispositivos, Undo Inteligente, Lógica de Stop/Start explícita.
  */
 const SpeechDictation = (() => {
     // Verifica compatibilidade
@@ -143,17 +171,21 @@ const SpeechDictation = (() => {
     let isListening = false;
     let shouldKeepListening = false; 
     const STORAGE_KEY = 'dictation_buffer_backup'; 
+    let selectedDeviceId = 'default';
 
     // Variáveis para o Visualizador e Stream de Hardware
     let visualizerInstance = null;
     let audioStream = null;
     
-    // --- NOVO: Variável para controle do Wake Lock (Modo Foco) ---
+    // Variável para controle do Wake Lock (Modo Foco)
     let screenLock = null;
+
+    // Undo Timer
+    let undoTimer = null;
 
     // Mapeamento UI
     let ui = {
-        micIcon: null, langSelect: null, statusDisplay: null, dictationModal: null,
+        micIcon: null, micSelect: null, langSelect: null, statusDisplay: null, dictationModal: null,
         toolbarMicButton: null, 
         canvas: null,
         textArea: null,
@@ -166,7 +198,6 @@ const SpeechDictation = (() => {
 
     /**
      * Função Auxiliar: Gerenciamento de Energia
-     * Impede que a tela apague durante o ditado
      */
     const toggleWakeLock = async (active) => {
         if ('wakeLock' in navigator) {
@@ -180,6 +211,55 @@ const SpeechDictation = (() => {
             } catch (err) {
                 console.warn('Wake Lock API não disponível ou bloqueada pelo sistema:', err);
             }
+        }
+    };
+
+    /**
+     * Função Auxiliar: Lista Dispositivos de Áudio com Permissão
+     */
+    const loadAudioDevices = async () => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+
+        try {
+            // 1. Tenta listar
+            let devices = await navigator.mediaDevices.enumerateDevices();
+            let audioInputDevices = devices.filter(d => d.kind === 'audioinput');
+
+            // 2. Verifica se os labels estão vazios (Proteção de Privacidade)
+            const hasLabels = audioInputDevices.some(d => d.label !== "");
+            
+            if (!hasLabels && audioInputDevices.length > 0) {
+                try {
+                    // Trigger rápido para permissão
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Lista novamente com permissão
+                    devices = await navigator.mediaDevices.enumerateDevices();
+                    audioInputDevices = devices.filter(d => d.kind === 'audioinput');
+                } catch (permErr) {
+                    console.warn("Permissão para listar nomes de microfone negada.", permErr);
+                }
+            }
+
+            // 3. Popula o Select
+            if (ui.micSelect) {
+                ui.micSelect.innerHTML = '<option value="default">Padrão do Sistema</option>';
+                audioInputDevices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Microfone ${device.deviceId.slice(0,5)}...`;
+                    ui.micSelect.appendChild(option);
+                });
+                
+                // Restaura seleção anterior se possível
+                if (selectedDeviceId && selectedDeviceId !== 'default') {
+                    ui.micSelect.value = selectedDeviceId;
+                }
+            }
+
+        } catch (err) {
+            console.error("Erro ao carregar dispositivos de áudio:", err);
         }
     };
 
@@ -220,8 +300,7 @@ const SpeechDictation = (() => {
                 updateStatus('Reiniciando serviço de voz...', 'reconnecting');
                 try { recognition.start(); } catch (e) {}
             } else {
-                // Se parou definitivamente, garante limpeza total
-                stop(); 
+                stop(); // Garante limpeza total se parou por erro ou ação externa
             }
         };
 
@@ -248,7 +327,8 @@ const SpeechDictation = (() => {
                 return;
             }
 
-            await stop(); // Para o microfone imediatamente (agora com await por ser async)
+            // Para o reconhecimento antes de processar, mas não fecha a UI ainda
+            await stop(); 
 
             const footerGroup = document.querySelector('.footer-buttons-group');
             if (footerGroup) footerGroup.classList.add('disabled-all');
@@ -300,13 +380,47 @@ const SpeechDictation = (() => {
         if (ui.btnInsertFix) ui.btnInsertFix.onclick = () => handleInsert('fix');
         if (ui.btnInsertLegal) ui.btnInsertLegal.onclick = () => handleInsert('legal');
 
+        // --- SMART UNDO (DESFAZER INTELIGENTE) ---
         if (ui.btnClear) {
-            ui.btnClear.onclick = () => {
-                if (confirm('Tem certeza que deseja limpar o rascunho atual?')) {
-                    if (ui.textArea) ui.textArea.value = '';
-                    clearBackup();
-                    if (ui.textArea) ui.textArea.focus();
-                }
+            ui.btnClear.onclick = (e) => {
+                if (!ui.textArea || !ui.textArea.value) return;
+
+                const originalText = ui.textArea.value;
+                ui.textArea.value = ''; // Limpa
+                clearBackup();
+                
+                // Cria botão de desfazer
+                const undoWrapper = e.target.parentElement; // div.undo-wrapper
+                const undoBtn = document.createElement('button');
+                undoBtn.className = 'btn-undo-float'; // Estilo definido no CSS
+                undoBtn.innerHTML = '↩ Desfazer apagar';
+                undoBtn.style.position = 'absolute';
+                undoBtn.style.top = '-35px';
+                undoBtn.style.left = '0';
+                undoBtn.style.background = '#333';
+                undoBtn.style.color = '#fff';
+                undoBtn.style.padding = '5px 10px';
+                undoBtn.style.borderRadius = '4px';
+                undoBtn.style.fontSize = '12px';
+                undoBtn.style.zIndex = '100';
+                undoBtn.style.cursor = 'pointer';
+
+                undoBtn.onclick = () => {
+                    ui.textArea.value = originalText;
+                    saveBackup(originalText);
+                    undoBtn.remove();
+                    if (undoTimer) clearTimeout(undoTimer);
+                };
+
+                undoWrapper.appendChild(undoBtn);
+
+                // Auto-hide após 5 segundos
+                if (undoTimer) clearTimeout(undoTimer);
+                undoTimer = setTimeout(() => {
+                    if (undoBtn.parentElement) undoBtn.remove();
+                }, 5000);
+
+                if (ui.textArea) ui.textArea.focus();
             };
         }
     };
@@ -320,7 +434,6 @@ const SpeechDictation = (() => {
         // Mapeia configurações e captura o Canvas
         ui = { ...ui, ...config };
         
-        // Elemento Canvas substitui o antigo waveAnimation na lógica
         ui.canvas = document.getElementById('audio-visualizer');
         if (ui.canvas) {
             visualizerInstance = new AudioVisualizer(ui.canvas);
@@ -333,77 +446,103 @@ const SpeechDictation = (() => {
         recognition.interimResults = true;
         recognition.lang = 'pt-BR';
         
+        // Listener para mudança de dispositivo
+        if (ui.micSelect) {
+            ui.micSelect.addEventListener('change', (e) => {
+                selectedDeviceId = e.target.value;
+                // Se estiver gravando, reinicia para aplicar mudança
+                if (isListening) {
+                    stop().then(() => start());
+                }
+            });
+        }
+
+        // Listener para Start/Stop no ícone do microfone
+        if (ui.micIcon) {
+            ui.micIcon.style.cursor = 'pointer';
+            ui.micIcon.addEventListener('click', () => {
+                if (isListening) {
+                    stop();
+                    updateStatus('Pausado. Clique no microfone para continuar.');
+                } else {
+                    start();
+                }
+            });
+        }
+        
         setupListeners();
         restoreBackup();
+
+        // Carrega dispositivos na inicialização
+        loadAudioDevices();
     };
 
     /**
      * MÉTODO START MODERNIZADO
-     * Incorpora High-Fidelity Audio, Fallback de Hardware e Proteção de Sessão (Wake Lock)
+     * Suporta seleção de dispositivo e alta fidelidade
      */
     const start = async () => {
         if (isListening) return;
         
         try {
-            // 1. Definição de Constraints de Alta Definição
-            // Solicita o melhor áudio possível que o hardware aguenta
-            const hdConstraints = { 
-                audio: { 
-                    echoCancellation: true, 
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    channelCount: { ideal: 1 }, // Prioriza Mono (Voz limpa, evita fase)
-                    sampleRate: { ideal: 48000 } // Prioriza Alta Definição
-                } 
+            // 1. Definição de Constraints com Dispositivo Selecionado
+            const audioConstraints = {
+                echoCancellation: true, 
+                noiseSuppression: true,
+                autoGainControl: true,
+                channelCount: { ideal: 1 }, // Mono
+                sampleRate: { ideal: 48000 } // HD
             };
 
-            // 2. Captura do Stream com Fallback (Auto-Healing)
+            // Se tiver um ID específico selecionado
+            if (selectedDeviceId && selectedDeviceId !== 'default') {
+                audioConstraints.deviceId = { exact: selectedDeviceId };
+            }
+
+            // 2. Captura do Stream
             try {
-                audioStream = await navigator.mediaDevices.getUserMedia(hdConstraints);
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
             } catch (e) {
-                // Fallback: Se o hardware não suportar HD, tenta o básico
-                console.warn("Hardware não suporta HD Audio. Usando padrão.");
+                console.warn("Hardware específico falhou. Usando padrão.", e);
+                // Fallback para padrão
                 audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             }
 
             // 3. Ativa o Wake Lock (Modo Foco)
             await toggleWakeLock(true);
 
-            // 4. Inicia Visualização DSP (Lógica existente)
+            // 4. Inicia Visualização DSP
             if (visualizerInstance) {
                 await visualizerInstance.start(audioStream);
-                if (ui.canvas) ui.canvas.classList.add('active'); // Fade-in
+                if (ui.canvas) ui.canvas.classList.add('active');
             }
 
             // 5. Configura e Inicia Reconhecimento
             shouldKeepListening = true;
             if (ui.langSelect) recognition.lang = ui.langSelect.value;
             
-            // Tratamento específico para o start do reconhecimento
             try {
                 recognition.start();
             } catch (recError) {
-                // Ignora erro se já estiver rodando
                 if (recError.name !== 'InvalidStateError') throw recError;
             }
 
             // Atualiza Estado UI
             isListening = true;
             toggleUIVisuals(true);
-            updateStatus('Ouvindo (HD)...'); // Feedback de qualidade
+            updateStatus('Ouvindo...');
             if (ui.dictationModal) ui.dictationModal.classList.add('visible');
             if (ui.textArea) ui.textArea.focus();
 
         } catch (err) {
             console.error("Erro crítico ao iniciar áudio:", err);
             updateStatus("Erro: Microfone inacessível.", "error");
-            await stop(); // Garante limpeza em caso de falha
+            await stop();
         }
     };
 
     /**
      * MÉTODO STOP ATUALIZADO
-     * Garante a liberação correta dos recursos e do Wake Lock
      */
     const stop = async () => {
         shouldKeepListening = false;
@@ -425,7 +564,7 @@ const SpeechDictation = (() => {
             audioStream = null;
         }
 
-        // 4. Libera Wake Lock (Permite tela apagar)
+        // 4. Libera Wake Lock
         await toggleWakeLock(false);
 
         // Atualiza UI
@@ -442,7 +581,11 @@ const SpeechDictation = (() => {
     };
 
     const toggleUIVisuals = (active) => {
-        if (ui.micIcon) ui.micIcon.classList.toggle('listening', active);
+        if (ui.micIcon) {
+            ui.micIcon.classList.toggle('listening', active);
+            // Efeito visual de toggle
+            ui.micIcon.style.opacity = active ? "1" : "0.6";
+        }
         if (ui.toolbarMicButton) ui.toolbarMicButton.classList.toggle('listening', active);
     };
 
