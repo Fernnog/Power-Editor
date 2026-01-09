@@ -3,7 +3,7 @@
 /**
  * Classe responsável pelo Processamento de Sinal Digital (DSP) e Visualização
  * Baseada em Web Audio API e Canvas API.
- * ATUALIZADO: Inclui linha de limiar (Threshold) e feedback visual de detecção.
+ * ATUALIZAÇÃO 1.2: Adicionado threshold visual.
  */
 class AudioVisualizer {
     constructor(canvasElement) {
@@ -85,60 +85,47 @@ class AudioVisualizer {
         
         this.ctx.clearRect(0, 0, width, height);
 
-        // --- 1. Desenha Linha de Limiar (Threshold) ---
-        // Indica o volume mínimo recomendado para boa captura
-        const centerY = height / 2;
-        // Ajustamos uma posição visual para a linha de corte
-        const thresholdY = height * 0.4; 
-
+        // --- NOVO: Desenha Linha de Limiar (Threshold) ---
+        // Feedback visual para o usuário saber o volume mínimo ideal
+        const thresholdY = height * 0.3; // Linha a 30% do topo
         this.ctx.beginPath();
-        this.ctx.setLineDash([4, 4]); 
-        this.ctx.strokeStyle = 'rgba(206, 42, 102, 0.3)'; // Cor primária suave
-        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        this.ctx.setLineDash([5, 5]); // Linha pontilhada
         this.ctx.moveTo(0, thresholdY);
         this.ctx.lineTo(width, thresholdY);
         this.ctx.stroke();
-        this.ctx.setLineDash([]); // Reseta dash
 
-        // --- 2. Desenha Barras de Frequência ---
+        // Configuração das barras
+        // Cortamos as frequências muito altas (acima do índice 80) onde a voz humana tem pouca energia
         const bufferLength = Math.floor(this.dataArray.length * 0.7); 
         const barWidth = (width / bufferLength) * 2.5;
         let x = 0;
-        let maxAmplitude = 0;
 
         for (let i = 0; i < bufferLength; i++) {
             const value = this.dataArray[i];
             const percent = value / 255;
             
-            if (value > maxAmplitude) maxAmplitude = value;
-
             // Altura da barra
             const barHeight = height * percent * 0.9; 
             
-            // Lógica de Cor do Tema
+            // --- Lógica de Cor do Tema Power Editor ---
+            // Base: #ce2a66 (Hue ~338). Variação para Roxo/Fúcsia conforme intensidade.
             const hue = 330 + (percent * 30); // Varia entre 330 (Rosa) e 360 (Vermelho/Fúcsia)
             const lightness = 50 + (percent * 10);
             
             this.ctx.fillStyle = `hsl(${hue}, 80%, ${lightness}%)`;
 
+            // Desenha a barra
             if (barHeight > 1) {
-                const y = height - barHeight; // Barras vêm de baixo para cima agora
+                // Centralizada verticalmente
+                const y = (height - barHeight) / 2;
+                
+                // Arredondamento simples
                 this.ctx.beginPath();
                 this.ctx.roundRect(x, y, barWidth - 1, barHeight, [3]);
                 this.ctx.fill();
             }
             x += barWidth;
-        }
-
-        // --- 3. Feedback Visual de Detecção de Áudio (Glow Effect) ---
-        const dictationContent = document.querySelector('.dictation-content');
-        // Se a amplitude máxima passar de um certo ponto (~10% do volume), ativa o glow
-        if (dictationContent) {
-            if (maxAmplitude > 25) { // 25/255 ~= 10%
-                dictationContent.classList.add('audio-detected');
-            } else {
-                dictationContent.classList.remove('audio-detected');
-            }
         }
     }
 
@@ -150,9 +137,6 @@ class AudioVisualizer {
             this.audioContext.close();
         }
         
-        const dictationContent = document.querySelector('.dictation-content');
-        if (dictationContent) dictationContent.classList.remove('audio-detected');
-
         // Limpa o canvas
         const width = this.canvas.width / (window.devicePixelRatio || 1);
         const height = this.canvas.height / (window.devicePixelRatio || 1);
@@ -162,42 +146,113 @@ class AudioVisualizer {
 
 /**
  * Módulo Principal de Ditado
- * ATUALIZADO: Gerenciamento de dispositivos, Undo Inteligente, Lógica de Stop/Start explícita.
+ * ATUALIZAÇÃO 1.2: Integração de Hardware (Seleção de Mic) e Controle de Pausa.
  */
 const SpeechDictation = (() => {
     // Verifica compatibilidade
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
-    let isListening = false;
-    let shouldKeepListening = false; 
-    const STORAGE_KEY = 'dictation_buffer_backup'; 
-    let selectedDeviceId = 'default';
-
+    
+    // ESTADOS
+    let isListening = false; // Estado técnico (se o motor está ativo)
+    let isUserPaused = false; // Estado de intenção do usuário (se clicou para pausar)
+    
     // Variáveis para o Visualizador e Stream de Hardware
     let visualizerInstance = null;
     let audioStream = null;
+    let screenLock = null; // Wake Lock
     
-    // Variável para controle do Wake Lock (Modo Foco)
-    let screenLock = null;
-
-    // Undo Timer
-    let undoTimer = null;
+    // Configuração de Hardware
+    let selectedDeviceId = 'default';
+    const STORAGE_KEY = 'dictation_buffer_backup'; 
 
     // Mapeamento UI
     let ui = {
-        micIcon: null, micSelect: null, langSelect: null, statusDisplay: null, dictationModal: null,
+        micIcon: null, langSelect: null, statusDisplay: null, dictationModal: null,
         toolbarMicButton: null, 
         canvas: null,
         textArea: null,
         interimDisplay: null, saveStatus: null, btnClear: null,
-        btnInsertRaw: null, btnInsertFix: null, btnInsertLegal: null
+        btnInsertRaw: null, btnInsertFix: null, btnInsertLegal: null,
+        // NOVO
+        micSelect: null 
     };
 
     let onInsertCallback = () => {};
     const isSupported = () => !!SpeechRecognition;
 
     /**
-     * Função Auxiliar: Gerenciamento de Energia
+     * LÓGICA DE HARDWARE (TRIGGER RELÂMPAGO)
+     * Força o navegador a listar os nomes dos microfones pedindo permissão rápida.
+     */
+    const getAudioDevices = async () => {
+        try {
+            // 1. Tenta listar
+            let devices = await navigator.mediaDevices.enumerateDevices();
+            let audioDevices = devices.filter(d => d.kind === 'audioinput');
+
+            // 2. Verifica se os labels estão ocultos (Privacidade do Browser)
+            const hasLabels = audioDevices.some(d => d.label !== "");
+            
+            if (!hasLabels) {
+                try {
+                    // 3. Trigger: Abre stream por 1ms para forçar permissão e revelar nomes
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // 4. Lista novamente com permissão
+                    devices = await navigator.mediaDevices.enumerateDevices();
+                    audioDevices = devices.filter(d => d.kind === 'audioinput');
+                } catch (permErr) {
+                    console.warn("Permissão para listar nomes negada.", permErr);
+                }
+            }
+            return audioDevices;
+        } catch (err) {
+            console.error("Erro ao listar dispositivos:", err);
+            return [];
+        }
+    };
+
+    const populateDeviceList = async () => {
+        if (!ui.micSelect) return;
+        
+        ui.micSelect.innerHTML = '<option value="loading">Carregando dispositivos...</option>';
+        const devices = await getAudioDevices();
+        
+        ui.micSelect.innerHTML = ''; // Limpa
+        
+        // Opção Padrão
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = 'default';
+        defaultOpt.text = 'Padrão do Sistema';
+        ui.micSelect.appendChild(defaultOpt);
+
+        // Preenche lista real
+        devices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Microfone ${ui.micSelect.length}`;
+            ui.micSelect.appendChild(option);
+        });
+
+        // Restaura seleção anterior se houver
+        if (selectedDeviceId) {
+            ui.micSelect.value = selectedDeviceId;
+        }
+
+        // Listener: Se mudar o mic enquanto grava, reinicia
+        ui.micSelect.onchange = () => {
+            selectedDeviceId = ui.micSelect.value;
+            if (isListening) {
+                // Reinicia suavemente para aplicar o novo hardware
+                stopInternal().then(() => startInternal());
+            }
+        };
+    };
+
+    /**
+     * Gerenciamento de Energia (Wake Lock)
      */
     const toggleWakeLock = async (active) => {
         if ('wakeLock' in navigator) {
@@ -209,60 +264,14 @@ const SpeechDictation = (() => {
                     screenLock = null;
                 }
             } catch (err) {
-                console.warn('Wake Lock API não disponível ou bloqueada pelo sistema:', err);
+                console.warn('Wake Lock API erro:', err);
             }
         }
     };
 
     /**
-     * Função Auxiliar: Lista Dispositivos de Áudio com Permissão
+     * Configuração de Eventos do Reconhecimento
      */
-    const loadAudioDevices = async () => {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
-
-        try {
-            // 1. Tenta listar
-            let devices = await navigator.mediaDevices.enumerateDevices();
-            let audioInputDevices = devices.filter(d => d.kind === 'audioinput');
-
-            // 2. Verifica se os labels estão vazios (Proteção de Privacidade)
-            const hasLabels = audioInputDevices.some(d => d.label !== "");
-            
-            if (!hasLabels && audioInputDevices.length > 0) {
-                try {
-                    // Trigger rápido para permissão
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    stream.getTracks().forEach(track => track.stop());
-                    
-                    // Lista novamente com permissão
-                    devices = await navigator.mediaDevices.enumerateDevices();
-                    audioInputDevices = devices.filter(d => d.kind === 'audioinput');
-                } catch (permErr) {
-                    console.warn("Permissão para listar nomes de microfone negada.", permErr);
-                }
-            }
-
-            // 3. Popula o Select
-            if (ui.micSelect) {
-                ui.micSelect.innerHTML = '<option value="default">Padrão do Sistema</option>';
-                audioInputDevices.forEach(device => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    option.text = device.label || `Microfone ${device.deviceId.slice(0,5)}...`;
-                    ui.micSelect.appendChild(option);
-                });
-                
-                // Restaura seleção anterior se possível
-                if (selectedDeviceId && selectedDeviceId !== 'default') {
-                    ui.micSelect.value = selectedDeviceId;
-                }
-            }
-
-        } catch (err) {
-            console.error("Erro ao carregar dispositivos de áudio:", err);
-        }
-    };
-
     const setupListeners = () => {
         // --- EVENTO 1: RECONHECIMENTO (TEXTO) ---
         recognition.onresult = (event) => {
@@ -296,11 +305,14 @@ const SpeechDictation = (() => {
 
         // --- EVENTO 2: FIM DO CICLO / RECONEXÃO ---
         recognition.onend = () => {
-            if (shouldKeepListening) {
-                updateStatus('Reiniciando serviço de voz...', 'reconnecting');
+            // Se o usuário NÃO pausou explicitamente, tentamos reconectar (loop contínuo)
+            if (!isUserPaused && isListening) {
+                updateStatus('Reiniciando serviço...', 'reconnecting');
                 try { recognition.start(); } catch (e) {}
             } else {
-                stop(); // Garante limpeza total se parou por erro ou ação externa
+                // Se o usuário pausou ou fechou
+                updateStatus('Pausado.');
+                setVisualState(false);
             }
         };
 
@@ -310,12 +322,18 @@ const SpeechDictation = (() => {
             
             if (event.error === 'network') {
                 updateStatus('Erro de rede. Reconectando...', 'error');
-                setTimeout(() => { if (shouldKeepListening) recognition.start(); }, 1000);
+                setTimeout(() => { if (!isUserPaused) recognition.start(); }, 1000);
                 return;
             }
             
-            // Outros erros param tudo
-            stop();
+            if (event.error === 'not-allowed') {
+                updateStatus('Acesso ao microfone negado.', 'error');
+                stopInternal();
+                setVisualState(false);
+                return;
+            }
+            
+            // Outros erros
             updateStatus('Erro: ' + event.error, 'error');
         };
 
@@ -327,8 +345,10 @@ const SpeechDictation = (() => {
                 return;
             }
 
-            // Para o reconhecimento antes de processar, mas não fecha a UI ainda
-            await stop(); 
+            // PAUSA O DITADO AO INSERIR
+            isUserPaused = true;
+            await stopInternal(); 
+            setVisualState(false);
 
             const footerGroup = document.querySelector('.footer-buttons-group');
             if (footerGroup) footerGroup.classList.add('disabled-all');
@@ -380,48 +400,31 @@ const SpeechDictation = (() => {
         if (ui.btnInsertFix) ui.btnInsertFix.onclick = () => handleInsert('fix');
         if (ui.btnInsertLegal) ui.btnInsertLegal.onclick = () => handleInsert('legal');
 
-        // --- SMART UNDO (DESFAZER INTELIGENTE) ---
         if (ui.btnClear) {
-            ui.btnClear.onclick = (e) => {
-                if (!ui.textArea || !ui.textArea.value) return;
-
-                const originalText = ui.textArea.value;
-                ui.textArea.value = ''; // Limpa
-                clearBackup();
-                
-                // Cria botão de desfazer
-                const undoWrapper = e.target.parentElement; // div.undo-wrapper
-                const undoBtn = document.createElement('button');
-                undoBtn.className = 'btn-undo-float'; // Estilo definido no CSS
-                undoBtn.innerHTML = '↩ Desfazer apagar';
-                undoBtn.style.position = 'absolute';
-                undoBtn.style.top = '-35px';
-                undoBtn.style.left = '0';
-                undoBtn.style.background = '#333';
-                undoBtn.style.color = '#fff';
-                undoBtn.style.padding = '5px 10px';
-                undoBtn.style.borderRadius = '4px';
-                undoBtn.style.fontSize = '12px';
-                undoBtn.style.zIndex = '100';
-                undoBtn.style.cursor = 'pointer';
-
-                undoBtn.onclick = () => {
-                    ui.textArea.value = originalText;
-                    saveBackup(originalText);
-                    undoBtn.remove();
-                    if (undoTimer) clearTimeout(undoTimer);
-                };
-
-                undoWrapper.appendChild(undoBtn);
-
-                // Auto-hide após 5 segundos
-                if (undoTimer) clearTimeout(undoTimer);
-                undoTimer = setTimeout(() => {
-                    if (undoBtn.parentElement) undoBtn.remove();
-                }, 5000);
-
-                if (ui.textArea) ui.textArea.focus();
+            ui.btnClear.onclick = () => {
+                if (confirm('Tem certeza que deseja limpar o rascunho atual?')) {
+                    if (ui.textArea) ui.textArea.value = '';
+                    clearBackup();
+                    if (ui.textArea) ui.textArea.focus();
+                }
             };
+        }
+    };
+
+    /**
+     * Alterna entre Gravar e Pausar (Função pública para o botão)
+     */
+    const toggleDictation = async () => {
+        if (isListening) {
+            // AÇÃO: PAUSAR
+            isUserPaused = true;
+            await stopInternal();
+            updateStatus('Pausado. Clique para continuar.');
+            setVisualState(false);
+        } else {
+            // AÇÃO: GRAVAR
+            isUserPaused = false;
+            await startInternal();
         }
     };
 
@@ -431,9 +434,13 @@ const SpeechDictation = (() => {
             return;
         }
 
-        // Mapeia configurações e captura o Canvas
+        // Mapeia configurações e captura elementos
         ui = { ...ui, ...config };
         
+        // NOVO: Mapeia o Select de Microfone
+        ui.micSelect = document.getElementById('dictation-mic-select');
+        
+        // Elemento Canvas
         ui.canvas = document.getElementById('audio-visualizer');
         if (ui.canvas) {
             visualizerInstance = new AudioVisualizer(ui.canvas);
@@ -446,65 +453,42 @@ const SpeechDictation = (() => {
         recognition.interimResults = true;
         recognition.lang = 'pt-BR';
         
-        // Listener para mudança de dispositivo
-        if (ui.micSelect) {
-            ui.micSelect.addEventListener('change', (e) => {
-                selectedDeviceId = e.target.value;
-                // Se estiver gravando, reinicia para aplicar mudança
-                if (isListening) {
-                    stop().then(() => start());
-                }
-            });
-        }
-
-        // Listener para Start/Stop no ícone do microfone
-        if (ui.micIcon) {
-            ui.micIcon.style.cursor = 'pointer';
-            ui.micIcon.addEventListener('click', () => {
-                if (isListening) {
-                    stop();
-                    updateStatus('Pausado. Clique no microfone para continuar.');
-                } else {
-                    start();
-                }
-            });
-        }
-        
         setupListeners();
         restoreBackup();
 
-        // Carrega dispositivos na inicialização
-        loadAudioDevices();
+        // Vínculo do Clique no Ícone Grande (PAUSAR/GRAVAR)
+        if (ui.micIcon) {
+            ui.micIcon.onclick = toggleDictation;
+            // Remove comportamento antigo de apenas decorativo
+            ui.micIcon.style.cursor = 'pointer'; 
+        }
     };
 
     /**
-     * MÉTODO START MODERNIZADO
-     * Suporta seleção de dispositivo e alta fidelidade
+     * Start Interno (Lógica técnica de iniciar streams)
      */
-    const start = async () => {
+    const startInternal = async () => {
         if (isListening) return;
         
         try {
-            // 1. Definição de Constraints com Dispositivo Selecionado
-            const audioConstraints = {
-                echoCancellation: true, 
-                noiseSuppression: true,
-                autoGainControl: true,
-                channelCount: { ideal: 1 }, // Mono
-                sampleRate: { ideal: 48000 } // HD
+            // 1. Definição de Constraints com SELEÇÃO DE HARDWARE
+            const constraints = { 
+                audio: { 
+                    // Se o usuário selecionou um mic específico, usa 'exact', senão undefined
+                    deviceId: selectedDeviceId !== 'default' ? { exact: selectedDeviceId } : undefined,
+                    echoCancellation: true, 
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: { ideal: 1 },
+                    sampleRate: { ideal: 48000 }
+                } 
             };
 
-            // Se tiver um ID específico selecionado
-            if (selectedDeviceId && selectedDeviceId !== 'default') {
-                audioConstraints.deviceId = { exact: selectedDeviceId };
-            }
-
-            // 2. Captura do Stream
+            // 2. Captura do Stream (com fallback automático se o mic específico falhar)
             try {
-                audioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
-            } catch (e) {
-                console.warn("Hardware específico falhou. Usando padrão.", e);
-                // Fallback para padrão
+                audioStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (deviceErr) {
+                console.warn("Microfone específico falhou. Tentando padrão.", deviceErr);
                 audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             }
 
@@ -514,11 +498,10 @@ const SpeechDictation = (() => {
             // 4. Inicia Visualização DSP
             if (visualizerInstance) {
                 await visualizerInstance.start(audioStream);
-                if (ui.canvas) ui.canvas.classList.add('active');
+                if (ui.canvas) ui.canvas.classList.add('active'); 
             }
 
             // 5. Configura e Inicia Reconhecimento
-            shouldKeepListening = true;
             if (ui.langSelect) recognition.lang = ui.langSelect.value;
             
             try {
@@ -529,24 +512,22 @@ const SpeechDictation = (() => {
 
             // Atualiza Estado UI
             isListening = true;
-            toggleUIVisuals(true);
+            setVisualState(true);
             updateStatus('Ouvindo...');
-            if (ui.dictationModal) ui.dictationModal.classList.add('visible');
             if (ui.textArea) ui.textArea.focus();
 
         } catch (err) {
             console.error("Erro crítico ao iniciar áudio:", err);
             updateStatus("Erro: Microfone inacessível.", "error");
-            await stop();
+            await stopInternal(); 
         }
     };
 
     /**
-     * MÉTODO STOP ATUALIZADO
+     * Stop Interno (Limpeza de recursos)
      */
-    const stop = async () => {
-        shouldKeepListening = false;
-        isListening = false;
+    const stopInternal = async () => {
+        isListening = false; // Importante: flag técnica
 
         // 1. Para o reconhecimento de texto
         if (recognition) {
@@ -569,8 +550,20 @@ const SpeechDictation = (() => {
 
         // Atualiza UI
         if (ui.canvas) ui.canvas.classList.remove('active');
-        toggleUIVisuals(false);
-        updateStatus('Pausado.');
+    };
+
+    // Atualiza classes CSS para feedback visual (Ícone Vermelho vs Cinza)
+    const setVisualState = (isActive) => {
+        if (ui.micIcon) {
+            if (isActive) {
+                ui.micIcon.classList.add('listening');
+                ui.micIcon.classList.remove('paused');
+            } else {
+                ui.micIcon.classList.remove('listening');
+                ui.micIcon.classList.add('paused');
+            }
+        }
+        if (ui.toolbarMicButton) ui.toolbarMicButton.classList.toggle('listening', isActive);
     };
 
     const updateStatus = (text, type = '') => {
@@ -580,31 +573,35 @@ const SpeechDictation = (() => {
         }
     };
 
-    const toggleUIVisuals = (active) => {
-        if (ui.micIcon) {
-            ui.micIcon.classList.toggle('listening', active);
-            // Efeito visual de toggle
-            ui.micIcon.style.opacity = active ? "1" : "0.6";
-        }
-        if (ui.toolbarMicButton) ui.toolbarMicButton.classList.toggle('listening', active);
+    // --- Persistência (Cofre de Voz) ---
+    function saveBackup(text) { localStorage.setItem(STORAGE_KEY, text); if (ui.saveStatus) ui.saveStatus.classList.add('visible'); setTimeout(() => { if (ui.saveStatus) ui.saveStatus.classList.remove('visible'); }, 2000); }
+    function restoreBackup() { const b = localStorage.getItem(STORAGE_KEY); if (b && ui.textArea) ui.textArea.value = b; }
+    function clearBackup() { localStorage.removeItem(STORAGE_KEY); if (ui.textArea) ui.textArea.value = ''; }
+
+    /**
+     * MÉTODO START PÚBLICO (Iniciado pelo Botão da Toolbar)
+     */
+    const start = async () => {
+        // 1. Popula a lista de microfones (Trigger de Permissão)
+        await populateDeviceList();
+
+        // 2. Abre o Modal
+        if (ui.dictationModal) ui.dictationModal.classList.add('visible');
+
+        // 3. Inicia Gravação
+        isUserPaused = false;
+        await startInternal();
     };
 
-    // --- Persistência (Cofre de Voz) ---
-    function saveBackup(text) { 
-        localStorage.setItem(STORAGE_KEY, text); 
-        if (ui.saveStatus) ui.saveStatus.classList.add('visible');
-        setTimeout(() => { if (ui.saveStatus) ui.saveStatus.classList.remove('visible'); }, 2000);
-    }
-    
-    function restoreBackup() { 
-        const b = localStorage.getItem(STORAGE_KEY); 
-        if (b && ui.textArea) ui.textArea.value = b; 
-    }
-    
-    function clearBackup() { 
-        localStorage.removeItem(STORAGE_KEY); 
-        if (ui.textArea) ui.textArea.value = ''; 
-    }
+    /**
+     * MÉTODO STOP PÚBLICO (Fechar modal)
+     */
+    const stop = async () => {
+        isUserPaused = true;
+        await stopInternal();
+        setVisualState(false);
+        updateStatus('Pausado.');
+    };
 
     return { init, start, stop, isSupported };
 })();
