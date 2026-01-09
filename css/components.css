@@ -440,12 +440,12 @@
     flex-direction: column; width: 600px; padding: 25px; gap: 15px;
     border-radius: 16px; align-items: stretch; background-color: #fff;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* Feedback de Atividade de Áudio (Glow Verde) */
-.dictation-content.advanced-mode.audio-detected {
+/* Feedback de Atividade (Glow Verde do Ditado Digital) */
+.dictation-content.audio-detected {
     box-shadow: 0 0 0 2px #4ade80, 0 10px 30px rgba(0,0,0,0.3);
+    transition: box-shadow 0.2s ease;
 }
 
 .dictation-header { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
@@ -465,13 +465,31 @@
 
 .mic-icon { 
     font-size: 36px; cursor: pointer; padding: 8px; border-radius: 50%; 
-    transition: background-color 0.2s, opacity 0.2s; z-index: 2; 
+    z-index: 2; 
     width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.3s ease;
+    border: 2px solid transparent; /* Prepare for border change */
 }
 .mic-icon:hover { background-color: #f0f0f0; }
-.mic-icon.listening { color: var(--primary-color); background-color: rgba(206, 42, 102, 0.1); }
 
-/* Visualizador de Áudio (Canvas) */
+/* Estado Pausado (Cinza/Menor) */
+.mic-icon.paused {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    transform: scale(0.9);
+}
+
+/* Estado Gravando (Ativo/Borda) */
+.mic-icon.listening {
+    color: var(--primary-color); 
+    background-color: rgba(206, 42, 102, 0.15);
+    opacity: 1;
+    filter: none;
+    transform: scale(1.1);
+    border-color: var(--primary-color);
+}
+
+/* Estilo do Visualizador de Áudio (Canvas) */
 #audio-visualizer {
     display: none;
     width: 160px; /* Largura controlada */
@@ -501,16 +519,17 @@
 
 /* NOVO: Estilo para o Seletor de Microfone */
 #dictation-mic-select {
-    width: 100%;
-    max-width: 250px;
-    padding: 6px 10px;
+    width: 100%; /* Ocupa a largura disponível no container flex */
+    max-width: 220px;
+    padding: 6px;
     border-radius: 5px;
     border: 1px solid #ccc;
     background-color: #fff;
     font-size: 13px;
-    margin-bottom: 6px;
-    cursor: pointer;
+    margin-bottom: 8px; /* Espaço para o seletor de idioma abaixo */
     text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 #dictation-lang-select { padding: 6px 10px; border-radius: 5px; border: 1px solid #ccc; background-color: #f8f9fa; font-size: 14px; margin-bottom: 4px; }
@@ -542,34 +561,6 @@
 .dictation-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 5px; }
 .footer-buttons-group { display: flex; gap: 10px; align-items: center; }
 .action-buttons { display: flex; gap: 10px; }
-
-/* Wrapper para o botão Limpar e Undo */
-.undo-wrapper {
-    position: relative;
-    display: inline-flex;
-}
-
-/* Botão de Undo Flutuante */
-.btn-undo-float {
-    position: absolute;
-    top: -45px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    border: none;
-    white-space: nowrap;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 100;
-    animation: fadeIn 0.3s ease;
-}
-.btn-undo-float:hover {
-    background-color: #555;
-}
 
 /* --- [ATUALIZAÇÃO v1.1.3] BOTÕES DO RODAPÉ UNIFORMIZADOS --- */
 /* Regra unificada para garantir tamanho e forma consistentes em todos os botões do ditado */
