@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Editor</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="stylesheet" href="css/style.css">      <link rel="stylesheet" href="css/components.css"> <script src="https://cdn.tiny.cloud/1/ejxjci6unfjljl6y2vali932gyz2bgenhi5lvoyp8yifsd46/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="editor-area">
+            
+            <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Recolher/Expandir Menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <div class="editor-wrapper">
+                <div id="ruler-horizontal" class="ruler"></div>
+                <div id="ruler-vertical" class="ruler"></div>
+
+                <textarea id="editor" class="text-editor"></textarea>
+
+                <button id="open-palette-fab" class="fab" aria-label="Abrir modelos rápidos">
+                    </button>
+            </div>
+        </div>
+
+        <div class="sidebar-area">
+            <h3>Modelos de Documento</h3>
+            <div class="sidebar-controls">
+                <input type="text" id="search-box" placeholder="Pesquisar... Use 'E' / 'OU' para refinar">
+                
+                <div class="search-filter-container">
+                    <input type="checkbox" id="search-in-tab-checkbox" name="search-filter">
+                    <label for="search-in-tab-checkbox">Buscar apenas na aba atual</label>
+                </div>
+
+                <div id="backup-status-card">
+                    <span class="card-title">ÚLTIMO BACKUP</span>
+                    <span id="backup-status-text">Nenhum backup recente.</span>
+                </div>
+
+                <div class="control-buttons-grid">
+                    <button id="search-btn" class="control-btn btn-secondary">Pesquisar</button>
+                    <button id="clear-search-btn" class="control-btn btn-secondary">Limpar Pesquisa</button>
+                    </div>
+            </div>
+            
+            <div id="tabs-container" class="tabs-container">
+                </div>
+
+            <div id="active-content-area" class="active-content-area">
+                <ul id="model-list">
+                    </ul>
+                <div id="tab-actions-container"></div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button id="add-new-tab-btn">Aba</button>
+                <button id="add-new-folder-btn">Pasta</button>
+                <button id="add-new-model-btn">Adicionar</button>
+                <button id="import-btn">Importar</button>
+                <button id="export-btn">Exportar</button>
+                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title">Título do Modal</h3>
+            
+            <div id="modal-dynamic-content"></div>
+            
+            <div class="modal-buttons">
+                <button id="modal-btn-save">Salvar</button>
+                <button id="modal-btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dictation-modal" class="modal-overlay">
+        <div class="dictation-content advanced-mode">
+            <div class="dictation-header">
+                <div class="mic-wrapper">
+                    <div id="dictation-mic-icon" class="mic-icon" title="Clique para Pausar/Gravar">🎤</div>
+                    <canvas id="audio-visualizer" width="300" height="60"></canvas>
+                </div>
+
+                <div class="dictation-controls">
+                    <select id="dictation-mic-select" class="mic-select" title="Selecionar Fonte de Áudio">
+                        <option value="default">Padrão do Sistema</option>
+                    </select>
+
+                    <select id="dictation-lang-select" title="Selecionar idioma">
+                        <option value="pt-BR" selected>Português (Brasil)</option>
+                        <option value="en-US">English (US)</option>
+                        <option value="es-ES">Español (España)</option>
+                    </select>
+                    <span id="dictation-status" class="status-indicator">Pronto para ouvir</span>
+                </div>
+                <button id="dictation-close-btn">&times;</button>
+            </div>
+            
+            <div class="dictation-buffer-area">
+                <textarea id="dictation-textarea" placeholder="Fale e seu texto aparecerá aqui. Edite se necessário..."></textarea>
+                <div id="dictation-interim" class="interim-display"></div>
+            </div>
+
+            <div class="dictation-footer">
+                <span id="dictation-save-status" class="save-status">Salvo automaticamente</span>
+                <div class="footer-buttons-group">
+                    <button id="btn-clear-dictation" class="secondary-btn" title="Limpar texto">Limpar</button>
+                    
+                    <div class="action-buttons">
+                        <button id="btn-insert-raw" class="action-btn-raw" title="Inserir texto sem alterações">Inserir</button>
+                        <button id="btn-insert-fix" class="action-btn-fix" title="Corrigir gramática e pontuação">Revisar ✨</button>
+                        <button id="btn-insert-legal" class="action-btn-legal" title="Refinar para linguagem jurídica formal">Jurídico ⚖️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="command-palette-overlay" class="cp-overlay">
+        <div id="command-palette-search-box" class="cp-search-box">
+            <input type="text" id="command-palette-search" placeholder="Buscar modelo rápido...">
+            <ul id="command-palette-results" role="listbox">
+                </ul>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <script src="js/config.js"></script>
+    <script src="js/speech.js"></script>
+    <script src="js/editor-actions.js"></script>
+    <script src="js/backup-manager.js"></script>
+    <script src="js/ModalManager.js"></script> <script src="js/NotificationService.js"></script> <script src="js/prompts.js"></script>
+    <script src="js/gemini-service.js"></script>
+    <script src="js/ui-icons.js"></script>
+    
+    <script src="js/changelog.js"></script> 
+    
+    <script src="js/markdown-converter.js"></script> <script src="js/CommandPalette.js"></script> <script src="js/SidebarManager.js"></script> 
+    <script src="js/script.js"></script>
+    <script src="js/tinymce-config.js"></script> 
+</body>
+</html>
